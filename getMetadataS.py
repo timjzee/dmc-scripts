@@ -18,7 +18,7 @@ line_counter = 0
 filename_old = ""
 for line in s_lines:
     line_counter += 1
-    if line_counter > 1000:
+    if line_counter > 5000:
         break
     line_list = line.split(",")
     component = "comp-" + line_list[0].split("/")[0]
@@ -37,12 +37,16 @@ for line in s_lines:
         plk_dict = dict(zip(plk_id_list, plk_lines_list))
     
     phon_list = line_list[5].split(" ++ ")
-    counter = 1
+    counter = 0
     for word_phon in phon_list:
+        counter += 1
         if word_phon[-1] == "s":
             print(filename, chunk_start, word_phon)
-            skp_marker = re.search(r'<t.*tb="{}" te="{}.*(s|x|z|sch)"/>'.format(chunk_start, chunk_end), skp_text).group(0)
-            skp_text = re.sub(r'<t.*tb="{}" te="{}.*(s|x|z|sch)"/>'.format(chunk_start, chunk_end), '', skp_text, count=1)
+            skp_marker_g = re.search(r'<t.*tb="{}" te="{}.*(s|x|z|sch|ce)"/>'.format(chunk_start, chunk_end), skp_text, flags=re.I)
+            if skp_marker_g == None:
+                continue
+            skp_marker = skp_marker_g.group(0)
+            skp_text = re.sub(r'<t.*tb="{}" te="{}.*(s|x|z|sch|ce)"/>'.format(chunk_start, chunk_end), '', skp_text, count=1, flags=re.I)
             chunk_id_string = re.search(r'(?<=ref=")[a-z0-9.]+', skp_marker).group(0)
             chunk_id = chunk_id_string.split(".")[1]
             word_index = int(chunk_id_string.split(".")[2]) - 1
@@ -55,7 +59,6 @@ for line in s_lines:
             next_phon = phon_list[counter] if counter < len(phon_list) else "NA"
             with open(tensusers_files + "s_words.csv", "a") as f:
                 f.write(",".join([component, language, filename, channel, chunk_start, chunk_end, str(word_index), word_ort, word_phon, next_phon, word_pos]) + "\n")
-        counter += 1
     filename_old = filename[:]
     
     
