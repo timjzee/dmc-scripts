@@ -18,8 +18,8 @@ line_counter = 0
 filename_old = ""
 for line in s_lines:
     line_counter += 1
-    if line_counter > 5000:
-        break
+    if line_counter % 1000 == 0:
+        print(line_counter / len(s_lines) * 100, " percent")
     line_list = line.split(",")
     component = "comp-" + line_list[0].split("/")[0]
     language, filename = line_list[0].split("/")[1:3]
@@ -41,7 +41,7 @@ for line in s_lines:
     for word_phon in phon_list:
         counter += 1
         if word_phon[-1] == "s":
-            print(filename, chunk_start, word_phon)
+#            print(filename, chunk_start, word_phon)
             skp_marker_g = re.search(r'<t.*tb="{}" te="{}.*(s|x|z|sch|ce)"/>'.format(chunk_start, chunk_end), skp_text, flags=re.I)
             if skp_marker_g == None:
                 continue
@@ -53,6 +53,9 @@ for line in s_lines:
 #            word_index += counter
             assert chunk_id in plk_dict
 #            assert len(phon_list) == len(plk_dict[chunk_start]) + 1
+            if word_index > len(plk_dict[chunk_id]):
+                print("mislabelled chunk, continuing on...")
+                continue
             word_info = plk_dict[chunk_id][word_index].split("\t")
             word_ort = word_info[0]
             word_pos = word_info[1]
