@@ -5,7 +5,7 @@ import re
 tensusers_files = "/vol/tensusers/timzee/cgn/"
 cgn_files = "/vol/bigdata/corpora2/CGN2/data/annot/"
 
-header = "component,language,filename,channel,chunk_start,chunk_end,word_index,word_ort,word_phon,next_phon,word_pos\n"
+header = "component,language,filename,chunk_id,word_id,channel,chunk_start,chunk_end,word_index,word_ort,word_phon,next_phon,word_pos\n"
 
 with open(tensusers_files + "s_words.csv", "w") as f:
     f.write(header)
@@ -36,7 +36,7 @@ for line in s_lines:
         assert len(plk_id_list) == len(plk_lines_list)
         plk_dict = dict(zip(plk_id_list, plk_lines_list))
     
-    phon_list = line_list[5].split(" ++ ")
+    phon_list = re.sub(r'\n', "", line_list[5].split(" ++ "))
     counter = 0
     for word_phon in phon_list:
         counter += 1
@@ -57,11 +57,14 @@ for line in s_lines:
                 print("mislabelled chunk, continuing on...")
                 continue
             word_info = plk_dict[chunk_id][word_index].split("\t")
+            if len(word_info) < 3:
+                print(word_phon, filename, chunk_id, word_index, "had an indexing error, continuing on...")
+                continue
             word_ort = word_info[0]
-            word_pos = word_info[1]
+            word_pos = re.sub(r',', ';', word_info[1])
             next_phon = phon_list[counter] if counter < len(phon_list) else "NA"
             with open(tensusers_files + "s_words.csv", "a") as f:
-                f.write(",".join([component, language, filename, channel, chunk_start, chunk_end, str(word_index), word_ort, word_phon, next_phon, word_pos]) + "\n")
+                f.write(",".join([component, language, filename, chunk_id, word_id, channel, chunk_start, chunk_end, str(word_index), word_ort, word_phon, next_phon, word_pos]) + "\n")
     filename_old = filename[:]
     
     
