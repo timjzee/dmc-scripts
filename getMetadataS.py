@@ -5,7 +5,7 @@ import re
 tensusers_files = "/vol/tensusers/timzee/cgn/"
 cgn_files = "/vol/bigdata/corpora2/CGN2/data/annot/"
 
-header = "component,language,filename,chunk_id,word_id,channel,chunk_start,chunk_end,word_index,word_ort,word_phon,next_phon,word_pos\n"
+header = "component,language,filename,chunk_id,word_id,channel,chunk_start,chunk_end,word_ort,word_phon,next_phon,oov_in_chunk,word_pos\n"
 
 with open(tensusers_files + "s_words.csv", "w") as f:
     f.write(header)
@@ -24,6 +24,8 @@ for line in s_lines:
     component = "comp-" + line_list[0].split("/")[0]
     language, filename = line_list[0].split("/")[1:3]
     channel, chunk_start, chunk_end = line_list[1:4]
+    oov_in_chunk = "1" if re.search(r'\?\?', line_list[5]) else "0"
+    
     if filename != filename_old:
         with gzip.open(cgn_files + "text/plk/" + component + "/" + language + "/" + filename + ".plk.gz", "rt", encoding='latin-1') as f:
             plk_text = f.read()
@@ -36,7 +38,7 @@ for line in s_lines:
         assert len(plk_id_list) == len(plk_lines_list)
         plk_dict = dict(zip(plk_id_list, plk_lines_list))
     
-    phon_list = re.sub(r'\n', "", line_list[5].split(" ++ "))
+    phon_list = re.sub(r'\n', "", line_list[5]).split(" ++ ")
     counter = 0
     for word_phon in phon_list:
         counter += 1
@@ -53,7 +55,7 @@ for line in s_lines:
 #            word_index += counter
             assert chunk_id in plk_dict
 #            assert len(phon_list) == len(plk_dict[chunk_start]) + 1
-            if word_index > len(plk_dict[chunk_id]):
+            if word_index >= len(plk_dict[chunk_id]):
                 print("mislabelled chunk, continuing on...")
                 continue
             word_info = plk_dict[chunk_id][word_index].split("\t")
@@ -64,7 +66,7 @@ for line in s_lines:
             word_pos = re.sub(r',', ';', word_info[1])
             next_phon = phon_list[counter] if counter < len(phon_list) else "NA"
             with open(tensusers_files + "s_words.csv", "a") as f:
-                f.write(",".join([component, language, filename, chunk_id, word_id, channel, chunk_start, chunk_end, str(word_index), word_ort, word_phon, next_phon, word_pos]) + "\n")
+                f.write(",".join([component, language, filename, chunk_id, str(word_index), channel, chunk_start, chunk_end, word_ort, word_phon, next_phon, oov_in_chunk, word_pos]) + "\n")
     filename_old = filename[:]
     
     

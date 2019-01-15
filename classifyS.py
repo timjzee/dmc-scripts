@@ -1,14 +1,14 @@
 import re
 
 
-with open("/vol/tensusers/timzee/cgn/s_words_half.csv", "r") as f:
+with open("/vol/tensusers/timzee/cgn/s_words.csv", "r") as f:
     f_text = f.readlines()
 
 #f_text = re.sub(r'\n,', ',', f_text)
 #f_lines = f_text.split("\n")
 
-with open("/vol/tensusers/timzee/cgn/s_words_half_class.csv", "w") as f:
-    f.write("component,language,filename,chunk_id,word_id,channel,chunk_start,chunk_end,word_index,word_ort,word_phon,next_phon,word_pos,word_class,type_of_s\n")
+with open("/vol/tensusers/timzee/cgn/s_words_class.csv", "w") as f:
+    f.write("component,language,filename,chunk_id,word_id,channel,chunk_start,chunk_end,word_ort,word_phon,next_phon,oov_in_chunk,word_pos,word_class,type_of_s\n")
 
 counter = 0
 for line in f_lines:
@@ -61,7 +61,7 @@ for line in f_lines:
     else:
         type_of_s = "S"
     with open("/vol/tensusers/timzee/cgn/s_words_half_class.csv", "a") as f:
-        f.write(",".join(line_list) + "," + pos_tag + "," + word_class + "," + type_of_s + "\n")
+        f.write(",".join(line_list) + "," + word_class + "," + type_of_s + "\n")
     counter += 1
 
 
