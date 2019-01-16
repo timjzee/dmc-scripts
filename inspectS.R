@@ -28,7 +28,9 @@ s_sub_df_DER = s_sub_df_u[s_sub_df_u$type_of_s == "DER",]
 s_sub_df_DER_smp = s_sub_df_DER[sample(nrow(s_sub_df_DER), 40), ]
 
 s_sub_df_smp = rbind(s_sub_df_DER_smp, s_sub_df_GEN_smp, s_sub_df_PL_smp, s_sub_df_S_smp)
-s_sub_df_smp_u = s_sub_df_smp[!duplicated(s_sub_df_smp$filename),]
+s_sub_df_smp_u = s_sub_df_smp[!duplicated(s_sub_df_smp[, c("filename", "chunk_start", "chunk_end")]),]
+
+
 
 s_sub_df_smp_u[ ,c(1,2,3,6,7,8)]
 write.table(s_sub_df_smp_u[ ,c(1,2,3,6,7,8)], file = "/Users/tim/OneDrive/PhD_Nijmegen/corpus/chunks.csv",row.names=FALSE,col.names = FALSE,sep=",")
