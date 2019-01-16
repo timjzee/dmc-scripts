@@ -1,5 +1,7 @@
 s_df = read.csv("/Users/tim/OneDrive/PhD_Nijmegen/corpus/s_words_class.csv")
 s_df$next_sound = substr(s_df$next_phon, 1, 1)
+s_df$chunk_start = sprintf("%.3f", s_df$chunk_start)
+s_df$chunk_end = sprintf("%.3f", s_df$chunk_end)
 # select data that is in core CGN, which does not contain OOVs in chunk,
 # which is not followed by /s/, and which is Netherlandic Dutch
 s_sub_df = s_df[s_df$language == "nl" & s_df$oov_in_chunk == 0 
