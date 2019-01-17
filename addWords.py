@@ -10,10 +10,10 @@ with open(f_path + "chunks_KALDI.txt") as g:
     g_lines = g.readlines()
 
 with open(f_path + "chunks_PRAAT.txt", "w") as h:
-    h.write(f_lines[0] + "\n")
+    h.write(f_lines[0])
 
 counter = 0
 for l in g_lines:
-    counter += 1
     with open(f_path + "chunks_PRAAT.txt", "a") as h:
-        h.write(l + f_lines[counter] + "\n")
+        h.write(l[:-1] + "," + f_lines[counter + 1].split(",")[-1])
+    counter += 1
