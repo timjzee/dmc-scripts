@@ -39,4 +39,4 @@ s_sub_df_smp = rbind(s_sub_df_DER_smp, s_sub_df_GEN_smp, s_sub_df_PL_smp, s_sub_
 s_sub_df_smp_u = s_sub_df_smp[!duplicated(s_sub_df_smp[, c("filename", "chunk_start", "chunk_end")]),]
 
 
-write.table(s_sub_df_smp_u[ ,c(1,2,3,6,7,8)], file = paste(f_path, "chunks.csv", sep = ""), row.names=FALSE, sep=",")
+write.table(s_sub_df_smp_u[ ,c(1,2,3,6,7,8,9)], file = paste(f_path, "chunks.csv", sep = ""), row.names=FALSE, sep=",")
