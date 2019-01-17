@@ -21,16 +21,14 @@ with open(f_path + "chunks_KALDI.txt") as g:
 
 counter = 0
 for l in g_lines:
-    if counter == 0:
+    counter += 1
+    if counter == 1:
         line_list = f_lines[0].split(",")
         with open(f_path + "chunks_PRAAT.txt", "w") as f:
-            f.write("filepath," + ",".join(line_list[3:]) + "\n")
+            f.write("filepath," + re.sub(r'"', "", ",".join(line_list[3:-1])) + ",chunk_ort," + re.sub(r'"', "", line_list[-1]))
         continue
     l_list = l.split(",")
     for i in f_lines2:
-        print(i[:3])
-        print(l_list[:3])
         if i[:3] == l_list[:3]:
             with open(f_path + "chunks_PRAAT.txt", "a") as h:
-                h.write(l[:-1] + "," + i[-1])
-    counter += 1
+                h.write(",".join(l_list[:-1]) + "," + i[-1])
