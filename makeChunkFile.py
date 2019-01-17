@@ -7,7 +7,14 @@ f_path = "/Volumes/tensusers/timzee/cgn/" if os.name == "Darwin" else "/vol/tens
 with open(f_path + "chunks.csv", "r") as f:
     f_lines = f.readlines()
 
+counter = 0
 for line in f_lines:
+    counter += 1
+    line_list = line.split(",")
+    if counter == 1:
+        with open(f_path + "chunks2.txt", "w") as f:
+            f.write("filepath," + ",".join(new_line_list[3:-1]))
+        continue
     new_line = re.sub(r'"', "", line)
     new_line = new_line[5:]
     new_line_list = new_line.split(",")
