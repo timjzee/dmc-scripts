@@ -1,4 +1,10 @@
-s_df = read.csv("/Users/tim/OneDrive/PhD_Nijmegen/corpus/s_words_class.csv")
+if (Sys.info()[1] == "Darwin"){
+  f_path = "/Volumes/tensusers/timzee/cgn/"
+} else {
+  f_path = "/vol/tensusers/timzee/cgn/"
+}
+
+s_df = read.csv(paste(f_path, "s_words_class.csv", sep = ""))
 s_df$next_sound = substr(s_df$next_phon, 1, 1)
 s_df$chunk_start = sprintf("%.3f", s_df$chunk_start)
 s_df$chunk_end = sprintf("%.3f", s_df$chunk_end)
@@ -33,6 +39,4 @@ s_sub_df_smp = rbind(s_sub_df_DER_smp, s_sub_df_GEN_smp, s_sub_df_PL_smp, s_sub_
 s_sub_df_smp_u = s_sub_df_smp[!duplicated(s_sub_df_smp[, c("filename", "chunk_start", "chunk_end")]),]
 
 
-
-s_sub_df_smp_u[ ,c(1,2,3,6,7,8)]
-write.table(s_sub_df_smp_u[ ,c(1,2,3,6,7,8)], file = "/Users/tim/OneDrive/PhD_Nijmegen/corpus/chunks.csv",row.names=FALSE,col.names = FALSE,sep=",")
+write.table(s_sub_df_smp_u[ ,c(1,2,3,6,7,8)], file = paste(f_path, "chunks.csv", sep = ""), row.names=FALSE, sep=",")

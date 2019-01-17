@@ -1,7 +1,7 @@
 form Give chunks
-    word chunk_path /vol/tensusers/timzee/cgn/chunks3h.txt
-    word cgn_path /vol/bigdata/corpora2/CGN2/data/audio/wav/comp-
-    word output_path /vol/tensusers/timzee/cgn/man_annot/
+    word chunk_path /Volumes/tensusers/timzee/cgn/chunks_PRAAT.txt
+    word cgn_path /Volumes/bigdata2/corpora2/CGN2/data/audio/wav/comp-
+    word output_path /Volumes/tensusers/timzee/cgn/man_annot/
 endform
 
 # Make sure input file has a header
@@ -19,6 +19,7 @@ endPause: "Continue", 1
 
 procedure annotateChunk: annotateChunk.id
     selectObject: "Table chunks"
+    annotateChunk.w_ort$ = Get value: annotateChunk.id, "word_ort"
     annotateChunk.f_path$ = Get value: annotateChunk.id, "filepath"
     annotateChunk.c_start$ = Get value: annotateChunk.id, "chunk_start"
     annotateChunk.c_start = number(annotateChunk.c_start$)
@@ -38,6 +39,7 @@ procedure annotateChunk: annotateChunk.id
         Zoom to selection
     endeditor
     beginPause: "Save and continue"
+        comment: "Annotate " + annotateChunk.w_ort$
         comment: "Click continue to save the annotation."
     endPause: "Continue", 1
     selectObject: "TextGrid " + annotateChunk.s_name$
@@ -70,4 +72,3 @@ else
         endif
     endfor
 endif
-
