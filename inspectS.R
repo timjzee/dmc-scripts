@@ -4,6 +4,8 @@ if (Sys.info()[1] == "Darwin"){
   f_path = "/vol/tensusers/timzee/cgn/"
 }
 
+set.seed(42)
+
 s_df = read.csv(paste(f_path, "s_words_class.csv", sep = ""))
 s_df$next_sound = substr(s_df$next_phon, 1, 1)
 s_df$chunk_start = sprintf("%.3f", s_df$chunk_start)
