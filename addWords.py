@@ -26,7 +26,6 @@ for l in g_lines:
         line_list = f_lines[0].split(",")
         with open(f_path + "chunks_PRAAT.txt", "w") as f:
             f.write("filepath," + re.sub(r'"', "", ",".join(line_list[3:-1])) + ",chunk_ort," + re.sub(r'"', "", line_list[-1]))
-        continue
     l_list = l.split(",")
     for i in f_lines2:
         if i[:3] == l_list[:3]:

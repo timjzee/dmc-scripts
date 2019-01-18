@@ -32,7 +32,13 @@ $Python addWords.py
 echo "f"
 
 # This makes a new chunk file that only contains those chunks that were given a good KALDI alignment
-ls -lh "${t_path}KALDI_output/" | grep -v '75B' | awk '{print $9}' | awk 'NF > 0' | sed 's/_/\//' | sed 's/_/\//' | sed 's/_/,/g' | sed 's/.\{4\}$//' > "${t_path}temp.tmp"
+ls -lh "${t_path}KALDI_output/CGN_beam_5_100" | grep -v ' 75' | awk '{print $9}' | awk 'NF > 0' | sed 's/_/\//' | sed 's/_/\//' | sed 's/_/,/g' | sed 's/.\{4\}$//' > "${t_path}temp.tmp"
+
+# Channel is weird because of sox, let's allow everything'
+cat "${t_path}temp.tmp" | awk -F ',' 'gsub("[0123456789]+", ".*", $2)' | sed 's/ /,/g' > "${t_path}temp2.tmp"
+
 head -n 1 "${t_path}chunks_PRAAT.txt" > "${t_path}chunks_PRAAT2.txt"
-grep -f "${t_path}temp.tmp" "${t_path}chunks_PRAAT.txt" >> "${t_path}chunks_PRAAT2.txt"
-rm "${t_path}temp.tmp"
+grep -f "${t_path}temp2.tmp" "${t_path}chunks_PRAAT.txt" >> "${t_path}chunks_PRAAT2.txt"
+rm "${t_path}temp.tmp" "${t_path}temp2.tmp" "${t_path}chunks_PRAAT.txt"
+mv "${t_path}chunks_PRAAT2.txt" "${t_path}chunks_PRAAT.txt"
+
