@@ -8,10 +8,10 @@ form Give chunks
 endform
 
 procedure getKwordInt: getKwordInt.index
-    getKwordInt.num_ints = Get number of intervals: 4
+    getKwordInt.num_ints = Get number of intervals: 5
     getKwordInt.real_k_words = 0
     for getKwordInt.int from 1 to getKwordInt.num_ints
-        getKwordInt.label$ = Get label of interval: 4, getKwordInt.int
+        getKwordInt.label$ = Get label of interval: 5, getKwordInt.int
         if getKwordInt.label$ != ""
             getKwordInt.real_k_words += 1
             if getKwordInt.real_k_words == getKwordInt.index
@@ -23,7 +23,7 @@ procedure getKwordInt: getKwordInt.index
     label FINISHED
 endproc
 
-procedure measure: measure.int_label$, measure.s_word$, measure.boundary$, measure.cgn_time$, measure.kaldi_time$, measure.cgn_min_kaldi$, measure.agreement$
+procedure measure: measure.int_label$, measure.s_word$, measure.boundary$, measure.cgn_time$, measure.kaldi_time$, measure.cgn_min_kaldi$, measure.agreement$, measure.cgn_tran$, measure.kaldi_tran$
     selectObject: "Table measurements"
     Append row
     num_rows = Get number of rows
@@ -38,12 +38,14 @@ procedure measure: measure.int_label$, measure.s_word$, measure.boundary$, measu
     Set string value: num_rows, "kaldi_time", measure.kaldi_time$
     Set string value: num_rows, "cgn-kaldi", measure.cgn_min_kaldi$
     Set string value: num_rows, "agreement", measure.agreement$
+    Set string value: num_rows, "cgn_tran", measure.cgn_tran$
+    Set string value: num_rows, "kaldi_tran", measure.kaldi_tran$
     selectObject: "TextGrid " + s_name$ + "_all"
 endproc
 
 Read Table from comma-separated file: phone_path$
 Rename: "phones"
-Create Table with column names: "measurements", 0, "filepath channel chunk_start chunk_end word s_word boundary cgn_time kaldi_time cgn-kaldi agreement"
+Create Table with column names: "measurements", 0, "filepath channel chunk_start chunk_end word s_word boundary cgn_time kaldi_time cgn-kaldi agreement cgn_tran kaldi_tran"
 Read Table from comma-separated file: chunk_path$
 Rename: "chunks"
 
@@ -62,7 +64,7 @@ for id from 1 to num_chunks
 
     Open long sound file: wav_path$ + f_path$ + ".wav"
     s_name$ = selected$("LongSound")
-    To TextGrid: "phon_CGN word_CGN phon_KALDI word_KALDI phon_man word_man orth", ""
+    To TextGrid: "phon_CGN word_CGN tran_CGN phon_KALDI word_KALDI tran_KALDI phon_man word_man tran_man orth", ""
     Rename: s_name$ + "_all"
 
     ## Load CGN TextGrids
@@ -76,7 +78,7 @@ for id from 1 to num_chunks
     end_phon_interval = Get high interval at time: cgn_channel, c_end
     end_phon_interval = end_phon_interval - 1
     if start_phon_interval == end_phon_interval
-        @measure: "NA", "NA", "NA", "NA", "NA", "NA", "NA"
+        @measure: "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA"
         goto SKIPCHUNK
     endif
     # copy and convert phones to new textgrid
@@ -113,25 +115,35 @@ for id from 1 to num_chunks
             Set interval text: 1, new_interval, kaldi_phon$
         endif
     endfor
-    # copy and convert words to new textgrid
+    # copy and convert words and transcriptions to new textgrid
     selectObject: "TextGrid " + s_name$
     start_word_interval = Get high interval at time: cgn_channel - 2, c_start
     end_word_interval = Get high interval at time: cgn_channel - 2, c_end
     end_word_interval = end_word_interval - 1
     for interval from start_word_interval to end_word_interval
         selectObject: "TextGrid " + s_name$
+        start_time = Get start time of interval: cgn_channel - 2, interval
         if interval == start_word_interval
-            start_time = Get start time of interval: cgn_channel - 2, interval
             selectObject: "TextGrid " + s_name$ + "_all"
             Insert boundary: 2, start_time
+            Insert boundary: 3, start_time
             selectObject: "TextGrid " + s_name$
         endif
         end_time = Get end time of interval: cgn_channel - 2, interval
         cgn_word$ = Get label of interval: cgn_channel - 2, interval
         selectObject: "TextGrid " + s_name$ + "_all"
         Insert boundary: 2, end_time
+        Insert boundary: 3, end_time
         new_interval = Get low interval at time: 2, end_time
         Set interval text: 2, new_interval, cgn_word$
+        cgn_tran$ = ""
+        first_fon = Get high interval at time: 1, start_time
+        last_fon = Get low interval at time: 1, end_time
+        for f from first_fon to last_fon
+            f_lab$ = Get label of interval: 1, f
+            cgn_tran$ = cgn_tran$ + f_lab$
+        endfor
+        Set interval text: 3, new_interval, cgn_tran$
     endfor
     runSystem_nocheck: "rm " + tens_path$ + s_name$ + ".awd"
     selectObject: "TextGrid " + s_name$
@@ -156,14 +168,14 @@ for id from 1 to num_chunks
         start_time = number(start_time$)
         if phon_index == 1
             selectObject: "TextGrid " + s_name$ + "_all"
-            Insert boundary: 3, c_start + start_time
+            Insert boundary: 4, c_start + start_time
             selectObject: "Table alignment"
         endif
         phon_dur$ = Get value: phon_index, "dur"
         phon_dur = number(phon_dur$)
         phon_text$ = Get value: phon_index, "phone"
         selectObject: "TextGrid " + s_name$ + "_all"
-        Insert boundary: 3, c_start + start_time + phon_dur
+        Insert boundary: 4, c_start + start_time + phon_dur
         underscore_index = index(phon_text$, "_")
         if underscore_index == 0
             phon$ = phon_text$
@@ -172,19 +184,24 @@ for id from 1 to num_chunks
             phon$ = left$(phon_text$, underscore_index - 1)
             phon_tag$ = right$(phon_text$, length(phon_text$) - underscore_index)
         endif
-        phon_interval = Get low interval at time: 3, c_start + start_time + phon_dur
-        Set interval text: 3, phon_interval, phon$
+        phon_interval = Get low interval at time: 4, c_start + start_time + phon_dur
+        Set interval text: 4, phon_interval, phon$
         if (phon_tag$ == "B") or (phon_tag$ == "S")
             word_start = c_start + start_time
+            word_tran$ = ""
             if word_start > word_end
-                Insert boundary: 4, word_start
+                Insert boundary: 5, word_start
+                Insert boundary: 6, word_start
             endif
         endif
+        word_tran$ = word_tran$ + phon$
         if (phon_tag$ == "E") or (phon_tag$ == "S")
             word_end = c_start + start_time + phon_dur
-            Insert boundary: 4, word_end
-            word_interval = Get low interval at time: 4, word_end
-            Set interval text: 4, word_interval, "word"
+            Insert boundary: 5, word_end
+            Insert boundary: 6, word_end
+            word_interval = Get low interval at time: 5, word_end
+            Set interval text: 5, word_interval, "word"
+            Set interval text: 6, word_interval, word_tran$
         endif
     endfor
     ## Manual textgrid processing
@@ -192,7 +209,7 @@ for id from 1 to num_chunks
     # Check if number of words are equal
     selectObject: "TextGrid " + s_name$ + "_all"
     num_cgn_words = Count intervals where: 2, "is not equal to", ""
-    num_kaldi_words = Count intervals where: 4, "is not equal to", ""
+    num_kaldi_words = Count intervals where: 5, "is not equal to", ""
     # For now let's compare all words
     if num_cgn_words == num_kaldi_words
         actual_word_i = 0
@@ -204,6 +221,7 @@ for id from 1 to num_chunks
                 # check if cgn and kaldi word have equal amount of boundaries
                 cgn_word_start = Get start time of interval: 2, int
                 cgn_word_end = Get end time of interval: 2, int
+                cgn_tran$ = Get label of interval: 3, int
                 first_cgn_fon = Get high interval at time: 1, cgn_word_start
                 last_cgn_fon = Get low interval at time: 1, cgn_word_end
                 num_cgn_fon = last_cgn_fon - first_cgn_fon + 1
@@ -217,10 +235,11 @@ for id from 1 to num_chunks
                 @getKwordInt: actual_word_i
 #                kaldi_int = getKwordInt.int
 #                appendInfoLine: getKwordInt.int
-                kaldi_word_start = Get start time of interval: 4, getKwordInt.int
-                kaldi_word_end = Get end time of interval: 4, getKwordInt.int
-                first_kaldi_fon = Get high interval at time: 3, kaldi_word_start
-                last_kaldi_fon = Get low interval at time: 3, kaldi_word_end
+                kaldi_word_start = Get start time of interval: 5, getKwordInt.int
+                kaldi_word_end = Get end time of interval: 5, getKwordInt.int
+                kaldi_tran$ = Get label of interval: 6, getKwordInt.int
+                first_kaldi_fon = Get high interval at time: 4, kaldi_word_start
+                last_kaldi_fon = Get low interval at time: 4, kaldi_word_end
                 num_kaldi_fon = last_kaldi_fon - first_kaldi_fon + 1
                 if num_cgn_fon == num_kaldi_fon
                     # for now we'll measure starting and ending boundaries for each word
@@ -230,7 +249,7 @@ for id from 1 to num_chunks
                         if phon == 1
                             boundary += 1
                             cgn_time = Get start time of interval: 1, first_cgn_fon + phon - 1
-                            kaldi_time = Get start time of interval: 3, first_kaldi_fon + phon - 1
+                            kaldi_time = Get start time of interval: 4, first_kaldi_fon + phon - 1
                             cgn_min_kaldi = cgn_time - kaldi_time
                             if abs(cgn_min_kaldi) > agreement_threshold
                                 agreement = 0
@@ -242,11 +261,11 @@ for id from 1 to num_chunks
                             else
                                 s_word$ = "1"
                             endif
-                            @measure: int_label$, s_word$, string$(boundary), string$(cgn_time), string$(kaldi_time), string$(cgn_min_kaldi), string$(agreement)
+                            @measure: int_label$, s_word$, string$(boundary), string$(cgn_time), string$(kaldi_time), string$(cgn_min_kaldi), string$(agreement), cgn_tran$, kaldi_tran$
                         endif
                         boundary += 1
                         cgn_time = Get end time of interval: 1, first_cgn_fon + phon - 1
-                        kaldi_time = Get end time of interval: 3, first_kaldi_fon + phon - 1
+                        kaldi_time = Get end time of interval: 4, first_kaldi_fon + phon - 1
                         cgn_min_kaldi = cgn_time - kaldi_time
                         if abs(cgn_min_kaldi) > agreement_threshold
                             agreement = 0
@@ -258,7 +277,7 @@ for id from 1 to num_chunks
                         else
                             s_word$ = "1"
                         endif
-                        @measure: int_label$, s_word$, string$(boundary), string$(cgn_time), string$(kaldi_time), string$(cgn_min_kaldi), string$(agreement)
+                        @measure: int_label$, s_word$, string$(boundary), string$(cgn_time), string$(kaldi_time), string$(cgn_min_kaldi), string$(agreement), cgn_tran$, kaldi_tran$
                     endfor
                 else
                     if index_regex(int_label$, w_ort$ + "[.!?]?$") != 1
@@ -266,12 +285,12 @@ for id from 1 to num_chunks
                     else
                         s_word$ = "1"
                     endif
-                    @measure: int_label$, s_word$, "NA", "NA", "NA", "NA", "NA"
+                    @measure: int_label$, s_word$, "NA", "NA", "NA", "NA", "NA", cgn_tran$, kaldi_tran$
                 endif
             endif
         endfor
     else
-        @measure: "NA", "NA", "NA", "NA", "NA", "NA", "NA"
+        @measure: "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA"
     endif
     ## Go to next chunk
 #    plusObject: "LongSound " + s_name$
