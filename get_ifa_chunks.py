@@ -10,7 +10,7 @@ tens_path = "/Volumes/tensusers/timzee/IFAcorpus/" if sys.platform == "darwin" e
 
 tg_folder = "SLcorpus/Labels/sentences/"
 
-tz_path = "/Volumes/timzee/Docs/" if sys.platform == "darwin" else "/vol/timzee/Docs/"
+tz_path = "/Volumes/timzee/Docs/" if sys.platform == "darwin" else "/home/timzee/Docs/"
 
 validation_files = []
 with open(tens_path + "validation_files.txt", "r") as f:
