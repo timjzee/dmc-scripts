@@ -8,10 +8,10 @@ import os
 
 tens_path = "/Volumes/tensusers/timzee/IFAcorpus/" if sys.platform == "darwin" else "/vol/tensusers/timzee/IFAcorpus/"
 
-speakers = os.listdir(tens_path + "SLcorpus/Labels/validation_tim/")
+speakers = os.listdir(tens_path + "SLcorpus/Labels/validation_tim2/")
 sentences = []
 for speaker in speakers:
-    files = os.listdir(tens_path + "SLcorpus/Labels/validation_tim/" + speaker + "/ASPEX/")
+    files = os.listdir(tens_path + "SLcorpus/Labels/validation_tim2/" + speaker + "/ASPEX/")
     files = [file.split("_")[0] for file in files if "aspex" in file]
     dupes = set([file for file in files if files.count(file) > 1])
     for dupe in dupes:
@@ -24,14 +24,14 @@ for speaker in speakers:
 #            print("removing " + rm_file)
 #            os.remove(rm_file)
 
-# sentences = ["F40L/ASPEX/F40L1VI8F_"]
+# sentences = ["F40L/ASPEX/F40L1VI1A_"]
 
 line_list = []
 for sentence in sentences:
     print("Working on " + sentence)
     max_diff = 3
     while max_diff > 2:
-        output = subprocess.check_output(["perl", "-I", tens_path + "SLcorpus/scripts", tens_path + "SLcorpus/scripts/ValidateSegmentation.pl", tens_path + "SLcorpus/Labels/validation_tim/" + sentence + "*"])
+        output = subprocess.check_output(["perl", "-I", tens_path + "SLcorpus/scripts", tens_path + "SLcorpus/scripts/ValidateSegmentation.pl", tens_path + "SLcorpus/Labels/validation_tim2/" + sentence + "*"])
         output = output[:-2] + "\n]"
         comparisons = json.loads(output)
         if len(comparisons) == 3:
@@ -158,17 +158,29 @@ for sentence in sentences:
                     index["tim_kaldi"] += 1
                     index["ifa_kaldi"] += 1
             if line["ifa_label"] != "NA" and line["tim_label"] != "NA":
-                line["ifa_tim_diff"] = comp_dict["ifa_tim"]["diff"][diff_index["ifa_tim"]]
+                if diff_index["ifa_tim"] > len(comp_dict["ifa_tim"]["diff"]) - 1:
+                    print("IFA-TIM INDEX OUT OF RANGE")
+                    line["ifa_tim_diff"] = "NA"
+                else:
+                    line["ifa_tim_diff"] = comp_dict["ifa_tim"]["diff"][diff_index["ifa_tim"]]
                 diff_index["ifa_tim"] += 1
             else:
                 line["ifa_tim_diff"] = "NA"
             if line["ifa_label"] != "NA" and line["kaldi_label"] != "NA":
-                line["ifa_kaldi_diff"] = comp_dict["ifa_kaldi"]["diff"][diff_index["ifa_kaldi"]]
+                if diff_index["ifa_kaldi"] > len(comp_dict["ifa_kaldi"]["diff"]) - 1:
+                    print("IFA-KALDI INDEX OUT OF RANGE")
+                    line["ifa_kaldi_diff"] = "NA"
+                else:
+                    line["ifa_kaldi_diff"] = comp_dict["ifa_kaldi"]["diff"][diff_index["ifa_kaldi"]]
                 diff_index["ifa_kaldi"] += 1
             else:
                 line["ifa_kaldi_diff"] = "NA"
             if line["tim_label"] != "NA" and line["kaldi_label"] != "NA":
-                line["tim_kaldi_diff"] = comp_dict["tim_kaldi"]["diff"][diff_index["tim_kaldi"]]
+                if diff_index["tim_kaldi"] > len(comp_dict["tim_kaldi"]["diff"]) - 1:
+                    print("TIM-KALDI INDEX OUT OF RANGE")
+                    line["tim_kaldi_diff"] = "NA"
+                else:
+                    line["tim_kaldi_diff"] = comp_dict["tim_kaldi"]["diff"][diff_index["tim_kaldi"]]
                 diff_index["tim_kaldi"] += 1
             else:
                 line["tim_kaldi_diff"] = "NA"

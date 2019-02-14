@@ -141,8 +141,8 @@ def getHandAnnot(tg_path):
         else:
             i_list = re.findall(r'[a-zAOEGINSYZ29@][:+~]?', i)
             phone_list2.extend(i_list)
-    start_time = tg[0][0].minTime
-    end_time = tg[0][len(tg[0]) - 1].maxTime
+    start_time = tg[0][0].maxTime
+    end_time = tg[0][len(tg[0]) - 1].minTime
     diphone_list = []
     for counter, phon in enumerate(phone_list2, 0):
         if phon not in phone_dict:
@@ -208,7 +208,7 @@ def selectSentences():
         num_red = annot_diff if annot_diff > 0 else 0
         sound_path = tens_path + "SLspeech/sentences/hm/" + sentence_path.split("/")[-3] + "/" + sentence_path.split("/")[-1].split("_")[0] + "_hm.wav"
         ifa_list.append((sound_path, start, end, ort, num_red, diph_load, (num_red + 1) * diph_load))
-    with open(tens_path + "IFA_sentences.txt", "w") as f:
+    with open(tens_path + "IFA_sentences2.txt", "w") as f:
         for i in sorted(ifa_list, key=lambda score: score[-1], reverse=True):
             sp, start, end, ort, n_red, diph_load, score = i
             f.write(",".join([sp, str(start), str(end), ort, str(n_red), str(diph_load), str(score)]).encode("utf-8") + "\n")
@@ -234,4 +234,4 @@ def appendPercentages():
 
 
 if __name__ == '__main__':
-    appendPercentages()
+    selectSentences()

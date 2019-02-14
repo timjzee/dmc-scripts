@@ -5,7 +5,7 @@ import textgrid
 import decimal
 
 tz_path = "/Volumes/timzee/Docs/" if sys.platform == "darwin" else "/home/timzee/Docs/"
-tens_path = "/Volumes/tensusers/timzee/IFAcorpus/SLcorpus/Labels/validation_tim/" if sys.platform == "darwin" else "/vol/tensusers/timzee/IFAcorpus/SLcorpus/Labels/validation_tim/"
+tens_path = "/Volumes/tensusers/timzee/IFAcorpus/SLcorpus/Labels/validation_tim2/" if sys.platform == "darwin" else "/vol/tensusers/timzee/IFAcorpus/SLcorpus/Labels/validation_tim2/"
 
 phon_dict = {}
 with open(tz_path + "KALDI-CGN_phones3.txt", "r") as f:
@@ -33,11 +33,6 @@ def processAli(ali_ls):
 
 
 def readWriteAli():
-#    if len(sys.argv) == 1:
-#        print("Please provide (newline delimited file of) .ali path(s) and path to output folder")
-#        sys.exit()
-#    else:
-#    files_list = sys.argv[1].split("\n")
     files_list = [line[:-1] for line in sys.stdin]
     for fp in files_list:
         try:
