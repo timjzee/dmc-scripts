@@ -51,5 +51,5 @@ s_samp_ort$chan_old = s_samp_ort$chan - 1
 
 write.table(s_samp_ort[ ,c(1,20,3,4,19)], file = paste(f_path, "cgn_louis_1.txt", sep = ""), row.names=FALSE, col.names=FALSE, sep=",", quote = FALSE)
 
-
+write.table(s_samp_ort[ ,1:14], file = paste(f_path, "cgn_praat_1.csv", sep = ""), row.names=FALSE, col.names=TRUE, sep=",", quote = FALSE)
 
