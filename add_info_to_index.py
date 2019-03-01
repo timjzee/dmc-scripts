@@ -12,8 +12,7 @@ from HTMLParser import HTMLParser
 from htmlentitydefs import entitydefs
 import multiprocessing
 
-
-tens_path = "/Volumes/tensusers/timzee/cgn/" if sys.platform == "darwin" else "/vol/tensusers/timzee/cgn/"
+tens_path = "/Volumes/tensusers/timzee/" if sys.platform == "darwin" else "/vol/tensusers/timzee/"
 cgn_path = "/Volumes/bigdata2/corpora2/CGN2/data/annot/" if sys.platform == "darwin" else "/vol/bigdata/corpora2/CGN2/data/annot/"
 tz_path = "/Volumes/timzee/Docs/" if sys.platform == "darwin" else "/home/timzee/Docs/"
 
@@ -36,11 +35,52 @@ for i in range(num_cores):
     else:
         core_dict[str(i + 1)]["end"] = num_index_lines
 
+print("Loading KALDI lexicon")
 kaldi_lex = {}
 with codecs.open(tz_path + "lexicon_from_MARIO.txt", "r", "utf-8") as f:
     for line in f:
         entry, pron = line[:-1].split("\t")
         kaldi_lex[entry] = pron
+
+print("Loading SUBTLEX")
+subtlex = {}
+with codecs.open(tens_path + "other/SUBTLEX-NL.txt", "r", "utf-8") as f:
+    for line in f:
+        line_list = line[:-1].split("\t")
+        word = line_list[0]
+        subtlexwf = line_list[6]
+        lg10wf = line_list[7]
+        subtlex[word] = [subtlexwf, lg10wf]
+
+print("Loading ClearPond")
+neighbours = {}
+with codecs.open(tens_path + "other/dutchCP_uni.txt", "r", "utf-8") as f:
+    for line in f:
+        word, otan, otaf, ptan, ptaf = line[:-1].split("\t")
+        neighbours[word] = [otan, otaf, ptan, ptaf]
+
+print("Loading CELEX")
+celex = {}
+with codecs.open(tens_path + "other/DPW.CD", "r", "ascii") as f:
+    for line in f:
+        l_list = line[:-1].split("\\")
+        word = l_list[1]
+        syls = l_list[4].split("-")
+        num_syl = len(syls)
+        for counter, syl in enumerate(syls, 1):
+            if "'" in syl:
+                stress = counter
+                break
+        celex[word] = [str(num_syl), str(stress)]
+
+print("Loading COW")
+cow = {}
+with codecs.open(tens_path + "other/cow2.counts", "r", "utf-8") as f:
+    for counter, line in enumerate(f, 1):
+        bigram, freq = line[:-1].split("\t")
+        cow[bigram] = freq
+        if counter % 1000000 == 0:
+            print(str((float(counter) / float(73883219)) * 100) + " %")
 
 
 def createTemp(tg_path):
@@ -147,8 +187,24 @@ def getPOS(rt, s_ind, w_ind, wrd):
     return w_pos, word_class, type_of_s
 
 
-def parseLine(f_path, chan, from_time, to_time, ort, new_file):
-    speaker = getSpeaker(f_path, chan)
+def findWord(rt, s_index, w_index, shift):
+    file_name = rt.attrib["ref"]
+    matches = rt.findall(".//tw[@ref='{}']".format(file_name + "." + str(s_index) + "." + str(w_index + shift)))
+    if len(matches) == 0:
+        if shift > 0:
+            matches = rt.findall(".//tw[@ref='{}']".format(file_name + "." + str(s_index + 1) + "." + str(shift)))
+        else:
+            prev_sent = rt.findall("./tau[@ref='{}']".format(file_name + "." + str(s_index - 1)))
+            if len(prev_sent) > 0:
+                matches = prev_sent[0].getchildren()[-1:]
+            else:
+                matches = []
+    shift_word = matches[0].attrib["w"] if len(matches) > 0 else ""
+    return shift_word
+
+
+def parseLine(f_path, chan, from_time, to_time, ort, tier, new_file):
+    speaker = getSpeaker(f_path, tier)
     if new_file:
         with gzip.open(cgn_path + "xml/skp-ort/comp-" + f_path + ".skp.gz") as h:
             skp_gz = h.read()
@@ -182,27 +238,33 @@ def parseLine(f_path, chan, from_time, to_time, ort, new_file):
             continue
         else:
             word_chunk_i = counter
+            subtlexwf, lg10wf = subtlex[word] if word in subtlex else ["NA", "NA"]
+            otan, otaf, ptan, ptaf = neighbours[word] if word in neighbours else ["NA", "NA", "NA", "NA"]
+            num_syl, word_stress = celex[word] if word in celex else ["NA", "NA"]
             sent_i, word_sent_i = getSentenceInfo(skp_root, speaker, from_time, to_time, word)
             found = skp_root.findall(".//tw[@ref='{}']".format(".".join([f_path.split("/")[-1], str(sent_i), str(word_sent_i)])))[0]
             parent = skp_root.findall("./tau[@ref='{}']".format(".".join([f_path.split("/")[-1], str(sent_i)])))[0]
             parent.remove(found)
+            next_word = findWord(skp_root, sent_i, word_sent_i, 1)
+            bigram = word.lower() + " " + next_word.lower()
+            bigram_f = cow[bigram] if bigram in cow else "0"
             next_phon = "SIL" if counter == len(word_list) else checkCanonical(word_list[counter], 0)
             next_phon = "NA" if next_phon is None else next_phon
             word_pos, word_class, type_of_s = getPOS(tag_root, sent_i, word_sent_i, word)
-            output_lines.append([str(word_chunk_i), str(sent_i), str(word_sent_i), word, next_phon, word_pos, word_class, type_of_s, speaker])
+            output_lines.append([str(word_chunk_i), str(sent_i), str(word_sent_i), word, next_phon, word_pos, word_class, type_of_s, speaker, subtlexwf, lg10wf, otan, otaf, ptan, ptaf, bigram_f, num_syl, word_stress])
             print(word, word_pos, type_of_s)
-    return [",".join([f_path, chan, from_time, to_time, str(oov)] + ol) + "\n" for ol in output_lines] if len(output_lines) != 0 else []
+    return [",".join([f_path, chan, from_time, to_time, str(oov), tier] + ol) + "\n" for ol in output_lines] if len(output_lines) != 0 else []
 
 
 def readWriteMetaData(core_num="", start_line=1, end_line=num_index_lines):
-#    if select.select([sys.stdin, ], [], [], 0.0)[0]:
-#        print("Reading from Standard Input")
-#        f = codecs.getreader('utf-8')(sys.stdin)
-#    else:
-    print("Reading from file")
-    f = codecs.open(tens_path + "cgn_ort_index_210119.txt", "r", "utf-8")
-    with codecs.open(tens_path + "all_s" + core_num + ".csv", "w", "utf-8") as g:
-        output_header = "wav,chan,chunk_start,chunk_end,oov_in_chunk,word_chunk_i,sent_i,word_sent_i,word_ort,next_phon,word_pos,word_class,type_of_s,speaker\n"
+    if select.select([sys.stdin, ], [], [], 0.0)[0]:
+        print("Reading from Standard Input")
+        f = codecs.getreader('utf-8')(sys.stdin)
+    else:
+        print("Reading from file")
+        f = codecs.open(tens_path + "cgn/test_input.txt", "r", "utf-8")
+    with codecs.open(tens_path + "cgn/all_s" + core_num + ".csv", "w", "utf-8") as g:
+        output_header = "wav,chan,chunk_start,chunk_end,oov_in_chunk,tier,word_chunk_i,sent_i,word_sent_i,word_ort,next_phon,word_pos,word_class,type_of_s,speaker,per_mil_wf,log_wf,otan,otaf,ptan,ptaf,bigram_f,num_syl,word_stress\n"
         g.write(output_header)
         old_f_path = ""
         for l_num, line in enumerate(f, 1):
@@ -210,9 +272,9 @@ def readWriteMetaData(core_num="", start_line=1, end_line=num_index_lines):
                 print("core " + core_num + ": " + line[:-1].encode("utf-8"))
                 if line.split(",")[2] == "from":
                     continue
-                file_path, channel, f_time, t_time, orth = line[:-1].split(",")
+                file_path, channel, f_time, t_time, orth, tg_tier = line[:-1].split(",")
                 new = True if old_f_path != file_path else False
-                write_lines = parseLine(file_path, channel, f_time, t_time, orth, new)
+                write_lines = parseLine(file_path, channel, f_time, t_time, orth, tg_tier, new)
                 for wl in write_lines:
                     g.write(wl)
                 old_f_path = file_path[:]
@@ -227,14 +289,14 @@ def multiProcess():
         p = multiprocessing.Process(target=readWriteMetaData, args=[core_n, s_line, e_line])
         p.start()
     # combine separate files
-    with codecs.open(tens_path + "all_s_combined.csv", "w", encoding="utf-8") as g:
+    with codecs.open(tens_path + "cgn/all_s_combined.csv", "w", encoding="utf-8") as g:
         for core in range(num_cores):
             core_n = str(core + 1)
-            with codecs.open(tens_path + "all_s" + core_n + ".csv", "r", encoding="utf-8") as f:
+            with codecs.open(tens_path + "cgn/all_s" + core_n + ".csv", "r", encoding="utf-8") as f:
                 for fln, f_line in enumerate(f, 1):
                     if not (core > 0 and fln == 1):
                         g.write(f_line)
 
 
 if __name__ == '__main__':
-    multiProcess()
+    readWriteMetaData()

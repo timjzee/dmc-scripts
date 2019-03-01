@@ -78,9 +78,9 @@ vowels$[17] = "y"
 
 Read Table from tab-separated file: tens_path$ + "speakers.txt"
 
-Create Table with column names: "spectral_info", 0, "wav speaker speaker_sex birth_year chunk_start chunk_end word_chunk_i sent_i word_sent_i word_ort next_phon next_phon_pron prev_phon_pron word_pos word_class type_of_s base_dur speech_rate_pron num_syl_pron mean_hnr time freq_bin Pa_per_Hz"
+Create Table with column names: "spectral_info", 0, "wav speaker speaker_sex birth_year chunk_start chunk_end word_chunk_i sent_i word_sent_i word_ort next_phon next_phon_pron prev_phon_pron word_pos word_class type_of_s base_dur speech_rate_pron num_syl_pron mean_hnr time freq_bin Pa_per_Hz dB_per_Hz"
 
-Read Table from comma-separated file: tens_path$ + "cgn_praat_1_part.csv"
+Read Table from comma-separated file: tens_path$ + "test_s.csv"
 table_name$ = selected$("Table")
 Append column: "s_dur"
 Append column: "s_cog_full"
@@ -112,15 +112,16 @@ for s_line from 1 to n_inputlines
     cur_start = number(cur_start$)
     cur_end$ = Get value: s_line, "chunk_end"
     cur_end = number(cur_end$)
+    appendInfoLine: "Working on ", cur_name$, " from ", cur_start$, " to ", cur_end$
     ali_name1$ = replace$(cur_path$, "/", "_", 2)
     c_channel$ = Get value: s_line, "chan"
     c_channel = number(c_channel$)
     # Louis turned all 0 channels to 1; all 1 channels to 2; and >1 channels to 1
-    if (c_channel == 1) or (c_channel == 2)
-        ali_name2$ = "_" + string$(c_channel) + "_"
-    else
-        ali_name2$ = "_1_"
-    endif
+    # if (c_channel == 1) or (c_channel == 2)
+    ali_name2$ = "_" + string$(c_channel) + "_"
+    # else
+    #     ali_name2$ = "_1_"
+    # endif
     ali_file$ = ali_name1$ + ali_name2$ + cur_start$ + "_" + cur_end$
     # We only want to load & convert the .ali file to a tg once
     if ali_name$ != replace$(ali_file$, ".", "_", 0)
@@ -148,7 +149,7 @@ for s_line from 1 to n_inputlines
         else
             # make dummy tg and table so script won't crash trying to delete them
             Create TextGrid: 0, 1, wav_name$, ""
-            ali_name$ = replace$(ali_file$, ".", "_", 0)
+#            ali_name$ = replace$(ali_file$, ".", "_", 0)
             Create Table without column names: ali_name$, 1, 1
             s_duration$ = "NA"
             s_cog_full$ = "NA"
@@ -275,7 +276,7 @@ for s_line from 1 to n_inputlines
         num_cons_pron$ = "NA"
         speaker_sex$ = "NA"
         birth_year$ = "NA"
-        next_phon_pron$ "NA"
+        next_phon_pron$ = "NA"
         next_phon_dur$ = "NA"
         prev_phon_pron$ = "NA"
         prev_phon_dur$ = "NA"
@@ -329,10 +330,10 @@ for s_line from 1 to n_inputlines
         all_frames = Get number of frames
         proportion_voiced = voiced_frames / all_frames
         proportion_voiced$ = string$(proportion_voiced)
-        Remove
-        selectObject: "Sound " + wav_name$
-        To PointProcess (periodic, cc): pitch_floor, pitch_ceiling
-        num_periods = Get number of periods: 0, 0, 0.0001, 0.02, 1.3
+        plusObject: "Sound " + wav_name$
+        To PointProcess (cc)
+        removeObject: "Pitch " + wav_name$
+        num_periods = Get number of periods: 0, 0, 1 / pitch_ceiling, 1 / pitch_floor, 1.3
         if num_periods != 0
             mean_period = Get mean period: 0, 0, 0.0001, 0.02, 1.3
             proportion_voiced2 = (num_periods * mean_period) / s_duration
@@ -348,16 +349,19 @@ for s_line from 1 to n_inputlines
             periods_per_win = 4.5
             duration_needed = periods_per_win * (1 / pitch_floor)
             if num_periods < periods_per_win
+#                appendInfoLine: "A"
                 periods_per_win = num_periods - 0.001
-                if s_duration - periods_per_win * (1 / pitch_floor) < 0.01
-                    periods_per_win -= 1
-                    if periods_per_win == 0
-                        goto NO_VOICING
-                    endif
-                endif
             elsif duration_needed + 0.001 > s_duration
+#                appendInfoLine: "B"
                 periods_per_win = s_duration * pitch_floor - 0.001
             endif
+            while s_duration - periods_per_win * (1 / pitch_floor) < 0.011
+                periods_per_win -= 1.3
+                if periods_per_win < 1
+                    goto NO_VOICING
+                endif
+            endwhile
+#            appendInfoLine: time_step, " ", pitch_floor, " ", silence_thresh, " ", periods_per_win
             selectObject: "Sound " + wav_name$
             To Harmonicity (cc): time_step, pitch_floor, silence_thresh, periods_per_win
             mean_hnr = Get mean: 0, 0
@@ -368,8 +372,7 @@ for s_line from 1 to n_inputlines
             label NO_VOICING
             mean_hnr$ = "NA"
         endif
-        selectObject: "Sound " + wav_name$
-        Remove
+        removeObject: "Sound " + wav_name$
         selectObject: "LongSound " + wav_name$
         Extract part: s_start - buffer, s_end + buffer, "yes"
         To Spectrogram: 0.005, 5000, 0.002, 250, "Gaussian"
@@ -386,14 +389,24 @@ for s_line from 1 to n_inputlines
             Remove column: "rowLabel"
             Set column label (index): 1, "Pa_per_Hz"
             num_bins = Get number of rows
+            Rename: wav_name$ + "_Pa"
+            removeObject: "Matrix " + wav_name$
+            removeObject: "Matrix " + wav_name$ + "_transposed"
+            removeObject: "TableOfReal " + wav_name$ + "_transposed"
             selectObject: "Spectrum " + wav_name$
-            Remove
-            selectObject: "Matrix " + wav_name$
-            Remove
-            selectObject: "Matrix " + wav_name$ + "_transposed"
-            Remove
-            selectObject: "TableOfReal " + wav_name$ + "_transposed"
-            Remove
+            To Ltas (1-to-1)
+            To Matrix
+            Transpose
+            To TableOfReal
+            To Table: "rowLabel"
+            Remove column: "rowLabel"
+            Set column label (index): 1, "dB_per_Hz"
+            Rename: wav_name$ + "_dB"
+            removeObject: "Ltas " + wav_name$
+            removeObject: "Matrix " + wav_name$
+            removeObject: "Matrix " + wav_name$ + "_transposed"
+            removeObject: "TableOfReal " + wav_name$ + "_transposed"
+            removeObject: "Spectrum " + wav_name$
             selectObject: "Table " + table_name$
             speaker$ = Get value: s_line, "speaker"
             sent_i$ = Get value: s_line, "sent_i"
@@ -405,8 +418,10 @@ for s_line from 1 to n_inputlines
             type_of_s$ = Get value: s_line, "type_of_s"
             prop_time = i * (1 / num_spectral_slices)
             for j from 1 to num_bins
-                selectObject: "Table " + wav_name$ + "_transposed"
+                selectObject: "Table " + wav_name$ + "_Pa"
                 pa_per_hz = Get value: j, "Pa_per_Hz"
+                selectObject: "Table " + wav_name$ + "_dB"
+                db_per_hz = Get value: j, "dB_per_Hz"
                 selectObject: "Table spectral_info"
                 Append row
                 num_rows = Get number of rows
@@ -434,17 +449,16 @@ for s_line from 1 to n_inputlines
                 Set numeric value: num_rows, "time", prop_time
                 Set numeric value: num_rows, "freq_bin", j
                 Set numeric value: num_rows, "Pa_per_Hz", pa_per_hz
+                Set numeric value: num_rows, "dB_per_Hz", db_per_hz
             endfor
-            selectObject: "Table " + wav_name$ + "_transposed"
-            Remove
+            removeObject: "Table " + wav_name$ + "_Pa"
+            removeObject: "Table " + wav_name$ + "_dB"
         endfor
-        selectObject: "Spectrogram " + wav_name$
-        Remove
-        selectObject: "Sound " + wav_name$
-        Remove
+        removeObject: "Spectrogram " + wav_name$
+        removeObject: "Sound " + wav_name$
     endif
     # now lets add duration, voicing and cog data to table
-    appendInfoLine: s_duration, " ", s_cog_full, " ", s_cog_window, " ", proportion_voiced
+#    appendInfoLine: s_duration, " ", s_cog_full, " ", s_cog_window, " ", proportion_voiced
     label END
     selectObject: "Table " + table_name$
     Set string value: s_line, "s_dur", s_duration$
