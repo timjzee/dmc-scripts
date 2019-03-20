@@ -42,9 +42,13 @@ def readWriteAli():
             sys.exit()
         if len(ali_lines) != 1:  # ignore empty .ali files
             tg = processAli(ali_lines)
-            # construct output path from inputfile
-            fp_speaker, fp_sentence = fp.split("/")[-1].split("_")[8:10]
-            output_path = tens_path + fp_speaker + "/ASPEX/" if len(sys.argv) != 3 else sys.argv[2]
+            if len(sys.argv) != 2:
+                # construct output path from inputfile
+                fp_speaker, fp_sentence = fp.split("/")[-1].split("_")[8:10]
+                output_path = tens_path + fp_speaker + "/ASPEX/"
+            else:
+                output_path = sys.argv[1]
+                fp_sentence = fp[:-4]
             print("Writing " + fp_sentence)
             with open(output_path + fp_sentence + "_KA.aspex", "w") as f:
                 tg.write(f, short=True)

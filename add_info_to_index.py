@@ -117,6 +117,11 @@ def checkCanonical(w, position):
     return phonlist[position]
 
 
+def getAnnotMeta(orig_path, c_start, spkr, num_words):
+    """Calls a Praat script which finds the chunk and returns a list of word annotations and meta info in JSON format."""
+    new_path = tens_path + "cgn/kaldi_annot/" + orig_path.split("/")[-1]
+
+
 def getSentenceInfo(rt, spkr, from_t, to_t, wrd):
     candidates = []
     wrd = "'s" if wrd == "da's" else wrd
@@ -262,7 +267,7 @@ def readWriteMetaData(core_num="", start_line=1, end_line=num_index_lines):
         f = codecs.getreader('utf-8')(sys.stdin)
     else:
         print("Reading from file")
-        f = codecs.open(tens_path + "cgn/test_input.txt", "r", "utf-8")
+        f = codecs.open(tens_path + "cgn/test_input3.txt", "r", "utf-8")
     with codecs.open(tens_path + "cgn/all_s" + core_num + ".csv", "w", "utf-8") as g:
         output_header = "wav,chan,chunk_start,chunk_end,oov_in_chunk,tier,word_chunk_i,sent_i,word_sent_i,word_ort,next_phon,word_pos,word_class,type_of_s,speaker,per_mil_wf,log_wf,otan,otaf,ptan,ptaf,bigram_f,num_syl,word_stress\n"
         g.write(output_header)
@@ -282,12 +287,16 @@ def readWriteMetaData(core_num="", start_line=1, end_line=num_index_lines):
 
 
 def multiProcess():
+    jobs = []
     for core in range(num_cores):
         core_n = str(core + 1)
         s_line = core_dict[core_n]["start"]
         e_line = core_dict[core_n]["end"]
         p = multiprocessing.Process(target=readWriteMetaData, args=[core_n, s_line, e_line])
+        jobs.append(p)
         p.start()
+    for job in jobs:
+        job.join()
     # combine separate files
     with codecs.open(tens_path + "cgn/all_s_combined.csv", "w", encoding="utf-8") as g:
         for core in range(num_cores):
