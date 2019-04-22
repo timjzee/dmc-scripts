@@ -8,10 +8,12 @@ import os
 
 tens_path = "/Volumes/tensusers/timzee/IFAcorpus/" if sys.platform == "darwin" else "/vol/tensusers/timzee/IFAcorpus/"
 
-speakers = os.listdir(tens_path + "SLcorpus/Labels/validation_tim2/")
+input_folder = "SLcorpus/Labels/validation_tim3/"
+
+speakers = os.listdir(tens_path + input_folder)
 sentences = []
 for speaker in speakers:
-    files = os.listdir(tens_path + "SLcorpus/Labels/validation_tim2/" + speaker + "/ASPEX/")
+    files = os.listdir(tens_path + input_folder + speaker + "/ASPEX/")
     files = [file.split("_")[0] for file in files if "aspex" in file]
     dupes = set([file for file in files if files.count(file) > 1])
     for dupe in dupes:
@@ -31,7 +33,7 @@ for sentence in sentences:
     print("Working on " + sentence)
     max_diff = 3
     while max_diff > 2:
-        output = subprocess.check_output(["perl", "-I", tens_path + "SLcorpus/scripts", tens_path + "SLcorpus/scripts/ValidateSegmentation.pl", tens_path + "SLcorpus/Labels/validation_tim2/" + sentence + "*"])
+        output = subprocess.check_output(["perl", "-I", tens_path + "SLcorpus/scripts", tens_path + "SLcorpus/scripts/ValidateSegmentation.pl", tens_path + input_folder + sentence + "*"])
         output = output[:-2] + "\n]"
         comparisons = json.loads(output)
         if len(comparisons) == 3:
@@ -188,7 +190,7 @@ for sentence in sentences:
 
 header = ["sentence", "ifa_labels", "tim_labels", "kaldi_labels", "ifa_tim_diff", "ifa_kaldi_diff", "tim_kaldi_diff\n"]
 
-with open(tens_path + "validation_data.csv", "w") as f:
+with open(tens_path + "validation_data_small.csv", "w") as f:
     f.write(",".join(header))
     for l in line_list:
         f.write(l)

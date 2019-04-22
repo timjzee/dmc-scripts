@@ -133,34 +133,56 @@ procedure makeKaldiTG
         start_time$ = Get value: ali_line, "start"
         start_time = number(start_time$)
         if ali_line == 1 and (cur_start + start_time) != 0
+            # let's check for existing boundary
             selectObject: "TextGrid " + wav_name$
-            Insert boundary: spkr_tier + 3, cur_start + start_time
+            num_phons = Get number of intervals: spkr_tier + 3
+            prev_boundary_time = Get start time of interval: spkr_tier + 3, num_phons
+            if cur_start + start_time - prev_boundary_time > 0.001
+                Insert boundary: spkr_tier + 3, cur_start + start_time
+            endif
             selectObject: "Table ali"
         endif
         phon_dur$ = Get value: ali_line, "dur"
         phon_dur = number(phon_dur$)
         end_time = cur_start + start_time + phon_dur
         selectObject: "TextGrid " + wav_name$
-        Insert boundary: spkr_tier + 3, end_time
-        phon_interval = Get low interval at time: spkr_tier + 3, end_time
+        total_dur = Get total duration
+        if total_dur - end_time > 0.001
+            Insert boundary: spkr_tier + 3, end_time
+            phon_interval = Get low interval at time: spkr_tier + 3, end_time
+        else
+            phon_interval = Get number of intervals: spkr_tier + 3
+        endif
         Set interval text: spkr_tier + 3, phon_interval, phon$
         if (phon_tag$ == "B") or (phon_tag$ == "S")
             word_start = cur_start + start_time
             word_tran$ = ""
-            if word_start - word_end > 0.001 and word_start != 0
-                Insert boundary: spkr_tier + 2, word_start
-                Insert boundary: spkr_tier + 1, word_start
-                Insert boundary: spkr_tier, word_start
+            if word_start != 0
+                if ali_line == 1
+                    if word_start - prev_boundary_time > 0.001
+                        Insert boundary: spkr_tier + 2, word_start
+                        Insert boundary: spkr_tier + 1, word_start
+                        Insert boundary: spkr_tier, word_start
+                    endif
+                elsif word_start - word_end > 0.001
+                    Insert boundary: spkr_tier + 2, word_start
+                    Insert boundary: spkr_tier + 1, word_start
+                    Insert boundary: spkr_tier, word_start
+                endif
             endif
         endif
         word_tran$ = word_tran$ + phon$
         if (phon_tag$ == "E") or (phon_tag$ == "S")
             w_count += 1
             word_end = end_time
-            Insert boundary: spkr_tier + 2, word_end
-            Insert boundary: spkr_tier + 1, word_end
-            Insert boundary: spkr_tier, word_end
-            word_interval = Get low interval at time: spkr_tier + 2, word_end
+            if total_dur - word_end > 0.001
+                Insert boundary: spkr_tier + 2, word_end
+                Insert boundary: spkr_tier + 1, word_end
+                Insert boundary: spkr_tier, word_end
+                word_interval = Get low interval at time: spkr_tier + 2, word_end
+            else
+                word_interval = Get number of intervals: spkr_tier + 2
+            endif
             if w_count == 1
                 c_start_i = word_interval
             endif
@@ -170,9 +192,9 @@ procedure makeKaldiTG
     @processWords
 endproc
 
-Read Table from tab-separated file: tens_path$ + "cgn/oov_conv_table.txt"
+Read Table from tab-separated file: tens_path$ + "cgn/oov_conv_table_comp-d.txt"
 Rename: "conv"
-Read Table from comma-separated file: home_path$ + "Docs/oov_test2.txt"
+Read Table from comma-separated file: tens_path$ + "cgn/cgn_index_d_mono2.txt"
 Rename: "index"
 
 wav_name$ = ""
@@ -194,10 +216,11 @@ for line from 1 to n_inputlines
     cur_start = number(cur_start$)
     cur_end$ = Get value: line, "to"
     cur_end = number(cur_end$)
+    appendInfoLine: cur_path$, ",", cur_start$, ",", cur_end$, ",", cur_ort$, ",", ort_tier$
     if cur_name$ != wav_name$
         if line != 1
             selectObject: "TextGrid " + wav_name$
-            Save as text file: tens_path$ + "cgn/kaldi_annot/" + wav_name$ + ".TextGrid"
+            Save as text file: tens_path$ + "cgn/kaldi_annot/comp-" + pre_name$ + wav_name$ + ".awd"
             Remove
             removeObject: "TextGrid " + wav_name$ + "_ort"
         endif
@@ -213,6 +236,7 @@ for line from 1 to n_inputlines
         spkr_tier = 1
         wav_name$ = cur_name$
         prev_speaker$ = speaker$
+        pre_name$ = left$(cur_path$, pre_name)
     else
         selectObject: "TextGrid " + cur_name$ + "_ort"
         speaker$ = Get tier name: ort_tier
@@ -229,8 +253,8 @@ for line from 1 to n_inputlines
         endif
     endif
     ali_file$ = replace$(cur_path$, "/", "_", 2) + "_" + ort_tier$ + "_" + cur_start$ + "_" + cur_end$ + ".ali"
-    if fileReadable(tens_path$ + "KALDI_FA_out/test/" + ali_file$)
-        Read Table from tab-separated file: tens_path$ + "KALDI_FA_out/test/" + ali_file$
+    if fileReadable(tens_path$ + "KALDI_FA_out/comp-d_mono_all/" + ali_file$)
+        Read Table from tab-separated file: tens_path$ + "KALDI_FA_out/comp-d_mono_all/" + ali_file$
         Rename: "ali"
     else
         Create Table with column names: "table", 1, "start dur phone"
@@ -242,3 +266,6 @@ for line from 1 to n_inputlines
     endif
     @makeKaldiTG
 endfor
+
+selectObject: "TextGrid " + wav_name$
+Save as text file: tens_path$ + "cgn/kaldi_annot/comp-" + pre_name$ + wav_name$ + ".awd"

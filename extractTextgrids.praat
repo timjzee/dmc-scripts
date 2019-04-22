@@ -6,10 +6,11 @@ else
     tens_path$ = "/vol/tensusers/timzee/IFAcorpus/"
 endif
 
-Read Table from comma-separated file: tens_path$ + "IFA_sentences_praat_v2.txt"
+Read Table from comma-separated file: tens_path$ + "eval_praat.txt"
+table_name$ = selected$()
 num_sentences = Get number of rows
 for sent from 1 to num_sentences
-    selectObject: "Table IFA_sentences_praat_v2"
+    selectObject: table_name$
     wav_path$ = Get value: sent, "wav"
     b_extract$ = Get value: sent, "begin"
     b_extract = number(b_extract$)
@@ -20,7 +21,7 @@ for sent from 1 to num_sentences
     end_ind = length_wav - final_slash - 7
     sentence$ = mid$(wav_path$, final_slash + 1, end_ind)
     speaker$ = left$(sentence$, 4)
-    tg_path$ = tens_path$ + "SLcorpus/Labels/validation_tim2/" + speaker$ + "/ASPEX/"
+    tg_path$ = tens_path$ + "SLcorpus/Labels/validation_tim3/" + speaker$ + "/ASPEX/"
     strings = Create Strings as file list: "textgrids", tg_path$ + sentence$ + "_*"
     num_tgs = Get number of strings
     for tg from 1 to num_tgs

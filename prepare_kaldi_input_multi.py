@@ -6,6 +6,7 @@ import os
 
 home_dir = "/Volumes/timzee/" if sys.platform == "darwin" else "/home/timzee/"
 tens_dir = "/Volumes/tensusers/timzee/" if sys.platform == "darwin" else "/vol/tensusers/timzee/"
+corpus = "IFADVcorpus"
 
 alphabet = {"a": "a", "b": "b e", "c": "s e", "d": "d e", "e": "e", "f": "E f", "g": "G e", "h": "h a", "i": "i", "j": "j e", "k": "k a", "l": "E l", "m": "E m", "n": "E n", "o": "o", "p": "p e", "q": "k y", "r": "E r", "s": "E s", "t": "t e", "u": "y", "v": "v e", "w": "w e", "x": "I k s", "y": "EI", "z": "z E t"}
 
@@ -16,10 +17,10 @@ with codecs.open(home_dir + "clst-asr-fa/alphemes.txt", "w", "utf-8") as f:
         f.write(k + "\t" + alphabet[k] + "\n")
         f.write(k + "\t" + graphemes[k] + "\n")
 
-with codecs.open(tens_dir + "cgn/cgn_index_a_final.txt", "r", "utf-8") as f:
+with codecs.open(tens_dir + corpus + "/ifadv_index.txt", "r", "utf-8") as f:
     cgn_index = f.readlines()
 
-num_cores = 14
+num_cores = 30
 num_index_lines = len(cgn_index)
 core_dict = {}
 for i in range(num_cores):
@@ -49,27 +50,27 @@ for job in jobs:
 
 print("Combining files ...")
 
-f = codecs.open(tens_dir + "cgn/prepared_index.txt", "w", "utf-8")
-g = codecs.open(home_dir + "clst-asr-fa/oov_lex.txt", "w", "utf-8")
-h = codecs.open(tens_dir + "cgn/oov_conv_table.txt", "w", "utf-8")
+f = codecs.open(tens_dir + corpus + "/prepared_index_comp-ifadv.txt", "w", "utf-8")
+g = codecs.open(home_dir + "clst-asr-fa/oov_lex_comp-ifadv.txt", "w", "utf-8")
+h = codecs.open(tens_dir + corpus + "/oov_conv_table_comp-ifadv.txt", "w", "utf-8")
 for core in range(num_cores):
     core_n = str(core + 1)
-    with codecs.open(tens_dir + "cgn/prepared_index{}.txt".format(core_n), "r", "utf-8") as i:
+    with codecs.open(tens_dir + corpus + "/prepared_index{}.txt".format(core_n), "r", "utf-8") as i:
         for l in i:
             f.write(l)
-#    os.remove(tens_dir + "cgn/prepared_index{}.txt".format(core_n))
+    os.remove(tens_dir + corpus + "/prepared_index{}.txt".format(core_n))
     with codecs.open(home_dir + "clst-asr-fa/oov_lex{}.txt".format(core_n), "r", "utf-8") as j:
         for l in j:
             g.write(l)
     os.remove(home_dir + "clst-asr-fa/oov_lex{}.txt".format(core_n))
-    with codecs.open(tens_dir + "cgn/oov_conv_table{}.txt".format(core_n), "r", "utf-8") as k:
+    with codecs.open(tens_dir + corpus + "/oov_conv_table{}.txt".format(core_n), "r", "utf-8") as k:
         for l in k:
             h.write(l)
-    os.remove(tens_dir + "cgn/oov_conv_table{}.txt".format(core_n))
+    os.remove(tens_dir + corpus + "/oov_conv_table{}.txt".format(core_n))
 f.close()
 g.close()
 h.close()
 
 print("Expanding Lexicon ...")
 
-subprocess.call([home_dir + "fa_files/run_lexical_expansion.sh"])
+# subprocess.call([home_dir + "fa_files/run_lexical_expansion.sh"])

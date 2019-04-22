@@ -1,22 +1,21 @@
-form Command line parameters
-    word core_number 1
-    integer start_line 1
-    integer end_line -1
-endform
+start_line = 1
+end_line = -1
 
 prop$ = Report system properties
 os$ = extractWord$(prop$, newline$)
 if os$ == "macintosh"
     tens_path$ = "/Volumes/tensusers/timzee/cgn/"
     cgn_path$ = "/Volumes/bigdata2/corpora2/CGN2/data/"
+    praat_pref$ = "/Users/tim/Library/Preferences/Praat Prefs/"
 else
     tens_path$ = "/vol/tensusers/timzee/cgn/"
     cgn_path$ = "/vol/bigdata/corpora2/CGN2/data/"
+    praat_pref$ = "/home/timzee/.praat-dir/"
 endif
 
-writeFileLine: tens_path$ + "cgn_index_chan" + core_number$ + ".txt", "wav,chan,from,to,ort"
+writeFileLine: tens_path$ + "cgn_index_c_cmpr" + ".txt", "wav,chan,from,to,ort,tier"
 appendInfoLine: "Loading CGN index"
-Read Table from comma-separated file: tens_path$ + "cgn_ort_index_210119.txt"
+Read Table from comma-separated file: tens_path$ + "old_comp-c.txt"
 Rename: "cgn_index"
 Set column label (label): "chan", "tier"
 Append column: "chan"
@@ -48,11 +47,13 @@ for s_line from start_line to end_line
                 endfor
             endif
         endif
+        compress = 0
+        attempts = 1
         Read from file: cgn_path$ + "audio/wav/comp-" + cur_path$ + ".wav"
         wav_name$ = selected$("Sound")
         appendInfoLine: "Working on " + wav_name$ + " Line " + string$(s_line)
-        runSystem_nocheck: "cp " + cgn_path$ + "annot/text/ort/comp-" + cur_path$ + ".ort.gz " + tens_path$
-        runSystem_nocheck: "gunzip " + tens_path$ + wav_name$ + ".ort.gz"
+        runSystem_nocheck: "cp -f " + cgn_path$ + "annot/text/ort/comp-" + cur_path$ + ".ort.gz " + tens_path$
+        runSystem_nocheck: "gunzip -f " + tens_path$ + wav_name$ + ".ort.gz"
         Read from file: tens_path$ + wav_name$ + ".ort"
         runSystem_nocheck: "rm -f " + tens_path$ + wav_name$ + ".ort"
         selectObject: "Sound " + wav_name$
@@ -63,7 +64,19 @@ for s_line from start_line to end_line
             best_channel = 1
         else
             Extract all channels
-            To Harmonicity (cc): 0.01, 75, 0.1, 4.5
+            label COMPRESS
+            appendInfoLine: "Attempt 'attempts'"
+            if compress
+                runScript: praat_pref$ + "plugin_VocalToolkit/compressor.praat", 50
+                To Harmonicity (cc): 0.01, 75, 0.1, 4.5
+                for c from 1 to num_channels
+                    selectObject: "Harmonicity " + wav_name$ + "_ch" + string$(c) + "_compressor_50"
+                    Rename: wav_name$ + "_ch" + string$(c)
+                    removeObject: "Sound " + wav_name$ + "_ch" + string$(c) + "_compressor_50"
+                endfor
+            else
+                To Harmonicity (cc): 0.01, 75, 0.1, 4.5
+            endif
             selectObject: "TextGrid " + wav_name$
             num_tiers = Get number of tiers
             for tier from 1 to num_tiers
@@ -111,9 +124,22 @@ for s_line from start_line to end_line
         cur_speaker$ = Get tier name: c_tier
         selectObject: "Table hnr_values"
         max_hnr = Get maximum: cur_speaker$
+        min_hnr = Get minimum: cur_speaker$
+        diff_hnr = abs(min_hnr - max_hnr)
+        if (max_hnr < -2 or diff_hnr < 1) and attempts < 2
+            attempts += 1
+            compress = 1
+            removeObject: "Table hnr_values"
+            Create Table without column names: "hnr_values", num_channels, 1
+            selectObject: "Sound " + wav_name$ + "_ch1"
+            for c from 2 to num_channels
+                plusObject: "Sound " + wav_name$ + "_ch" + string$(c)
+            endfor
+            goto COMPRESS
+        endif
         best_channel = Search column: cur_speaker$, string$(max_hnr)
     endif
     selectObject: "Table cgn_index"
     Set numeric value: s_line, "chan", best_channel
-    appendFileLine: tens_path$ + "cgn_index_chan" + core_number$ + ".txt", cur_path$ + ",", best_channel, "," + c_start$ + "," + c_end$ + "," + c_ort$
+    appendFileLine: tens_path$ + "cgn_index_c_cmpr" + ".txt", cur_path$ + ",", best_channel, "," + c_start$ + "," + c_end$ + "," + c_ort$ + "," + c_tier$
 endfor

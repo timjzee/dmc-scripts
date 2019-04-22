@@ -8,7 +8,7 @@ from telwoord import cardinal
 
 home_dir = "/Volumes/timzee/" if sys.platform == "darwin" else "/home/timzee/"
 tens_dir = "/Volumes/tensusers/timzee/" if sys.platform == "darwin" else "/vol/tensusers/timzee/"
-corpus = "IFAcorpus"
+corpus = "IFADVcorpus"
 
 print("Loading KALDI lexicon")
 kaldi_lex = {}
@@ -20,7 +20,7 @@ with codecs.open(home_dir + "clst-asr-fa/lexicon_from_MARIO.txt", "r", "utf-8") 
         else:
             kaldi_lex[entry] = pron
 
-with codecs.open(tens_dir + corpus + "/ifa_index.txt", "r", "utf-8") as f:
+with codecs.open(tens_dir + corpus + "/ifadv_index.txt", "r", "utf-8") as f:
     cgn_index = f.readlines()
 
 if len(sys.argv) > 1:
@@ -81,8 +81,9 @@ for counter, l in enumerate(cgn_index[from_l - 1:to_l], 1):
                 if code in w:
                     meta[1].append(cgn_codes[code])
                     break   # CGN only allowed 1 code per word
-        sws = [sw for sw in w.split("-") if re.sub(r'\*[a-z]', '', sw) != ""]
+        sws = [sw for sw in re.split(r"([-&])", w) if re.sub(r'\*[a-z]', '', sw) not in ["", "-"]]
         if len(sws) > 1:
+            meta[1].append("hyphen/ampersand")
             pass
 #            g.write("line {} word {}: '-' in word {}\n".format(counter, w_counter, w))
         for sw_counter, sw in enumerate(sws, 1):
@@ -206,6 +207,10 @@ for counter, l in enumerate(cgn_index[from_l - 1:to_l], 1):
                                             new_words.append("( ha | haha | hahaha | hahahaha | hahahahaha | spn )")
                                             sw_l.append("xxx")
                                             si_l.append(str(sw_i))
+                                        elif ssssw_clean.lower() == "&":
+                                            new_words.append("en")
+                                            sw_l.append("en")
+                                            si_l.append(str(sw_i))
                                         elif re.fullmatch(r'[A-Z][^A-Z0-9]+', ssssw_clean):    # if ssssw is a name
                                             meta[1].append("name")
 #                                            g.write("line {} word {}: name in (sub-)word {}\n".format(counter, w_counter, ssssw))
@@ -284,7 +289,7 @@ for counter, l in enumerate(cgn_index[from_l - 1:to_l], 1):
 f.close()
 # g.close()
 
-with codecs.open(home_dir + "clst-asr-fa/{}_oov_lex{}.txt".format(corpus, core_num), "w", "utf-8") as f:
+with codecs.open(home_dir + "clst-asr-fa/oov_lex{}.txt".format(core_num), "w", "utf-8") as f:
     for key in oov_lex:
         f.write(key + "\t" + oov_lex[key] + "\n")
 

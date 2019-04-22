@@ -3,7 +3,7 @@ import codecs
 import glob
 
 tens_path = "/Volumes/tensusers/timzee/IFAcorpus/" if sys.platform == "darwin" else "/vol/tensusers/timzee/IFAcorpus/"
-ali_path = "/Volumes/tensusers/ltenbosch/KALDI_FA_out/CGN_expanded_lex_v3/" if sys.platform == "darwin" else "/vol/tensusers/ltenbosch/KALDI_FA_out/CGN_expanded_lex_v3/"
+ali_path = "/Volumes/tensusers/timzee/KALDI_FA_out/ifa_eval_sen/" if sys.platform == "darwin" else "/vol/tensusers/timzee/KALDI_FA_out/ifa_eval_sen/"
 tz_path = "/Volumes/timzee/Docs/" if sys.platform == "darwin" else "/home/timzee/Docs/"
 
 phon_dict = {}
@@ -11,8 +11,8 @@ with open(tz_path + "KALDI-CGN_phones3.txt", "r") as f:
     for line in f:
         phon_dict[line.split(",")[0]] = line[:-1].split(",")[1]
 
-with codecs.open(tens_path + "validation_data_time_from_ifa_pos.csv", "w", encoding="utf-8") as h:
-    with codecs.open(tens_path + "validation_data_time_from_ifa.csv", "r", encoding="utf-8") as f:
+with codecs.open(tens_path + "validation_data_small_pos.csv", "w", encoding="utf-8") as h:
+    with codecs.open(tens_path + "validation_data_small.csv", "r", encoding="utf-8") as f:
         prev_sentence = ""
         phon_num = 0
         for l_num, line in enumerate(f, 1):

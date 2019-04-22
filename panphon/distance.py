@@ -233,11 +233,17 @@ class Distance(object):
         # Recurrence relation
         for i in range(1, n + 1):
             for j in range(1, m + 1):
-                d[i][j] = min([
-                    d[i - 1][j] + sub_cost(source[i], target[j]),
-                    d[i - 1][j - 1] + sub_cost(source[i], target[j]),
-                    d[i][j - 1] + sub_cost(source[i], target[j]),
+                min_cost = min([
+                    (d[i - 1][j] + sub_cost(source[i], target[j]), "del"),
+                    (d[i - 1][j - 1] + sub_cost(source[i], target[j]), "sub"),
+                    (d[i][j - 1] + sub_cost(source[i], target[j]), "ins"),
                 ])
+                if min_cost[1] == "del":
+                    d[i][j] = d[i - 1][j] + sub_cost(source[i], target[j]) * 0.3333
+                elif min_cost[1] == "ins":
+                    d[i][j] = d[i][j - 1] + sub_cost(source[i], target[j]) * 0.3333
+                else:
+                    d[i][j] = min_cost[0]
         return d[n][m]
 
     def feature_difference(self, ft1, ft2):
