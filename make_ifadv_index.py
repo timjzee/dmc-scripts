@@ -83,10 +83,10 @@ def read_file_entries(fp, fn):
                 assert tier_num == int(tier.name[-1])
                 for interval in tier:
                     i_start, i_end, i_ort = [interval.minTime, interval.maxTime, interval.mark]
-                    i_ort = i_ort.strip(" ")
-                    i_ort = re.sub(r' (?=[.,:;?!])', "", i_ort)
+                    i_ort = re.sub(r' (?=[ .,:;?!])', "", i_ort.strip(" "))
                     # special praat characters to unicode
                     i_ort = replacePraatEscapes(i_ort.encode("utf-8"))
+                    i_ort = re.sub(r"[,\t\n\r]", "", i_ort)
                     if i_ort != "":
                         i_entry = [wavpaths[fn], str(tier_num), "{0:.3f}".format(i_start), "{0:.3f}".format(i_end), i_ort, str(t_counter)]
                         print(i_entry)

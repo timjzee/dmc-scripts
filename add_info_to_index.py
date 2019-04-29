@@ -14,7 +14,7 @@ import multiprocessing
 import subprocess
 
 tens_path = "/Volumes/tensusers/timzee/" if sys.platform == "darwin" else "/vol/tensusers/timzee/"
-cgn_path = "/Volumes/bigdata2/corpora2/CGN2/data/annot/" if sys.platform == "darwin" else "/vol/bigdata/corpora2/CGN2/data/annot/"
+cgn_path = "/Volumes/bigdata2/corpora2/CGN2/data/annot/" if sys.platform == "darwin" else "/vol/bigdata2/corpora2/CGN2/data/annot/"
 tz_path = "/Volumes/timzee/" if sys.platform == "darwin" else "/home/timzee/"
 
 segment = "s"
@@ -25,11 +25,11 @@ del entitydefs["quot"]
 del entitydefs["lt"]
 del entitydefs["gt"]
 
-input_file_path = tens_path + "cgn/cgn_index_a_final2_1h.txt"
+input_file_path = tens_path + "cgn/cgn_index_d_mono2.txt"
 with codecs.open(input_file_path, "r", "utf-8") as f:
     input_file = f.readlines()
 
-running_cores = 0
+running_cores = 39
 
 # Do not run with more than 5 cores.
 num_cores = 8
@@ -46,7 +46,7 @@ for i in range(num_cores):
 
 print("Loading KALDI lexicon")
 kaldi_lex = {}
-with codecs.open(tz_path + "clst-asr-fa/lexicon_comp-ac.txt", "r", "utf-8") as f:
+with codecs.open(tz_path + "clst-asr-fa/lexicon_comp-acd-ifadv.txt", "r", "utf-8") as f:
     for line in f:
         entry, pron = line[:-1].split("\t")
         kaldi_lex[entry] = pron
@@ -100,7 +100,7 @@ with codecs.open(tens_path + "other/cow2.counts", "r", "utf-8") as f:
 
 print("Loading OOV Conversion Table")
 oov_conv = {}
-with codecs.open(tens_path + "cgn/oov_conv_table_comp-a.txt", "r", "utf-8") as f:
+with codecs.open(tens_path + "cgn/oov_conv_table_comp-d.txt", "r", "utf-8") as f:
     for counter, line in enumerate(f, 1):
         if counter > 1:
             c_key, input_w, orig_w, input_i, orig_i, meta_i, meta_l = line[:-1].split("\t")
@@ -146,8 +146,8 @@ def checkCanonical(w, position, chunk_id):
     if nw in kaldi_lex:
         phonlist = kaldi_lex[nw].split(" ")
         return [phonlist, False]
-    elif w in oov_conv[chunk_id]["orig_w"]:
-        w_i = oov_conv[chunk_id]["orig_w"].index(w)
+    elif re.sub(r"[!?.,:;\t\n\r]*", "", w) in oov_conv[chunk_id]["orig_w"]:
+        w_i = oov_conv[chunk_id]["orig_w"].index(re.sub(r"[!?.,:;\t\n\r]*", "", w))
         sw = oov_conv[chunk_id]["input_w"][w_i].split(" ")[position]
         if sw in kaldi_lex:
             phonlist = kaldi_lex[sw].split(" ")
@@ -158,9 +158,9 @@ def checkCanonical(w, position, chunk_id):
         return [None, False]
 
 
-def getAnnotInfo(orig_path, c_start, spkr, word_index):
+def getAnnotInfo(orig_path, c_start, c_end, spkr, word_index):
     """Calls a Praat script which finds the chunk and returns info on phonetic context."""
-    output = subprocess.check_output([tz_path + "praat_nogui", "--run", tz_path + "GitHub/dmc-scripts/getAnnotInfo.praat", orig_path, c_start, spkr, str(word_index)]).decode("utf-8")[:-1].split(" ")
+    output = subprocess.check_output([tz_path + "praat_nogui", "--run", tz_path + "GitHub/dmc-scripts/getAnnotInfo.praat", orig_path, c_start, c_end, spkr, str(word_index), "cgn/kaldi_annot/comp-"]).decode("utf-8")[:-1].split(" ")
     print(output)
     return output
 
@@ -356,7 +356,7 @@ def parseLine(f_path, chan, from_time, to_time, ort, tier, new_file):
                         else:
                             prev_phon = "NA"
 #            oov_meta = getOOVmeta(chunk_id, counter)
-            phon_pron, next_phon_pron, prev_phon_pron, overlap, oov_meta = getAnnotInfo(f_path, from_time, speaker, counter)
+            phon_pron, next_phon_pron, prev_phon_pron, overlap, oov_meta = getAnnotInfo(f_path, from_time, to_time speaker, counter)
             word_pos, word_class, type_of_s = getPOS(tag_root, sent_i, word_sent_i, word)
             output_lines.append([str(word_chunk_i), str(sent_i), str(word_sent_i), word, phon_pron, prev_phon, prev_phon_pron, next_phon, next_phon_pron, overlap, oov_meta, word_pos, word_class, type_of_s, speaker, subtlexwf, lg10wf, lex_neb_num, lex_neb_freq, ptan, ptaf, bigram_f, num_syl, word_stress])
             print(word, word_pos, type_of_s)
@@ -401,7 +401,7 @@ def multiProcess():
     for job in jobs:
         job.join()
     # combine separate files
-    with codecs.open(tens_path + "cgn/all_s_comb_1h.csv", "w", encoding="utf-8") as g:
+    with codecs.open(tens_path + "cgn/all_s_comb_d.csv", "w", encoding="utf-8") as g:
         for core in range(num_cores):
             core_n = str(core + 1 + running_cores)
             with codecs.open(tens_path + "cgn/all_s" + core_n + ".csv", "r", encoding="utf-8") as f:

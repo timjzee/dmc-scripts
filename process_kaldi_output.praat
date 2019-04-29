@@ -1,12 +1,22 @@
 prop$ = Report system properties
 os$ = extractWord$(prop$, newline$)
+
+corpus$ = "IFADVcorpus"
+if corpus$ == "IFADVcorpus"
+    o_path$ = "/tensusers/timzee/IFADVcorpus/Annotations/ort/"
+elif corpus$ == "cgn"
+    o_path$ = "/bigdata2/corpora2/CGN2/data/annot/text/ort/comp-"
+else
+    o_path$ = "/tensusers/timzee/ECSD/Annotations/ort/"
+endif
+
 if os$ == "macintosh"
     tens_path$ = "/Volumes/tensusers/timzee/"
-    cgn_path$ = "/Volumes/bigdata2/corpora2/CGN2/data/annot/text/ort/comp-"
+    ort_path$ = "/Volumes" + o_path$
     home_path$ = "/Volumes/timzee/"
 else
     tens_path$ = "/vol/tensusers/timzee/"
-    cgn_path$ = "/vol/bigdata/corpora2/CGN2/data/annot/text/ort/comp-"
+    ort_path$ = "/vol" + o_path$
     home_path$ = "/home/timzee/"
 endif
 
@@ -192,9 +202,12 @@ procedure makeKaldiTG
     @processWords
 endproc
 
-Read Table from tab-separated file: tens_path$ + "cgn/oov_conv_table_comp-d.txt"
+if corpus$ == "IFADVcorpus"
+    Read Table from comma-separated file: tens_path$ + corpus$ + "/speakers.csv"
+endif
+Read Table from tab-separated file: tens_path$ + corpus$ + "/oov_conv_table_comp-ifadv.txt"
 Rename: "conv"
-Read Table from comma-separated file: tens_path$ + "cgn/cgn_index_d_mono2.txt"
+Read Table from comma-separated file: tens_path$ + corpus$ + "/ifadv_index2.txt"
 Rename: "index"
 
 wav_name$ = ""
@@ -220,16 +233,33 @@ for line from 1 to n_inputlines
     if cur_name$ != wav_name$
         if line != 1
             selectObject: "TextGrid " + wav_name$
-            Save as text file: tens_path$ + "cgn/kaldi_annot/comp-" + pre_name$ + wav_name$ + ".awd"
+            if corpus$ == "cgn"
+                Save as text file: tens_path$ + "cgn/kaldi_annot/comp-" + pre_name$ + wav_name$ + ".awd"
+            else
+                Save as text file: tens_path$ + corpus$ + "/kaldi_annot/" + pre_name$ + wav_name$ + ".awd"
+            endif
             Remove
             removeObject: "TextGrid " + wav_name$ + "_ort"
         endif
-        runSystem_nocheck: "cp " + cgn_path$ + cur_path$ + ".ort.gz " + tens_path$ + "cgn/"
-        runSystem_nocheck: "gunzip " + tens_path$ + "cgn/" + cur_name$ + ".ort.gz"
-        Read from file: tens_path$ + "cgn/" + cur_name$ + ".ort"
-        runSystem_nocheck: "rm -f " + tens_path$ + "cgn/" + cur_name$ + ".ort"
+        if corpus$ == "cgn"
+            runSystem_nocheck: "cp " + ort_path$ + cur_path$ + ".ort.gz " + tens_path$ + "cgn/"
+            runSystem_nocheck: "gunzip " + tens_path$ + "cgn/" + cur_name$ + ".ort.gz"
+            Read from file: tens_path$ + corpus$ + "/" + cur_name$ + ".ort"
+            runSystem_nocheck: "rm -f " + tens_path$ + "cgn/" + cur_name$ + ".ort"
+        else
+            Create Strings as file list: "fileList", tens_path$ + corpus$ + "/Annotations/ort/" + cur_name$ + "*.ort"
+            ifadv_path$ = Get string: 1
+            Read from file: tens_path$ + corpus$ + "/Annotations/ort/" + ifadv_path$
+        endif
         Rename: cur_name$ + "_ort"
         speaker$ = Get tier name: ort_tier
+        if corpus$ == "IFADVcorpus"
+            selectObject: "Table speakers"
+            file_row = Search column: "file", cur_name$
+            speaker_temp$ = speaker$
+            speaker$ = Get value: file_row, speaker_temp$
+            selectObject: "TextGrid " + cur_name$ + "_ort"
+        endif
         tg_dur = Get total duration
         Create TextGrid: 0, tg_dur, speaker$ + " " + speaker$ + "_META " + speaker$ + "_FON " + speaker$ + "_SEG", ""
         Rename: cur_name$
@@ -240,6 +270,13 @@ for line from 1 to n_inputlines
     else
         selectObject: "TextGrid " + cur_name$ + "_ort"
         speaker$ = Get tier name: ort_tier
+        if corpus$ == "IFADVcorpus"
+            selectObject: "Table speakers"
+            file_row = Search column: "file", cur_name$
+            speaker_temp$ = speaker$
+            speaker$ = Get value: file_row, speaker_temp$
+            selectObject: "TextGrid " + cur_name$ + "_ort"
+        endif
         # assuming the index first lists all chunks from tier 1, followed by all chunks from tier 2 etc.
         if speaker$ != prev_speaker$
             selectObject: "TextGrid " + cur_name$
@@ -252,9 +289,13 @@ for line from 1 to n_inputlines
             prev_speaker$ = speaker$
         endif
     endif
-    ali_file$ = replace$(cur_path$, "/", "_", 2) + "_" + ort_tier$ + "_" + cur_start$ + "_" + cur_end$ + ".ali"
-    if fileReadable(tens_path$ + "KALDI_FA_out/comp-d_mono_all/" + ali_file$)
-        Read Table from tab-separated file: tens_path$ + "KALDI_FA_out/comp-d_mono_all/" + ali_file$
+    if corpus$ == "cgn"
+        ali_file$ = replace$(cur_path$, "/", "_", 2) + "_" + ort_tier$ + "_" + cur_start$ + "_" + cur_end$ + ".ali"
+    else
+        ali_file$ = cur_path$ + "_" + ort_tier$ + "_" + cur_start$ + "_" + cur_end$ + ".ali"
+    endif
+    if fileReadable(tens_path$ + "KALDI_FA_out/ifadv/" + ali_file$)
+        Read Table from tab-separated file: tens_path$ + "KALDI_FA_out/ifadv/" + ali_file$
         Rename: "ali"
     else
         Create Table with column names: "table", 1, "start dur phone"
@@ -268,4 +309,8 @@ for line from 1 to n_inputlines
 endfor
 
 selectObject: "TextGrid " + wav_name$
-Save as text file: tens_path$ + "cgn/kaldi_annot/comp-" + pre_name$ + wav_name$ + ".awd"
+if corpus$ == "cgn"
+    Save as text file: tens_path$ + "cgn/kaldi_annot/comp-" + pre_name$ + wav_name$ + ".awd"
+else
+    Save as text file: tens_path$ + corpus$ + "/kaldi_annot/" + pre_name$ + wav_name$ + ".awd"
+endif

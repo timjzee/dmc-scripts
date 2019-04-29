@@ -73,4 +73,4 @@ h.close()
 
 print("Expanding Lexicon ...")
 
-# subprocess.call([home_dir + "fa_files/run_lexical_expansion.sh"])
+subprocess.call([home_dir + "fa_files/run_lexical_expansion.sh"])

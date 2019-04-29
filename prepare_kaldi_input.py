@@ -62,7 +62,7 @@ f = codecs.open(tens_dir + corpus + "/prepared_index{}.txt".format(core_num), "w
 
 for counter, l in enumerate(cgn_index[from_l - 1:to_l], 1):
     wav, chan, from_t, to_t, ort, tier = l[:-1].split(",")
-    print(l[:-1])
+    print(core_num, l[:-1])
     if chan == "chan":
         continue
 #    if "xxx" in ort or "Xxx" in ort:

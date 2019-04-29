@@ -1,16 +1,18 @@
 form Command line parameters
     word f_path 1
     real c_start 1
+    real c_end 1
     word speaker 1
     integer word_num 1
+    word corpus 1
 endform
 
 prop$ = Report system properties
 os$ = extractWord$(prop$, newline$)
 if os$ == "macintosh"
-    tens_path$ = "/Volumes/tensusers/timzee/cgn/kaldi_annot/comp-"
+    tens_path$ = "/Volumes/tensusers/timzee/" + corpus$
 else
-    tens_path$ = "/vol/tensusers/timzee/cgn/kaldi_annot/comp-"
+    tens_path$ = "/vol/tensusers/timzee/" + corpus$
 endif
 
 Read from file: tens_path$ + f_path$ + ".awd"
@@ -22,6 +24,18 @@ while tier_name$ != speaker$
 endwhile
 
 interval_i = Get high interval at time: tier, c_start
+interval_i_end = Get low interval at time: tier, c_end
+num_interval_i = interval_i_end - interval_i + 1
+# if words are not aligned
+if word_num > num_interval_i
+    phon_pron$ = "NA"
+    next_phon_pron$ = "NA"
+    prev_phon_pron$ = "NA"
+    overlap$ = "NA"
+    oov_meta$ = "unintelligible"
+    goto SKIP
+endif
+
 interval_i -= 1
 word_counter = 0
 while word_counter != word_num
@@ -32,12 +46,24 @@ while word_counter != word_num
     endif
 endwhile
 
+
+oov_meta$ = Get label of interval: tier + 1, interval_i
+# if words not aligned and chunk consists of a single word
+if oov_meta$ = "unintelligible"
+    phon_pron$ = "NA"
+    next_phon_pron$ = "NA"
+    prev_phon_pron$ = "NA"
+    overlap$ = "NA"
+    goto SKIP
+endif
+
 phon_end = Get end time of interval: tier, interval_i
 phon_i = Get low interval at time: tier + 3, phon_end
 phon_start = Get start time of interval: tier + 3, phon_i
 
 # get label of /s/, prev_phon_pron, next_phon_pron, oov_meta
 phon_pron$ = Get label of interval: tier + 3, phon_i
+
 if phon_i == 1
     prev_phon_pron$ = "NA"
 else
@@ -55,17 +81,16 @@ else
         next_phon_pron$ = "SIL"
     endif
 endif
-oov_meta$ = Get label of interval: tier + 1, interval_i
 
 # get overlap
 overlap_buffer = 0.05
-if phon_start == 0
+if phon_start < overlap_buffer
     overlap_start = 0
 else
     overlap_start = phon_start - overlap_buffer
 endif
 total_dur = Get total duration
-if (total_dur - phon_end) < 0.01
+if (total_dur - phon_end) < overlap_buffer
     overlap_end = total_dur
 else
     overlap_end = phon_end + overlap_buffer
