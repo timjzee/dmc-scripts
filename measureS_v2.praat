@@ -1,11 +1,28 @@
 prop$ = Report system properties
 os$ = extractWord$(prop$, newline$)
-if os$ == "macintosh"
-    tens_path$ = "/Volumes/tensusers/timzee/cgn/"
-    cgn_path$ = "/Volumes/bigdata2/corpora2/CGN2/data/audio/wav/comp-"
+
+
+corpus$ = "cgn"
+if corpus$ == "IFADVcorpus"
+    o_path$ = "/tensusers/timzee/IFADVcorpus/Speech/"
+elif corpus$ == "cgn"
+    component$ = "o"
+    if component$ == "c" or component$ == "d"
+        o_path$ = "/tensusers/timzee/cgn/mono_comp-"
+    else
+        o_path$ = "/bigdata2/corpora2/CGN2/data/audio/wav/comp-"
+    endif
 else
-    tens_path$ = "/vol/tensusers/timzee/cgn/"
-    cgn_path$ = "/vol/bigdata/corpora2/CGN2/data/audio/wav/comp-"
+    o_path$ = "/tensusers/timzee/ECSD/Speech/"
+endif
+
+
+if os$ == "macintosh"
+    tens_path$ = "/Volumes/tensusers/timzee/" + corpus$ + "/"
+    audio_path$ = "/Volumes" + o_path$
+else
+    tens_path$ = "/vol/tensusers/timzee/" + corpus$ + "/"
+    audio_path$ = "/vol" + o_path$
 endif
 
 cog_window = 0.8
@@ -33,7 +50,7 @@ Read Table from tab-separated file: tens_path$ + "speakers.txt"
 
 Create Table with column names: "spectral_info", 0, "wav speaker speaker_sex birth_year chunk_start chunk_end word_chunk_i sent_i word_sent_i word_ort next_phon next_phon_pron prev_phon prev_phon_pron word_pos word_class type_of_s base_dur speech_rate_pron num_syl_pron mean_hnr time freq_bin Pa_per_Hz dB_per_Hz"
 
-Read Table from comma-separated file: tens_path$ + "comp-a_s7.csv"
+Read Table from comma-separated file: tens_path$ + "eval_s.csv"
 table_name$ = selected$("Table")
 Append column: "s_dur"
 Append column: "s_cog_full"
@@ -76,9 +93,22 @@ for s_line from 1 to n_inputlines
             removeObject: "LongSound " + wav_name$
             removeObject: "TextGrid " + wav_name$
         endif
-        Open long sound file: cgn_path$ + cur_path$ + ".wav"
-        wav_name$ = selected$("LongSound")
-        Read from file: tens_path$ + "kaldi_annot/comp-" + cur_path$ + ".awd"
+        if corpus$ == "cgn"
+            Open long sound file: audio_path$ + cur_path$ + ".wav"
+            wav_name$ = selected$("LongSound")
+            Read from file: tens_path$ + "kaldi_annot/comp-" + cur_path$ + ".awd"
+        elif corpus$ == "IFADVcorpus"
+            Open long sound file: audio_path$ + cur_path$ + ".wav"
+            wav_name$ = selected$("LongSound")
+            Read from file: tens_path$ + "kaldi_annot/" + cur_path$ + ".awd"
+        else
+            pair_length = name_length - 10
+            pair_folder$ = "PP" + mid$(cur_path$, 3, pair_length)
+            Open long sound file: audio_path$ + pair_folder$ + "/" + cur_path$ + "_S.wav"
+            wav_name$ = selected$("LongSound")
+            Read from file: tens_path$ + "kaldi_annot/" + pair_folder$ + "/" + cur_path$ + ".awd"
+            Rename: wav_name$
+        endif
     endif
 
     selectObject: "Table " + table_name$
@@ -207,6 +237,7 @@ for s_line from 1 to n_inputlines
             if strp_wrd$ == strip_ort$
                 prev_mention$ = "TRUE"
                 goto MENTIONED
+            endif
         endfor
         prev_mention$ = "FALSE"
         label MENTIONED
@@ -488,6 +519,6 @@ for s_line from 1 to n_inputlines
 endfor
 
 selectObject: "Table " + table_name$
-Save as comma-separated file: tens_path$ + table_name$ + "_static7.csv"
+Save as comma-separated file: tens_path$ + table_name$ + "_static.csv"
 selectObject: "Table spectral_info"
-Save as comma-separated file: tens_path$ + table_name$ + "_dynamic7.csv"
+Save as comma-separated file: tens_path$ + table_name$ + "_dynamic.csv"

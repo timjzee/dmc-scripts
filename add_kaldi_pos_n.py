@@ -1,9 +1,10 @@
 import sys
 import codecs
 import glob
+import re
 
-tens_path = "/Volumes/tensusers/timzee/IFAcorpus/" if sys.platform == "darwin" else "/vol/tensusers/timzee/cgn/IFAcorpus/"
-ali_path = "/Volumes/tensusers/timzee/KALDI_FA_out/test" if sys.platform == "darwin" else "/vol/tensusers/timzee/KALDI_FA_out/test/"
+tens_path = "/Volumes/tensusers/timzee/cgn/n_tests/" if sys.platform == "darwin" else "/vol/tensusers/timzee/cgn/n_tests/"
+ali_path = "/Volumes/tensusers/timzee/KALDI_FA_out/n_tests_a/" if sys.platform == "darwin" else "/vol/tensusers/timzee/KALDI_FA_out/n_tests_a/"
 tz_path = "/Volumes/timzee/Docs/" if sys.platform == "darwin" else "/home/timzee/Docs/"
 
 phon_dict = {}
@@ -11,8 +12,8 @@ with open(tz_path + "KALDI-CGN_phones3.txt", "r") as f:
     for line in f:
         phon_dict[line.split(",")[0]] = line[:-1].split(",")[1]
 
-with codecs.open(tens_path + "validation_data_cgn-kaldi-kaldi-n_k_pos.csv", "w", encoding="utf-8") as h:
-    with codecs.open(tens_path + "validation_data_cgn-kaldi-kaldi-n_k.csv", "r", encoding="utf-8") as f:
+with codecs.open(tens_path + "validation_data_cgn-kaldi-kaldi-n_a_pos.csv", "w", encoding="utf-8") as h:
+    with codecs.open(tens_path + "validation_data_cgn-kaldi-kaldi-n_a.csv", "r", encoding="utf-8") as f:
         prev_sentence = ""
         phon_num = 0
         for l_num, line in enumerate(f, 1):
@@ -21,12 +22,12 @@ with codecs.open(tens_path + "validation_data_cgn-kaldi-kaldi-n_k_pos.csv", "w",
                 h.write(line[:-1] + ",kaldi_pos,kaldi_dur\n")
             else:
                 l_list = line[:-1].split(",")
-                sentence = l_list[0]
+                sentence = re.sub(r'[/-]', '_', l_list[0][:-1])
                 kaldi_lab = l_list[2]
                 if sentence != prev_sentence:
                     ali_lines = []
                     phon_num = 0
-                    glob_list = glob.glob(ali_path + "*" + sentence + "_*")
+                    glob_list = glob.glob(ali_path + "*" + sentence + "*")
                     print(sentence, glob_list)
                     if len(glob_list) > 0:
                         with codecs.open(glob_list[0], "r", encoding="utf-8") as g:
@@ -47,5 +48,5 @@ with codecs.open(tens_path + "validation_data_cgn-kaldi-kaldi-n_k_pos.csv", "w",
                 else:
                     kaldi_pos = "NA"
                     phon_dur = "NA"
-                h.write(line[:-1] + "," + kaldi_pos + "," + phon_dur + "\n")
+                h.write(re.sub(r'_', '', line[:-1]) + "," + kaldi_pos + "," + phon_dur + "\n")
                 prev_sentence = sentence[:]

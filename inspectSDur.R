@@ -1,22 +1,58 @@
 library(lme4)
-#library(effects)
+library(effects)
 #library(languageR)
 #library(corrplot)
 #library(polycor)
 
 if (Sys.info()[1] == "Darwin"){
-  f_path = "/Volumes/tensusers/timzee/cgn/"
+  cgn_path = "/Volumes/tensusers/timzee/cgn/"
+  ifadv_path = "/Volumes/tensusers/timzee/IFADVcorpus/"
+  ecsd_path = "/Volumes/tensusers/timzee/ECSD/"
 } else {
-  f_path = "/vol/tensusers/timzee/cgn/"
+  cgn_path = "/vol/tensusers/timzee/cgn/"
+  ifadv_path = "/vol/tensusers/timzee/IFADVcorpus/"
+  ecsd_path = "/Volumes/tensusers/timzee/ECSD/"
 }
 
-s_dur = read.csv(paste(f_path, "comp-a_s_static.csv", sep = ""))
+s_dur_a = read.csv(paste(cgn_path, "comp-a_s_static.csv", sep = ""))
+s_dur_a$corpus = as.factor("cgn-a")
+s_dur_c = read.csv(paste(cgn_path, "comp-c_s_static.csv", sep = ""))
+s_dur_c$corpus = as.factor("cgn-c")
+s_dur_c$birth_year = as.integer(s_dur_c$birth_year)
+s_dur_d = read.csv(paste(cgn_path, "comp-d_s_static.csv", sep = ""))
+s_dur_d$corpus = as.factor("cgn-d")
+s_dur_ifadv = read.csv(paste(ifadv_path, "ifadv_s_static.csv", sep = ""))
+s_dur_ifadv$corpus = as.factor("ifadv")
+s_dur_ifadv$mean_hnr = as.factor(s_dur_ifadv$mean_hnr)
+levels(s_dur_ifadv$speaker_sex) = c("sex2", "sex1")
+s_dur_ecsd = read.csv(paste(ecsd_path, "ecsd_s_static.csv", sep = ""))
+s_dur_ecsd$corpus = as.factor("ecsd")
+
+# inspect numbers:
+table(s_dur_a$type_of_s)
+table(s_dur_c$type_of_s)
+table(s_dur_d$type_of_s)
+table(s_dur_ifadv$type_of_s)
+table(s_dur_ecsd$type_of_s)
+
+
+s_dur = rbind(s_dur_a, s_dur_c, s_dur_d, s_dur_ifadv, s_dur_ecsd)
+s_dur$prev_mention = as.factor(s_dur$prev_mention)
+s_dur$phrase_final = as.factor(s_dur$phrase_final)
+
+# for now combine GEN levels:
+levels(s_dur$type_of_s)
+levels(s_dur$type_of_s) = c("GEN", "GEN", "PART", "PL", "S")
+levels(s_dur$type_of_s)
+# combine ifadv and ecsd to get rid of rank deficiency
+#levels(s_dur$corpus) = c("cgn-a", "cgn-c", "cgn-d", "ifadv-ecsd", "ifadv-ecsd")
+
 #s_dur$type_of_s = as.character(s_dur$type_of_s)
 #s_dur = s_dur[s_dur$type_of_s != "OTHER",]
 #s_dur$type_of_s = as.factor(s_dur$type_of_s)
 
 # Add the following to selection script
-s_dur = s_dur[(s_dur$prev_phon_pron %in% c("[SPN]", "SIL") == FALSE) & (s_dur$next_phon_pron != "[SPN]"),]
+# s_dur = s_dur[(s_dur$prev_phon_pron %in% c("[SPN]", "SIL") == FALSE) & (s_dur$next_phon_pron != "[SPN]"),]
 
 s_dur$type_of_s = relevel(s_dur$type_of_s, ref="S")
 #s_dur$num_cons_pron = as.numeric(s_dur$num_syl_pron)
@@ -83,12 +119,93 @@ s_dur = s_dur[s_dur$s_dur < 0.4,]
 # use m0 to spot collinearity
 m0 = lmer(s_dur ~ type_of_s + speech_rate_pron + base_dur + num_syl_pron 
            + stressed + num_cons_pron + log_wf + lex_neb + log_bigf 
-           + next_phon_class + prev_phon_class  
+           + next_phon_class + prev_phon_class + prev_mention + phrase_final 
            + (1|speaker) + (1|word_ort), data=s_dur)
 summary(m0)
 #vcov(m0)
 
-#plot(effect("type_of_s", m0, confidence.level=0.95))
+par(mfrow=c(2,3))
+plot(fitted(m0), residuals(m0))
+cor(fitted(m0), residuals(m0))
+qqnorm(residuals(m0))
+qqline(residuals(m0))
+plot(density(residuals(m0)))
+
+m1 = lmer(log10(s_dur) ~ type_of_s*corpus + speech_rate_pron + base_dur + num_syl_pron 
+          + stressed + num_cons_pron + log_wf + lex_neb + log_bigf 
+          + next_phon_class + prev_phon_class + prev_mention + phrase_final 
+          + (1|speaker) + (1|word_ort), data=s_dur)
+summary(m1)
+
+plot(fitted(m1), residuals(m1))
+cor(fitted(m1), residuals(m1))
+qqnorm(residuals(m1))
+qqline(residuals(m1))
+plot(density(residuals(m1)))
+
+plot(effect("type_of_s:corpus", m1, confidence.level=0.95))
+
+m1b = lmer(log10(s_dur) ~ type_of_s + speech_rate_pron + base_dur + num_syl_pron 
+          + stressed + num_cons_pron + log_wf + lex_neb + log_bigf 
+          + next_phon_class + prev_phon_class + prev_mention + phrase_final 
+          + (1+type_of_s|speaker) + (1|word_ort) + (1+type_of_s|corpus), data=s_dur)
+summary(m1b)
+
+
+
+s_dur_a = s_dur[s_dur$corpus == "cgn-a",]
+s_dur_c = s_dur[s_dur$corpus == "cgn-c",]
+s_dur_d = s_dur[s_dur$corpus == "cgn-d",]
+s_dur_ifadv = s_dur[s_dur$corpus == "ifadv",]
+s_dur_ecsd = s_dur[s_dur$corpus == "ecsd",]
+s_dur_other = rbind(s_dur_ifadv, s_dur_ecsd)
+
+m_a = lmer(log10(s_dur) ~ type_of_s + speech_rate_pron + base_dur + num_syl_pron 
+              + stressed + num_cons_pron + log_wf + lex_neb + log_bigf 
+              + next_phon_class + prev_phon_class + prev_mention + phrase_final 
+              + (1|speaker) + (1|word_ort), data=s_dur_a)
+summary(m_a)
+plot(effect("type_of_s", m_a, confidence.level=0.95))
+
+
+m_c = lmer(log10(s_dur) ~ type_of_s + speech_rate_pron + base_dur + num_syl_pron 
+           + stressed + num_cons_pron + log_wf + lex_neb + log_bigf 
+           + next_phon_class + prev_phon_class + prev_mention + phrase_final 
+           + (1|speaker) + (1|word_ort), data=s_dur_c)
+summary(m_c)
+plot(effect("type_of_s", m_c, confidence.level=0.95))
+
+
+m_d = lmer(log10(s_dur) ~ type_of_s + speech_rate_pron + base_dur + num_syl_pron 
+           + stressed + num_cons_pron + log_wf + lex_neb + log_bigf 
+           + next_phon_class + prev_phon_class + prev_mention + phrase_final 
+           + (1|speaker) + (1|word_ort), data=s_dur_d)
+summary(m_d)
+plot(effect("type_of_s", m_d, confidence.level=0.95))
+
+
+m_ifadv = lmer(log10(s_dur) ~ type_of_s + speech_rate_pron + base_dur + num_syl_pron 
+           + stressed + num_cons_pron + log_wf + lex_neb + log_bigf 
+           + next_phon_class + prev_phon_class + prev_mention + phrase_final 
+           + (1|speaker) + (1|word_ort), data=s_dur_ifadv)
+summary(m_ifadv)
+plot(effect("type_of_s", m_ifadv, confidence.level=0.95))
+
+
+m_ecsd = lmer(log10(s_dur) ~ type_of_s + speech_rate_pron + base_dur + num_syl_pron 
+               + stressed + num_cons_pron + log_wf + lex_neb + log_bigf 
+               + next_phon_class + prev_phon_class + prev_mention + phrase_final 
+               + (1|speaker) + (1|word_ort), data=s_dur_ecsd)
+summary(m_ecsd)
+plot(effect("type_of_s", m_ecsd, confidence.level=0.95))
+
+m_other = lmer(log10(s_dur) ~ type_of_s + speech_rate_pron + base_dur + num_syl_pron 
+              + stressed + num_cons_pron + log_wf + lex_neb + log_bigf 
+              + next_phon_class + prev_phon_class + prev_mention + phrase_final 
+              + (1|speaker) + (1|word_ort), data=s_dur_other)
+summary(m_other)
+plot(effect("type_of_s", m_other, confidence.level=0.95))
+
 
 #investigate genitives
 #plot(s_dur[s_dur$type_of_s == "GEN-POSS",]$s_dur)
@@ -112,7 +229,7 @@ vif.mer <- function (fit) {
   v
 }
 
-vif.mer(m0)
+vif.mer(m1)
 # mainly num_cons_pron and prev_phon_classV
 #cormat = hetcor(s_dur[,c("type_of_s", "speech_rate_pron", "base_dur",
 #                         "num_syl_pron", "stressed", "num_cons_pron",

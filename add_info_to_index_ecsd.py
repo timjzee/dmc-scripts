@@ -3,7 +3,6 @@
 import sys
 import select
 import re
-import gzip
 import tempfile
 import textgrid
 import codecs
@@ -14,7 +13,7 @@ import multiprocessing
 import subprocess
 
 tens_path = "/Volumes/tensusers/timzee/" if sys.platform == "darwin" else "/vol/tensusers/timzee/"
-cgn_path = "/Volumes/bigdata2/corpora2/CGN2/data/annot/" if sys.platform == "darwin" else "/vol/bigdata2/corpora2/CGN2/data/annot/"
+ecsd_path = "/Volumes/tensusers/timzee/ECSD/Annotations/" if sys.platform == "darwin" else "/vol/tensusers/timzee/ECSD/Annotations/"
 tz_path = "/Volumes/timzee/" if sys.platform == "darwin" else "/home/timzee/"
 
 segment = "s"
@@ -25,14 +24,14 @@ del entitydefs["quot"]
 del entitydefs["lt"]
 del entitydefs["gt"]
 
-input_file_path = tens_path + "cgn/cgn_index_a_final2_1h.txt"
+input_file_path = tens_path + "ECSD/ecsd_index2.txt"
 with codecs.open(input_file_path, "r", "utf-8") as f:
     input_file = f.readlines()
 
-running_cores = 26
+running_cores = 0
 
 # Do not run with more than 5 cores.
-num_cores = 7
+num_cores = 5
 num_index_lines = len(input_file)
 # num_index_lines = 1465779
 core_dict = {}
@@ -46,7 +45,7 @@ for i in range(num_cores):
 
 print("Loading KALDI lexicon")
 kaldi_lex = {}
-with codecs.open(tz_path + "clst-asr-fa/lexicon_comp-acd-ifadv-ecsd-ko.txt", "r", "utf-8") as f:
+with codecs.open(tz_path + "clst-asr-fa/lexicon_comp-acd-ifadv-ecsd.txt", "r", "utf-8") as f:
     for line in f:
         entry, pron = line[:-1].split("\t")
         kaldi_lex[entry] = pron
@@ -112,7 +111,7 @@ with codecs.open(tens_path + "other/cow2.counts", "r", "utf-8") as f:
 
 print("Loading OOV Conversion Table")
 oov_conv = {}
-with codecs.open(tens_path + "cgn/oov_conv_table_comp-a.txt", "r", "utf-8") as f:
+with codecs.open(tens_path + "ECSD/oov_conv_table_comp-ecsd.txt", "r", "utf-8") as f:
     for counter, line in enumerate(f, 1):
         if counter > 1:
             c_key, input_w, orig_w, input_i, orig_i, meta_i, meta_l = line[:-1].split("\t")
@@ -130,9 +129,8 @@ excl_words = ["weegs", "graads", "wils"]
 
 
 def createTemp(tg_path):
-    with gzip.open(tg_path) as f:
-        gz_bytes = f.read()
-    tg_string = codecs.decode(gz_bytes, "iso-8859-1")
+    with codecs.open(tg_path, "r", encoding="utf-8") as f:
+        tg_string = f.read()
     tempf = tempfile.NamedTemporaryFile()
     tempf.write(tg_string.encode("utf-8"))
     tempf.flush()
@@ -147,20 +145,23 @@ def loadTextGrid(tg_path):
 
 
 def getSpeaker(fp, tier):
-    tg = loadTextGrid(cgn_path + "text/ort/comp-" + fp + ".ort.gz")
+    folder_n = fp.split("_part")[0].upper()
+    tg = loadTextGrid(ecsd_path + "ort/" + folder_n + "/" + fp + ".TextGrid")
     spkr = tg.getNames()[int(tier) - 1]
     return spkr
 
 
 def checkCanonical(w, position, chunk_id):
     """position should be either 0 (first sub-word) or -1 (final sub-word)"""
-    nw = re.sub(r'\*[a-z]', '', re.sub(r"[!?.,:;\t\n\r]*", "", w.lower())).strip("-&'")
+    nw = re.sub(r'\*[a-z]', '', re.sub(r"[!?.,:;\t\n\r]*", "", w.lower())).strip("-'")
+    nw = "en" if nw == "&" else nw
 #    if re.search(r"\*[^ ]*", w):
 #        return "NA"
     if nw in kaldi_lex:
         phonlist = kaldi_lex[nw].split(" ")
         return [phonlist, False]
     elif re.sub(r"[!?.,:;\t\n\r]*", "", w) in oov_conv[chunk_id]["orig_w"]:
+        print(w, "in OOV table")
         w_i = oov_conv[chunk_id]["orig_w"].index(re.sub(r"[!?.,:;\t\n\r]*", "", w))
         sw = oov_conv[chunk_id]["input_w"][w_i].split(" ")[position]
         if sw in kaldi_lex:
@@ -169,24 +170,27 @@ def checkCanonical(w, position, chunk_id):
         else:
             return [None, True]
     else:
+        print(w, "not in OOV table")
         return [None, False]
 
 
 def getAnnotInfo(orig_path, c_start, c_end, spkr, word_index):
     """Calls a Praat script which finds the chunk and returns info on phonetic context."""
-    output = subprocess.check_output([tz_path + "praat_nogui", "--run", tz_path + "GitHub/dmc-scripts/getAnnotInfo.praat", orig_path, c_start, c_end, spkr, str(word_index), "cgn/kaldi_annot/comp-"]).decode("utf-8")[:-1].split(" ")
+    folder_n = orig_path.split("_part")[0].upper()
+    output = subprocess.check_output([tz_path + "praat_nogui", "--run", tz_path + "GitHub/dmc-scripts/getAnnotInfo.praat", orig_path, c_start, c_end, spkr, str(word_index), "ECSD/kaldi_annot/" + folder_n + "/"]).decode("utf-8")[:-1].split(" ")
     print(output)
     return output
 
 
 def getSentenceInfo(rt, spkr, from_t, to_t, wrd):
     candidates = []
-    wrd = "'s" if wrd == "da's" else wrd
+#    wrd = "'s" if wrd == "da's" else wrd
     for child in rt:
         if child.tag == "tau":
             if child.attrib["s"] == spkr:
                 for word in child:
-                    if word.attrib["tb"] == from_t and word.attrib["te"] == to_t:
+                    if "{0:.3f}".format(float(word.attrib["tb"])).encode("utf-8") == from_t and "{0:.3f}".format(float(word.attrib["te"])).encode("utf-8") == to_t:
+#                        print("{0:.3f}".format(float(word.attrib["tb"])), from_t, "{0:.3f}".format(float(word.attrib["te"])), to_t)
 #                        print(wrd.encode("utf-8"), h.unescape(word.attrib["w"]).encode("utf-8"))
                         if h.unescape(word.attrib["w"]) == wrd:
                             candidates.append((int(word.attrib["ref"].split(".")[1]), int(word.attrib["ref"].split(".")[2])))
@@ -276,13 +280,6 @@ def findWord(rt, s_index, w_index, shift):
     return shift_word
 
 
-def getHNR(fp, c, t):
-    """Calls praat script for HNR measurement"""
-    print("Getting HNR from Praat")
-    output = subprocess.check_output([tz_path + "praat_nogui", "--run", tz_path + "GitHub/dmc-scripts/getHarmonicity.praat", fp, str(c), str(t)]).decode("utf-8")[:-1]
-    return output
-
-
 def getOOVmeta(c_id, w_num):
     if w_num in oov_conv[c_id]["meta_i"]:
         i_i = oov_conv[c_id]["meta_i"].index(w_num)
@@ -296,22 +293,24 @@ def parseLine(f_path, chan, from_time, to_time, ort, tier, new_file):
     global hnr
     speaker = getSpeaker(f_path, tier)
     if new_file:
-        with gzip.open(cgn_path + "xml/skp-ort/comp-" + f_path + ".skp.gz") as h:
-            skp_gz = h.read()
-        skp_txt = codecs.decode(skp_gz, "ascii")
+        folder_n, part_n = f_path.split("_part")
+        file_n_uc = folder_n.upper() + "_part" + part_n
+        with codecs.open(ecsd_path + "skp-ort/" + folder_n.upper() + "/" + file_n_uc + ".skp", "r", "utf-8") as h:
+            skp_txt = h.read()
+#        skp_txt = codecs.decode(skp_gz, "ascii")
 #        skp_txt = skp_txt.encode("utf-8")
-        for ent in entitydefs:
-            skp_txt = re.sub(r"&{};".format(ent), entitydefs[ent].decode("latin-1"), skp_txt)
+#        for ent in entitydefs:
+#            skp_txt = re.sub(r"&{};".format(ent), entitydefs[ent].decode("latin-1"), skp_txt)
 #            skp_txt.replace("&" + ent + ";", entitydefs[ent].decode("latin-1"))
 #        print(skp_txt)
         global skp_root
         skp_root = ET.fromstring(skp_txt)
 #        print(ET.tostring(skp_root))
-        with gzip.open(cgn_path + "xml/tag/comp-" + f_path + ".tag.gz") as h:
-            tag_gz = h.read()
-        tag_txt = codecs.decode(tag_gz, "ascii")
-        for ent in entitydefs:
-            tag_txt = re.sub(r"&{};".format(ent), entitydefs[ent].decode("latin-1"), tag_txt)
+        with codecs.open(ecsd_path + "tag/" + folder_n.upper() + "/" + file_n_uc + ".tag", "r", "utf-8") as h:
+            tag_txt = h.read()
+#        tag_txt = codecs.decode(tag_gz, "ascii")
+#        for ent in entitydefs:
+#            tag_txt = re.sub(r"&{};".format(ent), entitydefs[ent].decode("latin-1"), tag_txt)
         global tag_root
         tag_root = ET.fromstring(tag_txt)
 #        hnr = getHNR(f_path, chan, tier)
@@ -403,7 +402,7 @@ def readWriteMetaData(core_num="", start_line=1, end_line=num_index_lines):
 #    else:
     print("Reading from file")
     f = codecs.open(input_file_path, "r", "utf-8")
-    with codecs.open(tens_path + "cgn/all_s" + core_num + ".csv", "w", "utf-8") as g:
+    with codecs.open(tens_path + "ECSD/all_s" + core_num + ".csv", "w", "utf-8") as g:
         output_header = "wav,chan,chunk_start,chunk_end,oov_in_chunk,tier,word_chunk_i,sent_i,word_sent_i,word_ort,word_phon,num_phon,phon_pron,prev_phon,prev_phon_pron,next_phon,next_phon_pron,overlap,oov_meta,word_pos,word_class,type_of_s,speaker,per_mil_wf,log_wf,lex_neb,lex_neb_freq,ptan,ptaf,cow_wf,next_word,next_wf,bigram_f,prev_word,prev_wf,prev_bigram_f,num_syl,word_stress\n"
         g.write(output_header)
         old_f_path = ""
@@ -433,10 +432,10 @@ def multiProcess():
     for job in jobs:
         job.join()
     # combine separate files
-    with codecs.open(tens_path + "cgn/all_s_comb2_a1.csv", "w", encoding="utf-8") as g:
+    with codecs.open(tens_path + "ECSD/all_s_comb2.csv", "w", encoding="utf-8") as g:
         for core in range(num_cores):
             core_n = str(core + 1 + running_cores)
-            with codecs.open(tens_path + "cgn/all_s" + core_n + ".csv", "r", encoding="utf-8") as f:
+            with codecs.open(tens_path + "ECSD/all_s" + core_n + ".csv", "r", encoding="utf-8") as f:
                 for fln, f_line in enumerate(f, 1):
                     if not (core > 0 and fln == 1):
                         g.write(f_line)

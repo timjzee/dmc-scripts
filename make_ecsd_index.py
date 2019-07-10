@@ -71,7 +71,7 @@ def read_file_entries(fp):
                     for w_n, w in enumerate(words, 1):
                         w_ort = re.sub(r'[\\/][vVoO]', '*u', w)  # *u
                         w_ort = re.sub(r'[\\/]\*', '*a', w_ort)         # *a
-                        w_ort = re.sub(r'[\\/]-', ' ', w_ort)                    # spelling
+                        w_ort = re.sub(r'[\\/]-', '', w_ort)                    # spelling
                         w_ort = re.sub(r'[",:;?!\n\r\t]', "", w_ort)
                         if w_ort not in ["", " "]:
                             final_words.append(w_ort)

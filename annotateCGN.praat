@@ -1,6 +1,7 @@
 form Give chunks
-    word chunk_path /Volumes/tensusers/timzee/cgn/chunks_PRAAT.txt
+    word chunk_path /Volumes/tensusers/timzee/cgn/fa_eval_subset.csv
     word cgn_path /Volumes/bigdata2/corpora2/CGN2/data/audio/wav/comp-
+    word kaldi_path /Volumes/tensusers/timzee/cgn/kaldi_annot/comp-
     word output_path /Volumes/tensusers/timzee/cgn/man_annot/
 endform
 
@@ -19,34 +20,55 @@ endPause: "Continue", 1
 
 procedure annotateChunk: annotateChunk.id
     selectObject: "Table chunks"
-    annotateChunk.w_ort$ = Get value: annotateChunk.id, "word_ort"
-    annotateChunk.f_path$ = Get value: annotateChunk.id, "filepath"
-    annotateChunk.c_start$ = Get value: annotateChunk.id, "chunk_start"
-    annotateChunk.c_start = number(annotateChunk.c_start$)
-    annotateChunk.c_end$ = Get value: annotateChunk.id, "chunk_end"
-    annotateChunk.c_end = number(annotateChunk.c_end$)
-    annotateChunk.c_ort$ = Get value: annotateChunk.id, "chunk_ort"
-    Open long sound file: cgn_path$ + annotateChunk.f_path$ + ".wav"
-    annotateChunk.s_name$ = selected$("LongSound")
-    To TextGrid: "phones words orth", ""
-    Insert boundary: 3, annotateChunk.c_start
-    Insert boundary: 3, annotateChunk.c_end
-    Set interval text: 3, 2, annotateChunk.c_ort$
-    plusObject: "LongSound " + annotateChunk.s_name$
+    filepath$ = Get value: annotateChunk.id, "wav"
+    if fileReadable(output_path$ + "comp-" + filepath$ + ".awd") == 0
+        Read from file: kaldi_path$ + filepath$ + ".awd"
+    else
+        Read from file: output_path$ + "comp-" + filepath$ + ".awd"
+    endif
+    s_name$ = selected$("TextGrid")
+    selectObject: "Table chunks"
+    w_ort$ = Get value: annotateChunk.id, "word_ort"
+    c_start = Get value: annotateChunk.id, "chunk_start"
+    c_end = Get value: annotateChunk.id, "chunk_end"
+    c_tier = Get value: annotateChunk.id, "tier"
+    c_speaker$ = Get value: annotateChunk.id, "speaker"
+    word_chunk_i = Get value: annotateChunk.id, "word_chunk_i"
+    tier = c_tier * 4 - 3
+    selectObject: "TextGrid " + s_name$
+    speaker$ = Get tier name: tier
+    assert c_speaker$ == speaker$
+    word_int = Get high interval at time: tier, c_start
+    word_int -= 1
+    word_counter = 0
+    while word_counter != word_chunk_i
+        word_int += 1
+        int_lab$ = Get label of interval: tier, word_int
+        if int_lab$ != ""
+            word_counter += 1
+        endif
+    endwhile
+    int_lab$ = replace_regex$(int_lab$, "[.?! ]", "", 0)
+    appendInfoLine: "Asserting '" + int_lab$ + "' == '" + w_ort$ + "'"
+    assert int_lab$ == w_ort$
+    w_start = Get start time of interval: tier, word_int
+    w_end = Get end time of interval: tier, word_int
+
+    Open long sound file: cgn_path$ + filepath$ + ".wav"
+    plusObject: "TextGrid " + s_name$
     View & Edit
-    editor: "TextGrid " + annotateChunk.s_name$
-        Select: annotateChunk.c_start, annotateChunk.c_end
-        Zoom to selection
+    editor: "TextGrid " + s_name$
+        Zoom: w_start, w_end
+        Zoom out
     endeditor
     beginPause: "Save and continue"
-        comment: "Annotate " + annotateChunk.w_ort$
+        comment: "Annotate " + w_ort$ + " on tier " + string$(tier)
         comment: "Click continue to save the annotation."
     endPause: "Continue", 1
-    selectObject: "TextGrid " + annotateChunk.s_name$
-    annotateChunk.n_path$ = replace$(annotateChunk.f_path$, "/", "_", 0)
-    Save as text file: output_path$ + annotateChunk.n_path$ + "_" + annotateChunk.c_start$ + "_" + annotateChunk.c_end$ + ".TextGrid"
+    selectObject: "TextGrid " + s_name$
+    Save as text file: output_path$ + "comp-" + filepath$ + ".awd"
     Remove
-    selectObject: "LongSound " + annotateChunk.s_name$
+    selectObject: "LongSound " + s_name$
     Remove
 endproc
 
@@ -54,21 +76,26 @@ if annotation_mode == 1
     @annotateChunk: chunk_index
 elsif annotation_mode == 2
     num_chunks = Get number of rows
+    Create Table with column names: "last_chunk", 1, "chunk_id"
     for id from 1 to num_chunks
         selectObject: "Table chunks"
         @annotateChunk: id
+        selectObject: "Table last_chunk"
+        Set numeric value: 1, "chunk_id", id
+        Save as tab-separated file: output_path$ + "last_chunk.log"
     endfor
 else
+    Read Table from tab-separated file: output_path$ + "last_chunk.log"
+    last_chunk = Get number of rows
+    last_chunk_id = Get value: last_chunk, "chunk_id"
+    Append row
+    selectObject: "Table chunks"
     num_chunks = Get number of rows
-    for id from 1 to num_chunks
+    for id from last_chunk_id to num_chunks
         selectObject: "Table chunks"
-        filepath$ = Get value: id, "filepath"
-        namepath$ = replace$(filepath$, "/", "_", 0)
-        chunkfrom$ = Get value: id, "chunk_start"
-        chunkto$ = Get value: id, "chunk_end"
-        tg_name$ = namepath$ + "_" + chunkfrom$ + "_" + chunkto$ + ".TextGrid"
-        if fileReadable(output_path$ + tg_name$) == 0
-            @annotateChunk: id
-        endif
+        @annotateChunk: id
+        selectObject: "Table last_chunk"
+        Set numeric value: last_chunk + 1, "chunk_id", id
+        Save as tab-separated file: output_path$ + "last_chunk.log"
     endfor
 endif

@@ -1,10 +1,10 @@
 prop$ = Report system properties
 os$ = extractWord$(prop$, newline$)
 
-corpus$ = "IFADVcorpus"
+corpus$ = "grid_search"
 if corpus$ == "IFADVcorpus"
     o_path$ = "/tensusers/timzee/IFADVcorpus/Annotations/ort/"
-elif corpus$ == "cgn"
+elif corpus$ == "cgn" or corpus$ == "grid_search"
     o_path$ = "/bigdata2/corpora2/CGN2/data/annot/text/ort/comp-"
 else
     o_path$ = "/tensusers/timzee/ECSD/Annotations/ort/"
@@ -19,6 +19,11 @@ else
     ort_path$ = "/vol" + o_path$
     home_path$ = "/home/timzee/"
 endif
+
+ali_folder$ = "gs03"
+oov_conv$ = "oov_conv_table_comp-grid_search.txt"
+index$ = "grid_search_index_sorted.txt"
+gs_folder$ = "gs03"
 
 procedure processWords
     # adjust boundaries
@@ -139,6 +144,10 @@ procedure makeKaldiTG
         else
             phon$ = left$(ali_lab$, underscore_index - 1)
             phon_tag$ = right$(ali_lab$, length(ali_lab$) - underscore_index)
+            # handle replacement SIL
+            if phon$ == "SIL" and phon_tag$ == "S"
+                phon$ = "[SIL]"
+            endif
         endif
         start_time$ = Get value: ali_line, "start"
         start_time = number(start_time$)
@@ -205,9 +214,9 @@ endproc
 if corpus$ == "IFADVcorpus"
     Read Table from comma-separated file: tens_path$ + corpus$ + "/speakers.csv"
 endif
-Read Table from tab-separated file: tens_path$ + corpus$ + "/oov_conv_table_comp-ifadv.txt"
+Read Table from tab-separated file: tens_path$ + corpus$ + "/" + oov_conv$
 Rename: "conv"
-Read Table from comma-separated file: tens_path$ + corpus$ + "/ifadv_index2.txt"
+Read Table from comma-separated file: tens_path$ + corpus$ + "/" + index$
 Rename: "index"
 
 wav_name$ = ""
@@ -235,21 +244,29 @@ for line from 1 to n_inputlines
             selectObject: "TextGrid " + wav_name$
             if corpus$ == "cgn"
                 Save as text file: tens_path$ + "cgn/kaldi_annot/comp-" + pre_name$ + wav_name$ + ".awd"
-            else
+            elif corpus$ == "grid_search"
+                Save as text file: tens_path$ + "grid_search/kaldi_annot/" + gs_folder$ + "/" + wav_name$ + ".awd"
+            elif corpus$ == "IFADVcorpus"
                 Save as text file: tens_path$ + corpus$ + "/kaldi_annot/" + pre_name$ + wav_name$ + ".awd"
+            else
+                Save as text file: tens_path$ + corpus$ + "/kaldi_annot/" + pair_folder$ + "/" + wav_name$ + ".awd"
             endif
             Remove
             removeObject: "TextGrid " + wav_name$ + "_ort"
         endif
-        if corpus$ == "cgn"
+        if corpus$ == "cgn" or corpus$ == "grid_search"
             runSystem_nocheck: "cp " + ort_path$ + cur_path$ + ".ort.gz " + tens_path$ + "cgn/"
             runSystem_nocheck: "gunzip " + tens_path$ + "cgn/" + cur_name$ + ".ort.gz"
-            Read from file: tens_path$ + corpus$ + "/" + cur_name$ + ".ort"
+            Read from file: tens_path$ + "cgn/" + cur_name$ + ".ort"
             runSystem_nocheck: "rm -f " + tens_path$ + "cgn/" + cur_name$ + ".ort"
-        else
+        elif corpus$ == "IFADVcorpus"
             Create Strings as file list: "fileList", tens_path$ + corpus$ + "/Annotations/ort/" + cur_name$ + "*.ort"
             ifadv_path$ = Get string: 1
             Read from file: tens_path$ + corpus$ + "/Annotations/ort/" + ifadv_path$
+        else
+            pair_length = name_length - 10
+            pair_folder$ = "PP" + mid$(cur_path$, 3, pair_length)
+            Read from file: tens_path$ + corpus$ + "/Annotations/ort/" + pair_folder$ + "/" + cur_path$ + ".TextGrid"
         endif
         Rename: cur_name$ + "_ort"
         speaker$ = Get tier name: ort_tier
@@ -289,13 +306,13 @@ for line from 1 to n_inputlines
             prev_speaker$ = speaker$
         endif
     endif
-    if corpus$ == "cgn"
+    if corpus$ == "cgn" or corpus$ == "grid_search"
         ali_file$ = replace$(cur_path$, "/", "_", 2) + "_" + ort_tier$ + "_" + cur_start$ + "_" + cur_end$ + ".ali"
     else
         ali_file$ = cur_path$ + "_" + ort_tier$ + "_" + cur_start$ + "_" + cur_end$ + ".ali"
     endif
-    if fileReadable(tens_path$ + "KALDI_FA_out/ifadv/" + ali_file$)
-        Read Table from tab-separated file: tens_path$ + "KALDI_FA_out/ifadv/" + ali_file$
+    if fileReadable(tens_path$ + "KALDI_FA_out/" + ali_folder$ + "/" + ali_file$)
+        Read Table from tab-separated file: tens_path$ + "KALDI_FA_out/" + ali_folder$ + "/" + ali_file$
         Rename: "ali"
     else
         Create Table with column names: "table", 1, "start dur phone"
@@ -311,6 +328,10 @@ endfor
 selectObject: "TextGrid " + wav_name$
 if corpus$ == "cgn"
     Save as text file: tens_path$ + "cgn/kaldi_annot/comp-" + pre_name$ + wav_name$ + ".awd"
-else
+elif corpus$ == "grid_search"
+    Save as text file: tens_path$ + "grid_search/kaldi_annot/" + gs_folder$ + "/" + wav_name$ + ".awd"
+elif corpus$ == "IFADVcorpus"
     Save as text file: tens_path$ + corpus$ + "/kaldi_annot/" + pre_name$ + wav_name$ + ".awd"
+else
+    Save as text file: tens_path$ + corpus$ + "/kaldi_annot/" + pair_folder$ + "/" + wav_name$ + ".awd"
 endif

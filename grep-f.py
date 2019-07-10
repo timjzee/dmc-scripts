@@ -15,6 +15,6 @@ else:
             for grepped_l in grepped_f:
                 if grep_l[:-1] in grepped_l:
                     found_lines.append(grepped_l)
-                    break
+#                    break
     for line in found_lines:
         print(line[:-1])

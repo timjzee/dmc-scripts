@@ -13,9 +13,9 @@ else
     praat_pref$ = "/home/timzee/.praat-dir/"
 endif
 
-writeFileLine: tens_path$ + "cgn_index_c_cmpr" + ".txt", "wav,chan,from,to,ort,tier"
+writeFileLine: tens_path$ + "cgn_index_o_final" + ".txt", "wav,chan,from,to,ort,tier"
 appendInfoLine: "Loading CGN index"
-Read Table from comma-separated file: tens_path$ + "old_comp-c.txt"
+Read Table from comma-separated file: tens_path$ + "cgn_index_o.txt"
 Rename: "cgn_index"
 Set column label (label): "chan", "tier"
 Append column: "chan"
@@ -141,5 +141,5 @@ for s_line from start_line to end_line
     endif
     selectObject: "Table cgn_index"
     Set numeric value: s_line, "chan", best_channel
-    appendFileLine: tens_path$ + "cgn_index_c_cmpr" + ".txt", cur_path$ + ",", best_channel, "," + c_start$ + "," + c_end$ + "," + c_ort$ + "," + c_tier$
+    appendFileLine: tens_path$ + "cgn_index_o_final" + ".txt", cur_path$ + ",", best_channel, "," + c_start$ + "," + c_end$ + "," + c_ort$ + "," + c_tier$
 endfor

@@ -5,12 +5,19 @@ import textgrid
 import decimal
 
 tz_path = "/Volumes/timzee/Docs/" if sys.platform == "darwin" else "/home/timzee/Docs/"
-tens_path = "/Volumes/tensusers/timzee/IFAcorpus/SLcorpus/Labels/validation_tim5/" if sys.platform == "darwin" else "/vol/tensusers/timzee/IFAcorpus/SLcorpus/Labels/validation_tim5/"
+tens_path = "/Volumes/tensusers/timzee/cgn/n_tests/" if sys.platform == "darwin" else "/vol/tensusers/timzee/cgn/n_tests/"
 
 phon_dict = {}
 with open(tz_path + "KALDI-CGN_phones3.txt", "r") as f:
     for line in f:
         phon_dict[line.split(",")[0]] = line[:-1].split(",")[1]
+
+print("Loading core index")
+core_index = []
+with open(tens_path + "prep_o_core.txt", "r") as f:
+    for chunk in f:
+        chunk_l = chunk[:-1].split(",")
+        core_index.append("_".join(chunk_l[0].split("/")) + "_" + chunk_l[-1] + "_" + chunk_l[2] + "_" + chunk_l[3] + ".ali")
 
 
 def processAli(ali_ls):
@@ -33,8 +40,8 @@ def processAli(ali_ls):
 
 
 def readWriteAli():
-    files_list = [line[:-1] for line in sys.stdin]
-    for fp in files_list:
+    files_list = [line[:-1] for line in sys.stdin if line[:-1] in core_index]
+    for file_n, fp in enumerate(files_list, 1):
         try:
             with open(fp, "r") as f:
                 ali_lines = f.readlines()
@@ -44,14 +51,15 @@ def readWriteAli():
             tg = processAli(ali_lines)
             if len(sys.argv) != 2:
                 # construct output path from inputfile
-                print(fp)
-                fp_speaker, fp_sentence = fp.split("/")[-1].split("_")[:2]
-                output_path = tens_path + fp_speaker + "/ASPEX/"
+                print file_n, fp
+                fp_id, tier, start, end = fp.split("/")[-1][:-4].split("_")[2:]
+                fp_sentence = start + "-" + end
+                output_path = tens_path + "validation/o/" + fp_id + "/" + tier + "/"
             else:
                 output_path = sys.argv[1]
                 fp_sentence = fp[:-4]
-            print("Writing " + fp_sentence)
-            with open(output_path + fp_sentence + "_KA1.aspex", "w") as f:
+#            print("Writing " + fp_sentence)
+            with open(output_path + fp_sentence + "_KA2.aspex", "w") as f:
                 tg.write(f, short=True)
 
 

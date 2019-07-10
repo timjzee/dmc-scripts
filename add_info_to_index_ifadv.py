@@ -77,19 +77,31 @@ with codecs.open(tz_path + "Docs/neighbour_lexicon.txt", "r", "utf-8") as f:
 
 print("Loading CELEX")
 celex = {}
-with codecs.open(tens_path + "other/DPW.CD", "r", "ascii") as f:
+with codecs.open(tens_path + "other/DPW3.CD", "r", "utf-8") as f:
     for line in f:
         l_list = line[:-1].split("\\")
         word = l_list[1]
         syls = l_list[4].split("-")
-        num_syl = len(syls)
-        for counter, syl in enumerate(syls, 1):
-            if "'" in syl:
-                stress = counter
-                break
-        celex[word] = [str(num_syl), str(stress)]
+        if syls == [""]:
+            celex[word] = ["NA", "NA"]
+        else:
+            num_syl = len(syls)
+            for counter, syl in enumerate(syls, 1):
+                if "'" in syl:
+                    stress = counter
+                    break
+            celex[word] = [str(num_syl), str(stress)]
 
-print("Loading COW")
+print("Loading COW word frequencies")
+cow_uni = {}
+with codecs.open(tens_path + "other/cow1.counts", "r", "utf-8") as f:
+    for counter, line in enumerate(f, 1):
+        wrd, freq = line[:-1].split("\t")
+        cow_uni[wrd] = freq
+        if counter % 1000000 == 0:
+            print(str((float(counter) / float(5052213)) * 100) + " %")
+
+print("Loading COW bigram frequencies")
 cow = {}
 with codecs.open(tens_path + "other/cow2.counts", "r", "utf-8") as f:
     for counter, line in enumerate(f, 1):
@@ -112,7 +124,9 @@ with codecs.open(tens_path + "IFADVcorpus/oov_conv_table_comp-ifadv.txt", "r", "
                 "meta_i": [i for i in meta_i.split(",") if i != ""],
                 "meta_l": [i for i in meta_l.split(",") if i != ""]}
 
-time_words = ["ochtends", "morgens", "middags", "avonds", "nachts", "maandags", "dinsdags", "woensdags", "donderdags", "vrijdags", "zaterdags", "zondags"]
+time_words = ["ochtends", "morgens", "middags", "avonds", "nachts", "maandags", "dinsdags", "woensdags", "donderdags", "vrijdags", "zaterdags", "zondags", "weekends", "winters", "zomers", "daags"]
+
+excl_words = ["weegs", "graads", "wils"]
 
 speakers = {}
 with codecs.open(tens_path + "IFADVcorpus/speakers.csv", "r", "utf-8") as f:
@@ -213,7 +227,10 @@ def getPOS(rt, s_ind, w_ind, wrd):
             if re.search(r"({})$".format("|".join(time_words)), wrd):
                 type_of_s = "GEN-TIME"
             else:
-                type_of_s = "GEN-POSS"
+                if re.search(r"({})$".format("|".join(excl_words)), wrd):
+                    type_of_s = "OTHER"
+                else:
+                    type_of_s = "GEN-POSS"
         else:
             type_of_s = "S"
     elif word_class == "ADJ":
@@ -329,17 +346,27 @@ def parseLine(f_path, chan, from_time, to_time, ort, tier, new_file):
             continue
         else:
             word_chunk_i = counter
+            word_phon = " ".join(seg_var)
+            num_phon = str(len(seg_var))
             subtlexwf, lg10wf = subtlex[word] if word in subtlex else ["NA", "NA"]
+            cow_word = re.sub(r"'", "", word.lower())
+            cow_wf = cow_uni[cow_word] if cow_word in cow_uni else "0"
             otan, otaf, ptan, ptaf = neighbours[word] if word in neighbours else ["NA", "NA", "NA", "NA"]
             lex_neb_num, lex_neb_freq = neighbours_lex[word] if word in neighbours_lex else ["NA", "NA"]
-            num_syl, word_stress = celex[word] if word in celex else ["NA", "NA"]
             sent_i, word_sent_i = getSentenceInfo(skp_root, speaker, from_time, to_time, word)
             found = skp_root.findall(".//tw[@ref='{}']".format(".".join([f_path.split("/")[-1], str(sent_i), str(word_sent_i)])))[0]
             parent = skp_root.findall("./tau[@ref='{}']".format(".".join([f_path.split("/")[-1], str(sent_i)])))[0]
             parent.remove(found)
             next_word = findWord(skp_root, sent_i, word_sent_i, 1)
-            bigram = word.lower() + " " + next_word.lower()
+            cow_next_word = re.sub(r"'", "", next_word.lower())
+            next_wf = cow_uni[cow_next_word] if cow_next_word in cow_uni else "0"
+            bigram = cow_word + " " + cow_next_word
             bigram_f = cow[bigram] if bigram in cow else "0"
+            prev_word = findWord(skp_root, sent_i, word_sent_i, -1)
+            cow_prev_word = re.sub(r"'", "", prev_word.lower())
+            prev_wf = cow_uni[cow_prev_word] if cow_prev_word in cow_uni else "0"
+            prev_bigram = cow_prev_word + " " + cow_word
+            prev_bigram_f = cow[prev_bigram] if prev_bigram in cow else "0"
             if counter == len(word_list):
                 next_phon = "SIL"
             else:
@@ -369,7 +396,12 @@ def parseLine(f_path, chan, from_time, to_time, ort, tier, new_file):
 #            oov_meta = getOOVmeta(chunk_id, counter)
             phon_pron, next_phon_pron, prev_phon_pron, overlap, oov_meta = getAnnotInfo(f_path, from_time, to_time, speaker, counter)
             word_pos, word_class, type_of_s = getPOS(tag_root, sent_i, word_sent_i, word)
-            output_lines.append([str(word_chunk_i), str(sent_i), str(word_sent_i), word, phon_pron, prev_phon, prev_phon_pron, next_phon, next_phon_pron, overlap, oov_meta, word_pos, word_class, type_of_s, speaker, subtlexwf, lg10wf, lex_neb_num, lex_neb_freq, ptan, ptaf, bigram_f, num_syl, word_stress])
+            num_syl, word_stress = celex[word] if word in celex else ["NA", "NA"]
+            # if no syllable info in CELEX or affixed word not in CELEX
+            if type_of_s not in ["S", "OTHER", "NA"] and num_syl == "NA" and word_stress == "NA":
+                word_stem = re.sub(r"'?s?$", "", word)
+                num_syl, word_stress = celex[word_stem] if word_stem in celex else ["NA", "NA"]
+            output_lines.append([str(word_chunk_i), str(sent_i), str(word_sent_i), word, word_phon, num_phon, phon_pron, prev_phon, prev_phon_pron, next_phon, next_phon_pron, overlap, oov_meta, word_pos, word_class, type_of_s, speaker, subtlexwf, lg10wf, lex_neb_num, lex_neb_freq, ptan, ptaf, cow_wf, next_word, next_wf, bigram_f, prev_word, prev_wf, prev_bigram_f, num_syl, word_stress])
             print(word, word_pos, type_of_s)
     return [",".join([f_path, chan, from_time, to_time, str(oov), tier] + ol) + "\n" for ol in output_lines] if len(output_lines) != 0 else []
 
@@ -383,7 +415,7 @@ def readWriteMetaData(core_num="", start_line=1, end_line=num_index_lines):
     print("Reading from file")
     f = codecs.open(input_file_path, "r", "utf-8")
     with codecs.open(tens_path + "IFADVcorpus/all_s" + core_num + ".csv", "w", "utf-8") as g:
-        output_header = "wav,chan,chunk_start,chunk_end,oov_in_chunk,tier,word_chunk_i,sent_i,word_sent_i,word_ort,phon_pron,prev_phon,prev_phon_pron,next_phon,next_phon_pron,overlap,oov_meta,word_pos,word_class,type_of_s,speaker,per_mil_wf,log_wf,lex_neb,lex_neb_freq,ptan,ptaf,bigram_f,num_syl,word_stress\n"
+        output_header = "wav,chan,chunk_start,chunk_end,oov_in_chunk,tier,word_chunk_i,sent_i,word_sent_i,word_ort,word_phon,num_phon,phon_pron,prev_phon,prev_phon_pron,next_phon,next_phon_pron,overlap,oov_meta,word_pos,word_class,type_of_s,speaker,per_mil_wf,log_wf,lex_neb,lex_neb_freq,ptan,ptaf,cow_wf,next_word,next_wf,bigram_f,prev_word,prev_wf,prev_bigram_f,num_syl,word_stress\n"
         g.write(output_header)
         old_f_path = ""
         for l_num, line in enumerate(f, 1):
@@ -412,7 +444,7 @@ def multiProcess():
     for job in jobs:
         job.join()
     # combine separate files
-    with codecs.open(tens_path + "IFADVcorpus/all_s_comb.csv", "w", encoding="utf-8") as g:
+    with codecs.open(tens_path + "IFADVcorpus/all_s_comb2.csv", "w", encoding="utf-8") as g:
         for core in range(num_cores):
             core_n = str(core + 1 + running_cores)
             with codecs.open(tens_path + "IFADVcorpus/all_s" + core_n + ".csv", "r", encoding="utf-8") as f:

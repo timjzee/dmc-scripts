@@ -8,7 +8,7 @@ import os
 
 tens_path = "/Volumes/tensusers/timzee/IFAcorpus/" if sys.platform == "darwin" else "/vol/tensusers/timzee/IFAcorpus/"
 
-input_folder = "SLcorpus/Labels/validation_tim3/"
+input_folder = "SLcorpus/Labels/validation_tim5/"
 
 speakers = os.listdir(tens_path + input_folder)
 sentences = []
@@ -26,7 +26,7 @@ for speaker in speakers:
 #            print("removing " + rm_file)
 #            os.remove(rm_file)
 
-# sentences = ["F40L/ASPEX/F40L1VI1A_"]
+# sentences = ["M40K/ASPEX/M40K1VI12A_"]
 
 line_list = []
 for sentence in sentences:
@@ -48,8 +48,8 @@ for sentence in sentences:
         cur_path, ref_path, cur_labs, ref_labs, align_dict = c
         sentence, cur_name = re.search(r"[0-9A-Z_-]+(?=\..*)", cur_path).group().split("_")
         ref_name = re.search(r"[0-9A-Z_-]+(?=\..*)", ref_path).group().split("_")[1]
-        cur_name_full = "tim" if cur_name == "TZ" else "kaldi" if cur_name == "KA" else "ifa"
-        ref_name_full = "tim" if ref_name == "TZ" else "kaldi" if ref_name == "KA" else "ifa"
+        cur_name_full = "tim" if cur_name == "KA2" else "kaldi" if cur_name == "KA" else "ifa"
+        ref_name_full = "tim" if ref_name == "KA2" else "kaldi" if ref_name == "KA" else "ifa"
         if cur_name_full == "ifa" and ref_name_full == "tim":
             comp_dict["ifa_tim"] = {"ifa_labs": cur_labs, "tim_labs": ref_labs, "diff": align_dict["AbsList"]}
         elif cur_name_full == "tim" and ref_name_full == "ifa":
@@ -81,9 +81,11 @@ for sentence in sentences:
     else:
         num_ifa_tim = len(comp_dict["ifa_tim"]["ifa_labs"])
         num_tim_kaldi = len(comp_dict["tim_kaldi"]["tim_labs"])
+        num_ifa_kaldi = len(comp_dict["ifa_kaldi"]["ifa_labs"])
         index = {"ifa_tim": 0, "tim_kaldi": 0, "ifa_kaldi": 0}
         diff_index = {"ifa_tim": 0, "ifa_kaldi": 0, "tim_kaldi": 0}
-        while (index["ifa_tim"] < num_ifa_tim) and (index["tim_kaldi"] < num_tim_kaldi):
+        while (index["ifa_tim"] < num_ifa_tim) and (index["tim_kaldi"] < num_tim_kaldi) and (index["ifa_kaldi"] < num_ifa_kaldi):
+#            print(line_list)
             line = {"ifa_label": "", "tim_label": "", "kaldi_label": ""}
             if "|" in comp_dict["ifa_tim"]["ifa_labs"][index["ifa_tim"]]:
                 if "|" in comp_dict["tim_kaldi"]["tim_labs"][index["tim_kaldi"]]:
@@ -188,9 +190,10 @@ for sentence in sentences:
                 line["tim_kaldi_diff"] = "NA"
             line_list.append(",".join([sentence, line["ifa_label"], line["tim_label"], line["kaldi_label"], str(line["ifa_tim_diff"]), str(line["ifa_kaldi_diff"]), str(line["tim_kaldi_diff"])]) + "\n")
 
-header = ["sentence", "ifa_labels", "tim_labels", "kaldi_labels", "ifa_tim_diff", "ifa_kaldi_diff", "tim_kaldi_diff\n"]
 
-with open(tens_path + "validation_data_no-exp_small.csv", "w") as f:
+header = ["sentence", "ifa_labels", "kaldi_n_labels", "kaldi_labels", "ifa_kaldi_n_diff", "ifa_kaldi_diff", "kaldi_n_kaldi_diff\n"]
+
+with open(tens_path + "validation_data_ifa-kaldi-kaldi-n_small2.csv", "w") as f:
     f.write(",".join(header))
     for l in line_list:
         f.write(l)
