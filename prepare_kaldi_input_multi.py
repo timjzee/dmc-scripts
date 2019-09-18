@@ -6,9 +6,9 @@ import os
 
 home_dir = "/Volumes/timzee/" if sys.platform == "darwin" else "/home/timzee/"
 tens_dir = "/Volumes/tensusers/timzee/" if sys.platform == "darwin" else "/vol/tensusers/timzee/"
-corpus = "grid_search"
-component = ""
-index_file = "grid_search_index.txt"
+corpus = "cgn"
+component = "k"
+index_file = "cgn_index_k_final.txt"
 lex_exp_n = 3
 enable_n_weights = "True"
 
@@ -24,7 +24,7 @@ with codecs.open(home_dir + "clst-asr-fa/alphemes.txt", "w", "utf-8") as f:
 with codecs.open(tens_dir + corpus + "/" + index_file, "r", "utf-8") as f:
     cgn_index = f.readlines()
 
-num_cores = 15
+num_cores = 60
 num_index_lines = len(cgn_index)
 core_dict = {}
 for i in range(num_cores):
@@ -86,7 +86,7 @@ x.close()
 print("Expanding Lexicon ...")
 exp_name = "lexicon_expanded.txt"
 
-subprocess.call([home_dir + "fa_files/run_lexical_expansion_new.sh", "oov_lex_comp-" + prep_name + ".txt", exp_name, str(lex_exp_n)])
+subprocess.call([home_dir + "fa_files/run_lexical_expansion_multi.sh", "oov_lex_comp-" + prep_name + ".txt", exp_name, str(lex_exp_n), str(num_cores)])
 
 enable_n_weights = enable_n_weights == "True"
 
@@ -96,7 +96,7 @@ if enable_n_weights:
     with codecs.open(home_dir + "clst-asr-fa/nnn_words.txt", "r", "utf-8") as f:
         nnn_words = [line[:-1] for line in f]
 
-    with codecs.open(home_dir + "clst-asr-fa/lexicon_gs.txt", "w", "utf-8") as g:
+    with codecs.open(home_dir + "clst-asr-fa/lexicon_" + prep_name + ".txt", "w", "utf-8") as g:
         with codecs.open(home_dir + "clst-asr-fa/" + exp_name, "r", "utf-8") as f:
             for line in f:
                 entry, pron = line[:-1].split("\t")
@@ -114,4 +114,4 @@ if enable_n_weights:
                 else:
                     g.write(entry + "\t" + pron + "\n")
 else:
-    os.rename(home_dir + "clst-asr-fa/" + exp_name, home_dir + "clst-asr-fa/lexicon_gs.txt")
+    os.rename(home_dir + "clst-asr-fa/" + exp_name, home_dir + "clst-asr-fa/lexicon_" + prep_name + ".txt")

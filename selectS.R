@@ -1,20 +1,20 @@
 if (Sys.info()[1] == "Darwin"){
-  f_path = "/Volumes/tensusers/timzee/cgn/"
+  f_path = "/Volumes/tensusers/timzee/IFADVcorpus/"
 } else {
-  f_path = "/vol/tensusers/timzee/cgn/"
+  f_path = "/vol/tensusers/timzee/IFADVcorpus/"
 }
 
 set.seed(42)
 
-s_df = read.csv(paste(f_path, "all_s_comb_o.csv", sep = ""))
+s_df = read.csv(paste(f_path, "all_s_comb_ndl.csv", sep = ""))
 # if non cgn corpus
-#s_df$language = "nl"
-#s_df$language = as.factor(s_df$language)
+s_df$language = "nl"
+s_df$language = as.factor(s_df$language)
 # if cgn component
-s_df$language = as.factor(substr(s_df$wav, 3, 4))
-s_df$cgn_comp = as.factor(substr(s_df$wav, 1, 1))
+#s_df$language = as.factor(substr(s_df$wav, 3, 4))
+#s_df$cgn_comp = as.factor(substr(s_df$wav, 1, 1))
 s_sub_df = s_df[s_df$language == "nl" 
-                & s_df$overlap == FALSE 
+#                & s_df$overlap == FALSE 
                 & (s_df$next_phon_pron != "s" | is.na(s_df$next_phon_pron)) 
                 & (s_df$next_phon_pron != "z" | is.na(s_df$next_phon_pron)) 
                 & (s_df$next_phon_pron != "S" | is.na(s_df$next_phon_pron)) 
@@ -63,11 +63,11 @@ s_sub_df = s_sub_df[rowSums(is.na(s_sub_df)) != ncol(s_sub_df),]
 #s_sub_df = s_sub_df[s_sub_df$part < s_sub_df$neg_start,]
 
 write.table(s_sub_df[ ,c("wav", "chan", "chunk_start", "chunk_end", "tier", "word_chunk_i", 
-                           "sent_i", "word_sent_i", "word_ort", "prev_phon", "prev_phon_pron",
+                           "sent_i", "word_sent_i", "word_ort", "word_phon", "num_phon", "phon_pron", "prev_phon", "prev_phon_pron",
                            "next_phon", "next_phon_pron", "word_pos", "word_class", "type_of_s",
                            "speaker", "per_mil_wf", "log_wf", "lex_neb", "lex_neb_freq", "ptan",
-                           "ptaf", "bigram_f", "num_syl", "word_stress")], 
-            file = paste(f_path, "comp-o_s.csv", sep = ""), row.names=FALSE, col.names=TRUE, sep=",", quote = FALSE)
+                           "ptaf", "cow_wf", "next_word", "next_wf", "bigram_f", "prev_word", "prev_wf", "prev_bigram_f", "num_syl", "word_stress", "ndl_boundary_diph", "other_ndl_cues")], 
+            file = paste(f_path, "ifadv_s.csv", sep = ""), row.names=FALSE, col.names=TRUE, sep=",", quote = FALSE)
 
 
 #word_t = table(s_sub_df$word_ort)

@@ -1,7 +1,7 @@
 prop$ = Report system properties
 os$ = extractWord$(prop$, newline$)
 
-corpus$ = "grid_search"
+corpus$ = "IFADVcorpus"
 if corpus$ == "IFADVcorpus"
     o_path$ = "/tensusers/timzee/IFADVcorpus/Annotations/ort/"
 elif corpus$ == "cgn" or corpus$ == "grid_search"
@@ -20,10 +20,10 @@ else
     home_path$ = "/home/timzee/"
 endif
 
-ali_folder$ = "gs03"
-oov_conv$ = "oov_conv_table_comp-grid_search.txt"
-index$ = "grid_search_index_sorted.txt"
-gs_folder$ = "gs03"
+ali_folder$ = "v2_ifadv"
+oov_conv$ = "oov_conv_table_comp-IFADVcorpus.txt"
+index$ = "ifadv_index2.txt"
+gs_folder$ = "gs20"
 
 procedure processWords
     # adjust boundaries
@@ -247,9 +247,9 @@ for line from 1 to n_inputlines
             elif corpus$ == "grid_search"
                 Save as text file: tens_path$ + "grid_search/kaldi_annot/" + gs_folder$ + "/" + wav_name$ + ".awd"
             elif corpus$ == "IFADVcorpus"
-                Save as text file: tens_path$ + corpus$ + "/kaldi_annot/" + pre_name$ + wav_name$ + ".awd"
+                Save as text file: tens_path$ + corpus$ + "/kaldi_annot/v2/" + pre_name$ + wav_name$ + ".awd"
             else
-                Save as text file: tens_path$ + corpus$ + "/kaldi_annot/" + pair_folder$ + "/" + wav_name$ + ".awd"
+                Save as text file: tens_path$ + corpus$ + "/kaldi_annot/v2/" + pair_folder$ + "/" + wav_name$ + ".awd"
             endif
             Remove
             removeObject: "TextGrid " + wav_name$ + "_ort"
@@ -331,7 +331,7 @@ if corpus$ == "cgn"
 elif corpus$ == "grid_search"
     Save as text file: tens_path$ + "grid_search/kaldi_annot/" + gs_folder$ + "/" + wav_name$ + ".awd"
 elif corpus$ == "IFADVcorpus"
-    Save as text file: tens_path$ + corpus$ + "/kaldi_annot/" + pre_name$ + wav_name$ + ".awd"
+    Save as text file: tens_path$ + corpus$ + "/kaldi_annot/v2/" + pre_name$ + wav_name$ + ".awd"
 else
-    Save as text file: tens_path$ + corpus$ + "/kaldi_annot/" + pair_folder$ + "/" + wav_name$ + ".awd"
+    Save as text file: tens_path$ + corpus$ + "/kaldi_annot/v2/" + pair_folder$ + "/" + wav_name$ + ".awd"
 endif

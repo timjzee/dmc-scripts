@@ -2,7 +2,7 @@ prop$ = Report system properties
 os$ = extractWord$(prop$, newline$)
 
 wrd_path$ = "/bigdata2/corpora2/CGN2/data/annot/text/wrd/comp-"
-gs_num$ = "gs03"
+gs_num$ = "gs20"
 
 if os$ == "macintosh"
     tens_path$ = "/Volumes/tensusers/timzee/grid_search/"

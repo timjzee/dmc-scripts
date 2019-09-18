@@ -2,7 +2,7 @@ prop$ = Report system properties
 os$ = extractWord$(prop$, newline$)
 
 
-corpus$ = "cgn"
+corpus$ = "IFADVcorpus"
 if corpus$ == "IFADVcorpus"
     o_path$ = "/tensusers/timzee/IFADVcorpus/Speech/"
 elif corpus$ == "cgn"
@@ -20,14 +20,17 @@ endif
 if os$ == "macintosh"
     tens_path$ = "/Volumes/tensusers/timzee/" + corpus$ + "/"
     audio_path$ = "/Volumes" + o_path$
+    frag_path$ = "/Volumes/tensusers/timzee/af_classification/pred_fragments/"
 else
     tens_path$ = "/vol/tensusers/timzee/" + corpus$ + "/"
     audio_path$ = "/vol" + o_path$
+    frag_path$ = "/vol/tensusers/timzee/af_classification/pred_fragments/"
 endif
 
 cog_window = 0.8
 num_spectral_slices = 4
 buffer = 0.5
+frag_buffer = 0.2
 vowels$[1] = "@"
 vowels$[2] = "A"
 vowels$[3] = "AU"
@@ -50,9 +53,11 @@ Read Table from tab-separated file: tens_path$ + "speakers.txt"
 
 Create Table with column names: "spectral_info", 0, "wav speaker speaker_sex birth_year chunk_start chunk_end word_chunk_i sent_i word_sent_i word_ort next_phon next_phon_pron prev_phon prev_phon_pron word_pos word_class type_of_s base_dur speech_rate_pron num_syl_pron mean_hnr time freq_bin Pa_per_Hz dB_per_Hz"
 
-Read Table from comma-separated file: tens_path$ + "eval_s.csv"
+Read Table from comma-separated file: tens_path$ + "all_s_comb_ndl.csv"
 table_name$ = selected$("Table")
 Append column: "s_dur"
+Append column: "s_start"
+Append column: "s_end"
 Append column: "s_cog_full"
 Append column: "s_cog_window"
 Append column: "proportion_voiced"
@@ -100,7 +105,7 @@ for s_line from 1 to n_inputlines
         elif corpus$ == "IFADVcorpus"
             Open long sound file: audio_path$ + cur_path$ + ".wav"
             wav_name$ = selected$("LongSound")
-            Read from file: tens_path$ + "kaldi_annot/" + cur_path$ + ".awd"
+            Read from file: tens_path$ + "kaldi_annot/v1/" + cur_path$ + ".awd"
         else
             pair_length = name_length - 10
             pair_folder$ = "PP" + mid$(cur_path$, 3, pair_length)
@@ -125,6 +130,12 @@ for s_line from 1 to n_inputlines
     endwhile
 
     word_int = Get high interval at time: tier, cur_start
+    interval_i_end = Get low interval at time: tier, cur_end
+    num_interval_i = interval_i_end - word_int + 1
+    # if words are not aligned
+    if chunk_i > num_interval_i
+        goto END
+    endif
     word_int -= 1
     word_counter = 0
     while word_counter != chunk_i
@@ -134,8 +145,12 @@ for s_line from 1 to n_inputlines
             word_counter += 1
         endif
     endwhile
-
     # word_int now contains the interval number for the word containing the /s/
+    oov_meta$ = Get label of interval: tier + 1, word_int
+    # if words not aligned and chunk consists of a single word
+    if oov_meta$ = "unintelligible"
+        goto END
+    endif
     # get index of s
     word_end = Get end time of interval: tier, word_int
     s_int = Get low interval at time: tier + 3, word_end
@@ -253,6 +268,8 @@ for s_line from 1 to n_inputlines
     # voorlopig zit er nog geen reductie regel in het lexicon die ervoor zorgt dat s een z wordt
     if s_lab$ != "s"
         s_duration$ = "NA"
+        s_start$ = "NA"
+        s_end$ = "NA"
         s_cog_window$ = "NA"
         s_cog_full$ = "NA"
         proportion_voiced$ = "NA"
@@ -282,6 +299,22 @@ for s_line from 1 to n_inputlines
         s_cog_window = Get centre of gravity: 1
         s_cog_window$ = string$(s_cog_window)
         Remove
+        removeObject: "Sound " + wav_name$ + "_ch" + c_channel$
+        removeObject: "Sound " + wav_name$
+        # extract fragment for af classification
+        selectObject: "LongSound " + wav_name$
+        frag_start = s_start - frag_buffer
+        frag_end = s_end + frag_buffer
+        Extract part: frag_start, frag_end, "yes"
+        Extract one channel: c_channel
+        samp_freq = Get sampling frequency
+        if samp_freq != 16000
+            Resample: 16000, 50
+        endif
+        Save as WAV file: frag_path$ + "ifadv/" + wav_name$ + "_" + c_channel$ + "_" + fixed$(frag_start, 3) + "_" + fixed$(frag_end, 3) + ".wav"
+        if samp_freq != 16000
+            removeObject: "Sound " + wav_name$ + "_ch" + c_channel$ + "_16000"
+        endif
         removeObject: "Sound " + wav_name$ + "_ch" + c_channel$
         removeObject: "Sound " + wav_name$
         selectObject: "LongSound " + wav_name$
@@ -498,9 +531,10 @@ for s_line from 1 to n_inputlines
     endif
     # now lets add duration, voicing and cog data to table
 #    appendInfoLine: s_duration, " ", s_cog_full, " ", s_cog_window, " ", proportion_voiced
-    label END
     selectObject: "Table " + table_name$
     Set string value: s_line, "s_dur", s_duration$
+    Set string value: s_line, "s_start", string$(s_start)
+    Set string value: s_line, "s_end", string$(s_end)
     Set string value: s_line, "s_cog_full", s_cog_full$
     Set string value: s_line, "s_cog_window", s_cog_window$
     Set string value: s_line, "proportion_voiced", proportion_voiced$
@@ -516,6 +550,7 @@ for s_line from 1 to n_inputlines
     Set string value: s_line, "prev_phon_dur", prev_phon_dur$
     Set string value: s_line, "prev_mention", prev_mention$
     Set string value: s_line, "phrase_final", phrase_final$
+    label END
 endfor
 
 selectObject: "Table " + table_name$
