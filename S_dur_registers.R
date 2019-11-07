@@ -557,14 +557,16 @@ plot(effect("type_of_s:register", intercepts))
 # normal model
 
 intercepts_cog = lmer(s_cog_window ~ PC1 + PC2 + PC3 + PC4
-                  + next_phon_class + prev_mention + phrase_final
+                  + next_phon_class + prev_mention 
+                  # + phrase_final
                   + type_of_s*register
                   + (1 | speaker) + (1 | word_ort),
                   control = lmerControl(optCtrl = list(maxfun = 1e6)),
                   data=s_dur)
 
 intercepts_cog2 = lmer(s_cog_window ~ PC1 + PC2 + PC3 + PC4
-                   + next_phon_class + prev_mention + phrase_final
+                   + next_phon_class + prev_mention 
+                   # + phrase_final
                    + type_of_s + register
                    + (1 | speaker) + (1 | word_ort),
                    control = lmerControl(optCtrl = list(maxfun = 1e6)),
@@ -575,7 +577,8 @@ plot(effect("type_of_s:register", intercepts_cog, x.var = "type_of_s"), multilin
      layout = c(3,1), alternating = F, rotx = 45, ci.style = "bars", main = "")
 
 intercepts_cog_conv = lmer(s_cog_window ~ PC1 + PC2 + PC3 + PC4
-                       + next_phon_class + prev_mention + phrase_final
+                       + next_phon_class + prev_mention 
+                       #+ phrase_final
                        + type_of_s
                        + (1 | speaker) + (1 | word_ort),
                        control = lmerControl(optCtrl = list(maxfun = 1e6)),
@@ -586,7 +589,8 @@ plot(effect("type_of_s", intercepts_cog_conv), main = "Conversation")
 lsmeans(intercepts_cog_conv, "pairwise"~type_of_s)
 
 intercepts_cog_news = lmer(s_cog_window ~ PC1 + PC2 + PC3 + PC4
-                       + next_phon_class + prev_mention + phrase_final
+                       + next_phon_class + prev_mention 
+                       #+ phrase_final
                        + type_of_s
                        + (1 | speaker) + (1 | word_ort),
                        control = lmerControl(optCtrl = list(maxfun = 1e6)),

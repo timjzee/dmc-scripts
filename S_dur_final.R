@@ -298,6 +298,23 @@ interest_news = lm(dur_resid ~ type_of_s,
                    data=s_dur_trim[s_dur_trim$register == "news",])
 summary(interest_news)
 
+# back transform residuals:
+s_dur_trim$dur_pred_lm = predict(interest)
+s_dur_trim$dur_pred_lm_back = s_dur_trim$s_dur_nn - exp(s_dur_trim$log_s_dur - s_dur_trim$dur_pred_lm)
+# Get means:
+# note: first splitting dataset and using predictions from register-specific models yield same dur_pred_lm
+mean_conv_s = mean(s_dur_trim[s_dur_trim$register == "conversation" & s_dur_trim$type_of_s == "S",]$dur_pred_lm_back)
+mean_conv_pl = mean(s_dur_trim[s_dur_trim$register == "conversation" & s_dur_trim$type_of_s == "PL",]$dur_pred_lm_back)
+mean_stor_s = mean(s_dur_trim[s_dur_trim$register == "stories" & s_dur_trim$type_of_s == "S",]$dur_pred_lm_back)
+mean_stor_pl = mean(s_dur_trim[s_dur_trim$register == "stories" & s_dur_trim$type_of_s == "PL",]$dur_pred_lm_back)
+mean_news_s = mean(s_dur_trim[s_dur_trim$register == "news" & s_dur_trim$type_of_s == "S",]$dur_pred_lm_back)
+mean_news_pl = mean(s_dur_trim[s_dur_trim$register == "news" & s_dur_trim$type_of_s == "PL",]$dur_pred_lm_back)
+
+mean_conv_s - mean_conv_pl
+mean_news_s - mean_news_pl
+# very small (2ms), but keep in mind that two-staged approach allows covariates to eat up as much variance as they can
+# also having to exclude /s/s which were difficult to segment means that we can not analyse the complete range of reduction
+
 # Centre of Gravity
 
 control_cog = lmer(s_cog_window ~ PC1 + PC2 + PC3 + PC4
@@ -348,3 +365,5 @@ summary(interest_cog_stor)
 interest_cog_news = lm(cog_resid ~ type_of_s,
                        data=s_cog_trim[s_cog_trim$register == "news",])
 summary(interest_cog_news)
+
+# again differences are small (~25Hz), but two staged approach, and only 0-4000Hz range
