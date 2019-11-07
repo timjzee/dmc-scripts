@@ -1,7 +1,7 @@
 prop$ = Report system properties
 os$ = extractWord$(prop$, newline$)
 
-corpus$ = "IFADVcorpus"
+corpus$ = "cgn"
 if corpus$ == "IFADVcorpus"
     o_path$ = "/tensusers/timzee/IFADVcorpus/Annotations/ort/"
 elif corpus$ == "cgn" or corpus$ == "grid_search"
@@ -20,10 +20,10 @@ else
     home_path$ = "/home/timzee/"
 endif
 
-ali_folder$ = "v2_ifadv"
-oov_conv$ = "oov_conv_table_comp-IFADVcorpus.txt"
-index$ = "ifadv_index2.txt"
-gs_folder$ = "gs20"
+ali_folder$ = "v2_comp-o"
+oov_conv$ = "oov_conv_table_comp-o.txt"
+index$ = "cgn_index_o_final.txt"
+gs_folder$ = "gs24"
 
 procedure processWords
     # adjust boundaries
@@ -243,7 +243,7 @@ for line from 1 to n_inputlines
         if line != 1
             selectObject: "TextGrid " + wav_name$
             if corpus$ == "cgn"
-                Save as text file: tens_path$ + "cgn/kaldi_annot/comp-" + pre_name$ + wav_name$ + ".awd"
+                Save as text file: tens_path$ + "cgn/kaldi_annot/v2/comp-" + pre_name$ + wav_name$ + ".awd"
             elif corpus$ == "grid_search"
                 Save as text file: tens_path$ + "grid_search/kaldi_annot/" + gs_folder$ + "/" + wav_name$ + ".awd"
             elif corpus$ == "IFADVcorpus"
@@ -327,7 +327,7 @@ endfor
 
 selectObject: "TextGrid " + wav_name$
 if corpus$ == "cgn"
-    Save as text file: tens_path$ + "cgn/kaldi_annot/comp-" + pre_name$ + wav_name$ + ".awd"
+    Save as text file: tens_path$ + "cgn/kaldi_annot/v2/comp-" + pre_name$ + wav_name$ + ".awd"
 elif corpus$ == "grid_search"
     Save as text file: tens_path$ + "grid_search/kaldi_annot/" + gs_folder$ + "/" + wav_name$ + ".awd"
 elif corpus$ == "IFADVcorpus"

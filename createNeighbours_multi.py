@@ -23,6 +23,7 @@ with codecs.open(tz_path + "Docs/KALDI-CGN-IPA-WORD.txt", "r", "utf-8") as f:
             l = i.split(",")
             kaldi2ipa[l[0]] = l[2]
 
+# replace with COW frequencies
 print("Loading SUBTLEX")
 subtlex = {}
 with codecs.open(tens_path + "other/SUBTLEX-NL.txt", "r", "utf-8") as f:

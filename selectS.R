@@ -1,12 +1,12 @@
 if (Sys.info()[1] == "Darwin"){
-  f_path = "/Volumes/tensusers/timzee/IFADVcorpus/"
+  f_path = "/Volumes/tensusers/timzee/cgn/"
 } else {
-  f_path = "/vol/tensusers/timzee/IFADVcorpus/"
+  f_path = "/vol/tensusers/timzee/cgn/"
 }
 
 set.seed(42)
 
-s_df = read.csv(paste(f_path, "all_s_comb_ndl.csv", sep = ""))
+s_df = read.csv(paste(f_path, "all_s_comb_c_ndl.csv", sep = ""))
 # if non cgn corpus
 s_df$language = "nl"
 s_df$language = as.factor(s_df$language)
@@ -67,7 +67,7 @@ write.table(s_sub_df[ ,c("wav", "chan", "chunk_start", "chunk_end", "tier", "wor
                            "next_phon", "next_phon_pron", "word_pos", "word_class", "type_of_s",
                            "speaker", "per_mil_wf", "log_wf", "lex_neb", "lex_neb_freq", "ptan",
                            "ptaf", "cow_wf", "next_word", "next_wf", "bigram_f", "prev_word", "prev_wf", "prev_bigram_f", "num_syl", "word_stress", "ndl_boundary_diph", "other_ndl_cues")], 
-            file = paste(f_path, "ifadv_s.csv", sep = ""), row.names=FALSE, col.names=TRUE, sep=",", quote = FALSE)
+            file = paste(f_path, "comp-c_s_ndl.csv", sep = ""), row.names=FALSE, col.names=TRUE, sep=",", quote = FALSE)
 
 
 #word_t = table(s_sub_df$word_ort)

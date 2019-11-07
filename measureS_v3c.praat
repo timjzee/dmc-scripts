@@ -20,11 +20,11 @@ endif
 if os$ == "macintosh"
     tens_path$ = "/Volumes/tensusers/timzee/" + corpus$ + "/"
     audio_path$ = "/Volumes" + o_path$
-    frag_path$ = "/Volumes/tensusers/timzee/af_classification/pred_textgrids/corp_large/"
+    frag_path$ = "/Volumes/tensusers/timzee/af_classification/pred_textgrids/corp_300/"
 else
     tens_path$ = "/vol/tensusers/timzee/" + corpus$ + "/"
     audio_path$ = "/vol" + o_path$
-    frag_path$ = "/vol/tensusers/timzee/af_classification/pred_textgrids/corp_large/"
+    frag_path$ = "/vol/tensusers/timzee/af_classification/pred_textgrids/corp_300/"
 endif
 
 #cog_window = 0.8
@@ -630,6 +630,6 @@ endfor
 #appendInfoLine: "Execution time: ", time2 - time1, " sec."
 
 selectObject: "Table " + table_name$
-Save as comma-separated file: tens_path$ + table_name$ + "_nn_corp_large4.csv"
+Save as comma-separated file: tens_path$ + table_name$ + "_nn_corp_300.csv"
 #selectObject: "Table spectral_info"
 #Save as comma-separated file: tens_path$ + table_name$ + "_dynamic.csv"

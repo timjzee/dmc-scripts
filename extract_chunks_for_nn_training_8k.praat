@@ -5,7 +5,7 @@ if corpus$ == "IFADVcorpus"
     a_path$ = "/tensusers/timzee/IFADVcorpus/Speech/"
     o_path$ = "/tensusers/timzee/IFADVcorpus/Annotations/ort/"
 elif corpus$ == "cgn"
-    component$ = "o"
+    component$ = "d"
     o_path$ = "/bigdata2/corpora2/CGN2/data/annot/text/ort/comp-"
     if component$ == "c" or component$ == "d"
         a_path$ = "/tensusers/timzee/cgn/mono_comp-"
@@ -38,7 +38,7 @@ if corpus$ == "IFADVcorpus"
     Read Table from comma-separated file: tens_path$ + "/speakers.csv"
 endif
 
-Read Table from comma-separated file: tens_path$ + "cgn_index_o_final.txt"
+Read Table from comma-separated file: tens_path$ + "cgn_index_d_mono2.txt"
 table_name$ = selected$("Table")
 
 wav_name$ = ""
@@ -149,12 +149,12 @@ for s_line from 1 to n_inputlines
     Extract part: cur_start, cur_end, "yes"
     Extract one channel: c_channel
     sample_f = Get sampling frequency
-    if sample_f != 16000
-        Resample: 16000, 50
+    if sample_f != 8000
+        Resample: 8000, 50
     endif
     Save as WAV file: frag_path$ + replace$(cur_path$, "/", "_", 0) + "_" + cur_start$ + "_" + cur_end$ + ".wav"
-    if sample_f != 16000
-        removeObject: "Sound " + wav_name$ + "_ch" + c_channel$ + "_16000"
+    if sample_f != 8000
+        removeObject: "Sound " + wav_name$ + "_ch" + c_channel$ + "_8000"
     endif
     removeObject: "Sound " + wav_name$ + "_ch" + c_channel$
     removeObject: "Sound " + wav_name$

@@ -18,6 +18,7 @@ tens_path = "/Volumes/tensusers/timzee/af_classification/" if sys.platform == "d
 num_cores = 30
 
 afs = ["s"]
+corpus = "8k"
 corpora = ["cgn-a", "cgn-c", "cgn-d", "cgn-k", "cgn-o", "ifadv", "ecsd", "ifa"]
 
 n_classes = {"s": 2}
@@ -38,8 +39,8 @@ pd.options.display.max_rows = 10
 pd.options.display.float_format = '{:.1f}'.format
 
 print("Loading data...")
-train_data = pd.read_csv(tens_path + "Bootstrap_s_large_train_labs.csv", sep=",", header=None)
-valid_data = pd.read_csv(tens_path + "Bootstrap_s_large_valid_labs.csv", sep=",", header=None)
+train_data = pd.read_csv(tens_path + "Bootstrap_s_large_" + corpus + "_train_labs.csv", sep=",", header=None)
+valid_data = pd.read_csv(tens_path + "Bootstrap_s_large_" + corpus + "_valid_labs.csv", sep=",", header=None)
 train_n = train_data.shape[0]
 # train_n = 20000
 # assuming label is in final columns
@@ -177,7 +178,7 @@ def train_nn_classification_model(learning_rate, steps, batch_size, hidden_units
     # Create a DNNClassifier object.
     my_optimizer = tf.train.AdagradOptimizer(learning_rate=learning_rate)
     my_optimizer = tf.contrib.estimator.clip_gradients_by_norm(my_optimizer, 5.0)
-    classifier = tf.estimator.DNNClassifier(feature_columns=feature_columns, n_classes=n_classes[af], hidden_units=hidden_units, optimizer=my_optimizer, config=tf.contrib.learn.RunConfig(keep_checkpoint_max=1), model_dir=tens_path + af + "_model_large")
+    classifier = tf.estimator.DNNClassifier(feature_columns=feature_columns, n_classes=n_classes[af], hidden_units=hidden_units, optimizer=my_optimizer, config=tf.contrib.learn.RunConfig(keep_checkpoint_max=1), model_dir=tens_path + af + "_" + corpus + "_model")
     # Train the model, but do so inside a loop so that we can periodically assess
     # loss metrics.
     print("Training model...")
@@ -222,7 +223,7 @@ def train_nn_classification_model(learning_rate, steps, batch_size, hidden_units
     plt.show()
     # Output a plot of the confusion matrix.
     cm = metrics.confusion_matrix(validation_targets, final_predictions)
-    with open(tens_path + af + "_large_validation_cm.csv", "w") as f:
+    with open(tens_path + af + "_" + corpus + "_validation_cm.csv", "w") as f:
         np.savetxt(f, cm.astype(int), fmt='%d', delimiter=",", comments="", header=",".join([feature_dict[af][i] for i in range(n_classes[af])]))
     # Normalize the confusion matrix by row (i.e by the number of samples
     # in each class).
@@ -251,8 +252,8 @@ classifier = train_nn_classification_model(
     steps=num_steps,
     batch_size=batch_size,
     hidden_units=[300],
-    training_file=tens_path + "Bootstrap_s_large_train.csv",
-    validation_file=tens_path + "Bootstrap_s_large_valid.csv")
+    training_file=tens_path + "Bootstrap_s_large_" + corpus + "_train.csv",
+    validation_file=tens_path + "Bootstrap_s_large_" + corpus + "_valid.csv")
 
 t_end = time.time()
 print("Execution time: ", t_end - t_start)

@@ -92,6 +92,10 @@ while word_counter > window_start
             word_counter = window_start
         endif
     endif
+    # handle intervals at start of file
+    if cur_i <= 1
+        word_counter = window_start
+    endif
 endwhile
 
 if index(pre_boundary$, "_") != 0
@@ -109,8 +113,9 @@ endif
 # get post-boundary phones
 word_counter = 0
 cur_i = interval_i
+max_i = Get number of intervals: tier
 post_boundary$ = ""
-while word_counter < window_end
+while (word_counter < window_end) and (cur_i < max_i)
     cur_i = cur_i + 1
     i_lab$ = Get label of interval: tier, cur_i
     if i_lab$ != ""

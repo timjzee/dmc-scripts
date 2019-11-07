@@ -11,7 +11,7 @@ tens_dir = "/Volumes/tensusers/timzee/" if sys.platform == "darwin" else "/vol/t
 
 print("Loading KALDI lexicon")
 kaldi_lex = {}
-with codecs.open(home_dir + "clst-asr-fa/lexicon_from_MARIO.txt", "r", "utf-8") as f:
+with codecs.open(home_dir + "clst-asr-fa/lexicon_from_MARIO_mod.txt", "r", "utf-8") as f:
     for line in f:
         entry, pron = line[:-1].split("\t")
         if entry[-2:] in ["en", "ën"] and pron[-1] == "@":
@@ -76,6 +76,7 @@ def mark_final_n(wrd):
 
 nnn_words = []
 oov_lex = {}
+kaldi_lex_used = {}
 conversion_table = {}
 cgn_codes = {"*v": "foreign_word", "*d": "dialect_word", "*z": "accented", "*n": "neologism", "*t": "interjection", "*a": "incomplete", "*u": "mispronunciation", "*x": "unclear"}
 compound_lex = {}
@@ -123,6 +124,7 @@ for counter, l in enumerate(cgn_index[from_l - 1:to_l], 1):
                 sw_i += 1 if sw_counter > 1 else 0
                 sw_clean = re.sub(r'\*[a-z]', '', sw)
                 if sw_clean.lower() in kaldi_lex:
+                    kaldi_lex_used[sw_clean.lower()] = kaldi_lex[sw_clean.lower()]
                     new_words.append(mark_final_n(sw_clean.lower()))
                     sw_l.append(sw_clean.lower())
                     si_l.append(str(sw_i))
@@ -146,6 +148,7 @@ for counter, l in enumerate(cgn_index[from_l - 1:to_l], 1):
                         sw_i += 1 if ssw_counter > 1 else 0
                         ssw_clean = re.sub(r'\*[a-z]', '', ssw)
                         if ssw_clean.lower() in kaldi_lex:
+                            kaldi_lex_used[ssw_clean.lower()] = kaldi_lex[ssw_clean.lower()]
                             new_words.append(mark_final_n(ssw_clean.lower()))
                             sw_l.append(ssw_clean.lower())
                             si_l.append(str(sw_i))
@@ -158,6 +161,7 @@ for counter, l in enumerate(cgn_index[from_l - 1:to_l], 1):
                                 sw_i += 1 if sssw_counter > 1 else 0
                                 sssw_clean = re.sub(r'\*[a-z]', '', sssw)
                                 if sssw_clean.lower() in kaldi_lex:
+                                    kaldi_lex_used[sssw_clean.lower()] = kaldi_lex[sssw_clean.lower()]
                                     new_words.append(mark_final_n(sssw_clean.lower()))
                                     sw_l.append(sssw_clean.lower())
                                     si_l.append(str(sw_i))
@@ -177,6 +181,7 @@ for counter, l in enumerate(cgn_index[from_l - 1:to_l], 1):
                                         sw_i += 1 if ssssw_counter > 1 else 0
                                         ssssw_clean = re.sub(r'\*[a-z]', '', ssssw)
                                         if ssssw_clean.lower() in kaldi_lex:
+                                            kaldi_lex_used[ssssw_clean.lower()] = kaldi_lex[ssssw_clean.lower()]
                                             new_words.append(mark_final_n(ssssw_clean.lower()))
                                             sw_l.append(ssssw_clean.lower())
                                             si_l.append(str(sw_i))
@@ -188,6 +193,7 @@ for counter, l in enumerate(cgn_index[from_l - 1:to_l], 1):
                                                 if len(num_list) > 1:   # if there are leading zeroes
                                                     assert len(num_list) == 2
                                                     for zero in num_list[0]:
+                                                        kaldi_lex_used["nul"] = kaldi_lex["nul"]
                                                         new_words.append("nul")
                                                         sw_l.append("nul")
                                                         si_l.append(str(sw_i))
@@ -200,6 +206,7 @@ for counter, l in enumerate(cgn_index[from_l - 1:to_l], 1):
                                                 for n_counter, n in enumerate(numbers, 1):
                                                     sw_i += 1 if n_counter > 1 else 0
                                                     if n in kaldi_lex:
+                                                        kaldi_lex_used[n] = kaldi_lex[n]
                                                         new_words.append(mark_final_n(n))
                                                         sw_l.append(n)
                                                         si_l.append(str(sw_i))
@@ -325,6 +332,10 @@ f.close()
 with codecs.open(home_dir + "clst-asr-fa/oov_lex{}.txt".format(core_num), "w", "utf-8") as f:
     for key in oov_lex:
         f.write(key + "\t" + oov_lex[key] + "\n")
+
+with codecs.open(home_dir + "clst-asr-fa/kaldi_lex_used{}.txt".format(core_num), "w", "utf-8") as f:
+    for key in kaldi_lex_used:
+        f.write(key + "\t" + kaldi_lex_used[key] + "\n")
 
 with codecs.open(home_dir + "clst-asr-fa/nnn_words{}.txt".format(core_num), "w", "utf-8") as f:
     for wrd in nnn_words:

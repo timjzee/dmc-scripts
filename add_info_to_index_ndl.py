@@ -28,14 +28,15 @@ del entitydefs["quot"]
 del entitydefs["lt"]
 del entitydefs["gt"]
 
-input_file_path = tens_path + "cgn/fa_eval_index.txt"
+component = "c"
+input_file_path = tens_path + "cgn/cgn_index_c_mono_nl2.txt"
 with codecs.open(input_file_path, "r", "utf-8") as f:
     input_file = f.readlines()
 
-running_cores = 7
+running_cores = 68
 
 # Do not run with more than 5 cores.
-num_cores = 7
+num_cores = 5
 num_index_lines = len(input_file)
 # num_index_lines = 1465779
 core_dict = {}
@@ -115,7 +116,7 @@ with codecs.open(tens_path + "other/cow2.counts", "r", "utf-8") as f:
 
 print("Loading OOV Conversion Table")
 oov_conv = {}
-with codecs.open(tens_path + "cgn/oov_conv_table_comp-oa.txt", "r", "utf-8") as f:
+with codecs.open(tens_path + "cgn/oov_conv_table_comp-" + component + ".txt", "r", "utf-8") as f:
     for counter, line in enumerate(f, 1):
         if counter > 1:
             c_key, input_w, orig_w, input_i, orig_i, meta_i, meta_l = line[:-1].split("\t")
@@ -157,7 +158,8 @@ def getSpeaker(fp, tier):
 
 def checkCanonical(w, position, chunk_id):
     """position should be either 0 (first sub-word) or -1 (final sub-word)"""
-    nw = re.sub(r'\*[a-z]', '', re.sub(r"[!?.,:;\t\n\r]*", "", w.lower())).strip("-&'")
+    nw = re.sub(r'\*[a-z]', '', re.sub(r"[!?.,:;\t\n\r]*", "", w.lower())).strip("-'")
+    nw = "en" if nw == "&" else nw
 #    if re.search(r"\*[^ ]*", w):
 #        return "NA"
     if nw in kaldi_lex:
@@ -177,14 +179,14 @@ def checkCanonical(w, position, chunk_id):
 
 def getAnnotInfo(orig_path, c_start, c_end, spkr, word_index):
     """Calls a Praat script which finds the chunk and returns info on phonetic context."""
-    output = subprocess.check_output([tz_path + "praat_nogui", "--run", tz_path + "GitHub/dmc-scripts/getAnnotInfo.praat", orig_path, c_start, c_end, spkr, str(word_index), "cgn/kaldi_annot/comp-"]).decode("utf-8")[:-1].split(" ")
+    output = subprocess.check_output([tz_path + "praat_nogui", "--run", tz_path + "GitHub/dmc-scripts/getAnnotInfo.praat", orig_path, c_start, c_end, spkr, str(word_index), "cgn/kaldi_annot/v2/comp-"]).decode("utf-8")[:-1].split(" ")
 #    print(output)
     return output
 
 
 def getNDLphons(orig_path, c_start, c_end, spkr, word_index, wndw_start, wndw_end):
     """Calls a Praat script which finds the chunk and returns info on phonetic context."""
-    output = subprocess.check_output([tz_path + "praat_nogui", "--run", tz_path + "GitHub/dmc-scripts/getNDLphons.praat", orig_path, c_start, c_end, spkr, str(word_index), str(wndw_start), str(wndw_end), "cgn/kaldi_annot/comp-"]).decode("utf-8")[:-1].split(" ")
+    output = subprocess.check_output([tz_path + "praat_nogui", "--run", tz_path + "GitHub/dmc-scripts/getNDLphons.praat", orig_path, c_start, c_end, spkr, str(word_index), str(wndw_start), str(wndw_end), "cgn/kaldi_annot/v2/comp-"]).decode("utf-8")[:-1].split(" ")
 #    print(output)
     return output
 
@@ -201,7 +203,7 @@ def getSentenceInfo(rt, spkr, from_t, to_t, wrd):
                         if h.unescape(word.attrib["w"]) == wrd:
                             candidates.append((int(word.attrib["ref"].split(".")[1]), int(word.attrib["ref"].split(".")[2])))
     # in case later sentence is positioned above earlier sentence in xml
-    match = sorted(candidates)[0]
+    match = sorted(candidates)[0] if len(candidates) > 0 else (None, None)
     return match
 
 
@@ -275,10 +277,11 @@ def phones2diphones(phone_list):
     return diphones
 
 
-def getNDLinfo(rt, s_index, w_in_sent, orig_path, c_start, c_end, spkr, w_in_chun):
+def getNDLinfo(rt, s_index, w_in_sent, orig_path, c_start, c_end, spkr, w_in_chun, final_phon):
     file_name = rt.attrib["ref"]
     window = []
     wndw_start = 100
+    sem = "."
     for i in range(w_in_sent + ndl_window_start, w_in_sent + ndl_window_end + 1):
         matches = rt.findall(".//pw[@ref='{}']".format(file_name + "." + str(s_index) + "." + str(i)))
         if len(matches) != 0:
@@ -286,25 +289,29 @@ def getNDLinfo(rt, s_index, w_in_sent, orig_path, c_start, c_end, spkr, w_in_chu
             if wndw_start == 100:
                 wndw_start = i - w_in_sent
             w = matches[0].attrib["w"]
-            window.append('"' + w + '"')
+            window.append(sem + w + sem)
             wndw_end = i - w_in_sent
             if i == w_in_sent:
-                outcome1 = '"' + w + '"'
+                outcome1 = sem + w + sem
                 lem = matches[0].attrib["lem"]
                 pos = matches[0].attrib["pos"]
                 w_class = re.search(r".+(?=\()", pos).group()
                 pos_attr = re.search(r"(?<=\().*(?=\))", pos).group()
                 if w_class == "WW":
-                    outcome3 = "NONMORPH" if pos_attr == "pv,tgw,ev" else ""
+                    outcome3 = "NONMORPH" if (pos_attr == "pv,tgw,ev" and final_phon == segment) else ""  # added final_phon constraint to mimick Tomaschek
+#                    outcome3 = "NONMORPH" if pos_attr == "pv,tgw,ev" else ""
                 elif w_class == "N":
                     attr_list = pos_attr.split(",")
-                    if "mv" in attr_list:
+#                    if "mv" in attr_list:
+                    if "mv" in attr_list and final_phon == segment:  # added final_phon constraint to mimick Tomaschek
                         outcome3 = "PL"
                     else:
-                        outcome3 = "NONMORPH" if w == lem else ""
+                        outcome3 = "NONMORPH" if (w == lem and final_phon == segment) else ""  # added final_phon constraint to mimick Tomaschek
+#                        outcome3 = "NONMORPH" if w == lem else ""
                 else:
-                    outcome3 = "NONMORPH" if w == lem else ""
-                outcome2 = '"' + lem + '"' if w != lem else ""
+                    outcome3 = "NONMORPH" if (w == lem and final_phon == segment) else ""  # added final_phon constraint to mimick Tomaschek
+#                    outcome3 = "NONMORPH" if w == lem else ""
+                outcome2 = sem + lem + sem if w != lem else ""
 #    print(w_in_chun, wndw_start, wndw_end)
     pre_phons, boundary, post_phons = getNDLphons(orig_path, c_start, c_end, spkr, w_in_chun, wndw_start, wndw_end)
     print(pre_phons, boundary, post_phons)
@@ -408,7 +415,7 @@ def parseLine(f_path, chan, from_time, to_time, ort, tier, new_file):
         found = skp_root.findall(".//tw[@ref='{}']".format(".".join([f_path.split("/")[-1], str(sent_i), str(word_sent_i)])))[0]
         parent = skp_root.findall("./tau[@ref='{}']".format(".".join([f_path.split("/")[-1], str(sent_i)])))[0]
         parent.remove(found)
-        cue_lexomes, pre_diphones, boundary_diphones, post_diphones, lexome1, lexome2, lexome3 = getNDLinfo(tag_root, sent_i, word_sent_i, f_path, from_time, to_time, speaker, counter)
+        cue_lexomes, pre_diphones, boundary_diphones, post_diphones, lexome1, lexome2, lexome3 = getNDLinfo(tag_root, sent_i, word_sent_i, f_path, from_time, to_time, speaker, counter, seg_var[-1] if seg_var else None)
         if not seg_var:
             oov = True
         elif seg_var[-1] != segment:
@@ -533,14 +540,14 @@ def multiProcess():
     for job in jobs:
         job.join()
     # combine separate files
-    with codecs.open(tens_path + "cgn/all_s_comb_eval_ndl.csv", "w", encoding="utf-8") as g:
+    with codecs.open(tens_path + "cgn/all_s_comb_" + component + "2_ndl.csv", "w", encoding="utf-8") as g:
         for core in range(num_cores):
             core_n = str(core + 1 + running_cores)
             with codecs.open(tens_path + "cgn/all_s" + core_n + ".csv", "r", encoding="utf-8") as f:
                 for fln, f_line in enumerate(f, 1):
                     if not (core > 0 and fln == 1):
                         g.write(f_line)
-    with codecs.open(tens_path + "cgn/ndl_eval.csv", "w", encoding="utf-8") as g:
+    with codecs.open(tens_path + "cgn/ndl_comp-" + component + "2.csv", "w", encoding="utf-8") as g:
         for core in range(num_cores):
             core_n = str(core + 1 + running_cores)
             with codecs.open(tens_path + "cgn/ndl" + core_n + ".csv", "r", encoding="utf-8") as f:

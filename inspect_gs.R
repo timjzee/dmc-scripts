@@ -24,6 +24,11 @@ gs17 = read.csv(paste(f_path, "gs17_measures.csv", sep = ""))
 gs18 = read.csv(paste(f_path, "gs18_measures.csv", sep = ""))
 gs19 = read.csv(paste(f_path, "gs19_measures.csv", sep = ""))
 gs20 = read.csv(paste(f_path, "gs20_measures.csv", sep = ""))
+gs21 = read.csv(paste(f_path, "gs21_measures.csv", sep = ""))
+gs22 = read.csv(paste(f_path, "gs22_measures.csv", sep = ""))
+gs23 = read.csv(paste(f_path, "gs23_measures.csv", sep = ""))
+gs24 = read.csv(paste(f_path, "gs24_measures.csv", sep = ""))
+
 
 
 mean_dist = c(gs01["Mean Distance", "combined"], gs02["Mean Distance", "combined"],
@@ -35,7 +40,9 @@ mean_dist = c(gs01["Mean Distance", "combined"], gs02["Mean Distance", "combined
               gs13["Mean Distance", "combined"], gs14["Mean Distance", "combined"], 
               gs15["Mean Distance", "combined"], gs16["Mean Distance", "combined"], 
               gs17["Mean Distance", "combined"], gs18["Mean Distance", "combined"], 
-              gs19["Mean Distance", "combined"], gs20["Mean Distance", "combined"])
+              gs19["Mean Distance", "combined"], gs20["Mean Distance", "combined"], 
+              gs21["Mean Distance", "combined"], gs22["Mean Distance", "combined"], 
+              gs23["Mean Distance", "combined"], gs24["Mean Distance", "combined"])
 sil_F1 = c(gs01["SIL F-measure", "combined"], gs02["SIL F-measure", "combined"],
            gs03["SIL F-measure", "combined"], gs04["SIL F-measure", "combined"],  
            gs05["SIL F-measure", "combined"], gs06["SIL F-measure", "combined"], 
@@ -45,7 +52,9 @@ sil_F1 = c(gs01["SIL F-measure", "combined"], gs02["SIL F-measure", "combined"],
            gs13["SIL F-measure", "combined"], gs14["SIL F-measure", "combined"], 
            gs15["SIL F-measure", "combined"], gs16["SIL F-measure", "combined"], 
            gs17["SIL F-measure", "combined"], gs18["SIL F-measure", "combined"], 
-           gs19["SIL F-measure", "combined"], gs20["SIL F-measure", "combined"])
+           gs19["SIL F-measure", "combined"], gs20["SIL F-measure", "combined"], 
+           gs21["SIL F-measure", "combined"], gs22["SIL F-measure", "combined"], 
+           gs23["SIL F-measure", "combined"], gs24["SIL F-measure", "combined"])
 SIL_start_diff = c(gs01["SIL start diff", "combined"], gs02["SIL start diff", "combined"],
                    gs03["SIL start diff", "combined"], gs04["SIL start diff", "combined"],  
                    gs05["SIL start diff", "combined"], gs06["SIL start diff", "combined"], 
@@ -55,7 +64,9 @@ SIL_start_diff = c(gs01["SIL start diff", "combined"], gs02["SIL start diff", "c
                    gs13["SIL start diff", "combined"], gs14["SIL start diff", "combined"], 
                    gs15["SIL start diff", "combined"], gs16["SIL start diff", "combined"], 
                    gs17["SIL start diff", "combined"], gs18["SIL start diff", "combined"], 
-                   gs19["SIL start diff", "combined"], gs20["SIL start diff", "combined"])
+                   gs19["SIL start diff", "combined"], gs20["SIL start diff", "combined"], 
+                   gs21["SIL start diff", "combined"], gs22["SIL start diff", "combined"], 
+                   gs23["SIL start diff", "combined"], gs24["SIL start diff", "combined"])
 SIL_end_diff = c(gs01["SIL end diff", "combined"], gs02["SIL end diff", "combined"],
                  gs03["SIL end diff", "combined"], gs04["SIL end diff", "combined"],  
                  gs05["SIL end diff", "combined"], gs06["SIL end diff", "combined"], 
@@ -65,7 +76,9 @@ SIL_end_diff = c(gs01["SIL end diff", "combined"], gs02["SIL end diff", "combine
                  gs13["SIL end diff", "combined"], gs14["SIL end diff", "combined"], 
                  gs15["SIL end diff", "combined"], gs16["SIL end diff", "combined"], 
                  gs17["SIL end diff", "combined"], gs18["SIL end diff", "combined"], 
-                 gs19["SIL end diff", "combined"], gs20["SIL end diff", "combined"])
+                 gs19["SIL end diff", "combined"], gs20["SIL end diff", "combined"], 
+                 gs21["SIL end diff", "combined"], gs22["SIL end diff", "combined"], 
+                 gs23["SIL end diff", "combined"], gs24["SIL end diff", "combined"])
 Word_start_diff = c(gs01["Word start diff", "combined"], gs02["Word start diff", "combined"],
                     gs03["Word start diff", "combined"], gs04["Word start diff", "combined"],  
                     gs05["Word start diff", "combined"], gs06["Word start diff", "combined"], 
@@ -75,7 +88,9 @@ Word_start_diff = c(gs01["Word start diff", "combined"], gs02["Word start diff",
                     gs13["Word start diff", "combined"], gs14["Word start diff", "combined"], 
                     gs15["Word start diff", "combined"], gs16["Word start diff", "combined"], 
                     gs17["Word start diff", "combined"], gs18["Word start diff", "combined"], 
-                    gs19["Word start diff", "combined"], gs20["Word start diff", "combined"])
+                    gs19["Word start diff", "combined"], gs20["Word start diff", "combined"], 
+                    gs21["Word start diff", "combined"], gs22["Word start diff", "combined"], 
+                    gs23["Word start diff", "combined"], gs24["Word start diff", "combined"])
 Word_end_diff = c(gs01["Word end diff", "combined"], gs02["Word end diff", "combined"],
                   gs03["Word end diff", "combined"], gs04["Word end diff", "combined"],  
                   gs05["Word end diff", "combined"], gs06["Word end diff", "combined"], 
@@ -85,7 +100,9 @@ Word_end_diff = c(gs01["Word end diff", "combined"], gs02["Word end diff", "comb
                   gs13["Word end diff", "combined"], gs14["Word end diff", "combined"], 
                   gs15["Word end diff", "combined"], gs16["Word end diff", "combined"], 
                   gs17["Word end diff", "combined"], gs18["Word end diff", "combined"], 
-                  gs19["Word end diff", "combined"], gs20["Word end diff", "combined"])
+                  gs19["Word end diff", "combined"], gs20["Word end diff", "combined"], 
+                  gs21["Word end diff", "combined"], gs22["Word end diff", "combined"], 
+                  gs23["Word end diff", "combined"], gs24["Word end diff", "combined"])
 All_start_diff = c(gs01["All start diff", "combined"], gs02["All start diff", "combined"],
                     gs03["All start diff", "combined"], gs04["All start diff", "combined"],  
                     gs05["All start diff", "combined"], gs06["All start diff", "combined"], 
@@ -95,7 +112,9 @@ All_start_diff = c(gs01["All start diff", "combined"], gs02["All start diff", "c
                     gs13["All start diff", "combined"], gs14["All start diff", "combined"], 
                     gs15["All start diff", "combined"], gs16["All start diff", "combined"], 
                     gs17["All start diff", "combined"], gs18["All start diff", "combined"], 
-                    gs19["All start diff", "combined"], gs20["All start diff", "combined"])
+                    gs19["All start diff", "combined"], gs20["All start diff", "combined"], 
+                   gs21["All start diff", "combined"], gs22["All start diff", "combined"], 
+                   gs23["All start diff", "combined"], gs24["All start diff", "combined"])
 All_end_diff = c(gs01["All end diff", "combined"], gs02["All end diff", "combined"],
                   gs03["All end diff", "combined"], gs04["All end diff", "combined"],  
                   gs05["All end diff", "combined"], gs06["All end diff", "combined"], 
@@ -105,7 +124,9 @@ All_end_diff = c(gs01["All end diff", "combined"], gs02["All end diff", "combine
                   gs13["All end diff", "combined"], gs14["All end diff", "combined"], 
                   gs15["All end diff", "combined"], gs16["All end diff", "combined"], 
                   gs17["All end diff", "combined"], gs18["All end diff", "combined"], 
-                  gs19["All end diff", "combined"], gs20["All end diff", "combined"])
+                  gs19["All end diff", "combined"], gs20["All end diff", "combined"], 
+                 gs21["All end diff", "combined"], gs22["All end diff", "combined"], 
+                 gs23["All end diff", "combined"], gs24["All end diff", "combined"])
 N_F1 = c(gs01["N F-measure", "combined"], gs02["N F-measure", "combined"],
          gs03["N F-measure", "combined"], gs04["N F-measure", "combined"],  
          gs05["N F-measure", "combined"], gs06["N F-measure", "combined"], 
@@ -115,7 +136,9 @@ N_F1 = c(gs01["N F-measure", "combined"], gs02["N F-measure", "combined"],
          gs13["N F-measure", "combined"], gs14["N F-measure", "combined"], 
          gs15["N F-measure", "combined"], gs16["N F-measure", "combined"], 
          gs17["N F-measure", "combined"], gs18["N F-measure", "combined"], 
-         gs19["N F-measure", "combined"], gs20["N F-measure", "combined"])
+         gs19["N F-measure", "combined"], gs20["N F-measure", "combined"], 
+         gs21["N F-measure", "combined"], gs22["N F-measure", "combined"], 
+         gs23["N F-measure", "combined"], gs24["N F-measure", "combined"])
 Schwa_F1 = c(gs01["Schwa F-measure", "combined"], gs02["Schwa F-measure", "combined"],
          gs03["Schwa F-measure", "combined"], gs04["Schwa F-measure", "combined"],  
          gs05["Schwa F-measure", "combined"], gs06["Schwa F-measure", "combined"], 
@@ -125,7 +148,9 @@ Schwa_F1 = c(gs01["Schwa F-measure", "combined"], gs02["Schwa F-measure", "combi
          gs13["Schwa F-measure", "combined"], gs14["Schwa F-measure", "combined"], 
          gs15["Schwa F-measure", "combined"], gs16["Schwa F-measure", "combined"], 
          gs17["Schwa F-measure", "combined"], gs18["Schwa F-measure", "combined"], 
-         gs19["Schwa F-measure", "combined"], gs20["Schwa F-measure", "combined"])
+         gs19["Schwa F-measure", "combined"], gs20["Schwa F-measure", "combined"], 
+         gs21["Schwa F-measure", "combined"], gs22["Schwa F-measure", "combined"], 
+         gs23["Schwa F-measure", "combined"], gs24["Schwa F-measure", "combined"])
 SPN_F1 = c(gs01["SPN F-measure", "combined"], gs02["SPN F-measure", "combined"],
            gs03["SPN F-measure", "combined"], gs04["SPN F-measure", "combined"],  
            gs05["SPN F-measure", "combined"], gs06["SPN F-measure", "combined"], 
@@ -135,8 +160,10 @@ SPN_F1 = c(gs01["SPN F-measure", "combined"], gs02["SPN F-measure", "combined"],
            gs13["SPN F-measure", "combined"], gs14["SPN F-measure", "combined"], 
            gs15["SPN F-measure", "combined"], gs16["SPN F-measure", "combined"], 
            gs17["SPN F-measure", "combined"], gs18["SPN F-measure", "combined"], 
-           gs19["SPN F-measure", "combined"], gs20["SPN F-measure", "combined"])
-gs_num = c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20)
+           gs19["SPN F-measure", "combined"], gs20["SPN F-measure", "combined"], 
+           gs21["SPN F-measure", "combined"], gs22["SPN F-measure", "combined"], 
+           gs23["SPN F-measure", "combined"], gs24["SPN F-measure", "combined"])
+gs_num = c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24)
 comparison = data.frame(gs_num, mean_dist, sil_F1, SIL_start_diff, SIL_end_diff, Word_start_diff, Word_end_diff, N_F1, Schwa_F1)
 
 par(mfrow=c(1,2))
@@ -147,29 +174,35 @@ lines(gs_num, N_F1, type = "b", col = "orange")
 lines(gs_num, Schwa_F1, type = "b", col = "purple")
 lines(gs_num, SPN_F1, type = "b", col = "yellow")
 
-plot(gs_num, SIL_start_diff, type = "l", ylim = c(0,0.12), col = "green")
-lines(gs_num, SIL_end_diff, type = "l", col = "green", lty = "dashed")
-lines(gs_num, Word_start_diff, type = "l", col = "pink")
-lines(gs_num, Word_end_diff, type = "l", col = "pink", lty = "dashed")
-lines(gs_num, All_start_diff, type = "l", col = "black")
-lines(gs_num, All_end_diff, type = "l", col = "black", lty = "dashed")
+plot(gs_num, SIL_start_diff, type = "b", ylim = c(0,0.12), col = "green")
+lines(gs_num, SIL_end_diff, type = "b", col = "green", lty = "dashed")
+lines(gs_num, Word_start_diff, type = "b", col = "pink")
+lines(gs_num, Word_end_diff, type = "b", col = "pink", lty = "dashed")
+lines(gs_num, All_start_diff, type = "b", col = "black")
+lines(gs_num, All_end_diff, type = "b", col = "black", lty = "dashed")
 
-# just lex exp plot
+## just lex exp plot
 mean_dist_a = c(gs01["Mean Distance", "comp.a"], gs02["Mean Distance", "comp.a"],
               gs03["Mean Distance", "comp.a"], gs04["Mean Distance", "comp.a"],  
               gs05["Mean Distance", "comp.a"], gs06["Mean Distance", "comp.a"], 
               gs07["Mean Distance", "comp.a"], gs08["Mean Distance", "comp.a"], 
-              gs09["Mean Distance", "comp.a"], gs10["Mean Distance", "comp.a"])
+              gs09["Mean Distance", "comp.a"], gs10["Mean Distance", "comp.a"],
+              gs21["Mean Distance", "comp.a"], gs22["Mean Distance", "comp.a"], 
+              gs23["Mean Distance", "comp.a"], gs24["Mean Distance", "comp.a"])
 mean_dist_k = c(gs01["Mean Distance", "comp.k"], gs02["Mean Distance", "comp.k"],
                 gs03["Mean Distance", "comp.k"], gs04["Mean Distance", "comp.k"],  
                 gs05["Mean Distance", "comp.k"], gs06["Mean Distance", "comp.k"], 
                 gs07["Mean Distance", "comp.k"], gs08["Mean Distance", "comp.k"], 
-                gs09["Mean Distance", "comp.k"], gs10["Mean Distance", "comp.k"])
+                gs09["Mean Distance", "comp.k"], gs10["Mean Distance", "comp.k"],
+                gs21["Mean Distance", "comp.k"], gs22["Mean Distance", "comp.k"], 
+                gs23["Mean Distance", "comp.k"], gs24["Mean Distance", "comp.k"])
 mean_dist_o = c(gs01["Mean Distance", "comp.o"], gs02["Mean Distance", "comp.o"],
                 gs03["Mean Distance", "comp.o"], gs04["Mean Distance", "comp.o"],  
                 gs05["Mean Distance", "comp.o"], gs06["Mean Distance", "comp.o"], 
                 gs07["Mean Distance", "comp.o"], gs08["Mean Distance", "comp.o"], 
-                gs09["Mean Distance", "comp.o"], gs10["Mean Distance", "comp.o"])
+                gs09["Mean Distance", "comp.o"], gs10["Mean Distance", "comp.o"],
+                gs21["Mean Distance", "comp.o"], gs22["Mean Distance", "comp.o"], 
+                gs23["Mean Distance", "comp.o"], gs24["Mean Distance", "comp.o"])
 
 par(mfrow=c(1,1))
 generations = c(0,1,2,3,4)
@@ -183,7 +216,68 @@ legend("right", legend = c("CGN-A", "CGN-K", "CGN-O"),
        col = c("red", "blue", "green"),
        lty = c("solid", "solid", "solid"), cex=0.7)
 
-# just n info
+generations = c(0,1,2,3)
+plot(generations, mean_dist_a[c(11,12,13,14)], type = "b", col = "red", ylim = c(0.8,2.6),
+     ylab = "weighted feature edit distance (panphon library)", 
+     xlab = "nGEN",
+     main = "Number of lexical expansion generations")
+lines(generations, mean_dist_k[c(11,12,13,14)], type = "b", col = "blue")
+lines(generations, mean_dist_o[c(11,12,13,14)], type = "b", col = "green")
+legend("right", legend = c("CGN-A", "CGN-K", "CGN-O"),
+       col = c("red", "blue", "green"),
+       lty = c("solid", "solid", "solid"), cex=0.7)
+
+# check why lex exp distance goes up
+gs = read.csv(paste(f_path, "gs23_aligned_dist.csv", sep = ""))
+gs$corpus = as.factor(substr(gs$wav, 1, 1))
+gs23_a = gs[gs$corpus == "a",]
+gs = read.csv(paste(f_path, "gs24_aligned_dist.csv", sep = ""))
+gs$corpus = as.factor(substr(gs$wav, 1, 1))
+gs24_a = gs[gs$corpus == "a",]
+gs_diff = merge(gs23_a, gs24_a, by = c("wav", "from", "to", "tier", "word", "cgn_start", "cgn_end"))
+gs_diff$dist_diff = gs_diff$tran_dist.y - gs_diff$tran_dist.x
+gs_diff = gs_diff[order(-gs_diff$dist_diff),]
+mean(gs_diff$dist_diff, na.rm = T)
+nrow(gs_diff[gs_diff$dist_diff > 0,])
+nrow(gs_diff[gs_diff$dist_diff == 0,])
+nrow(gs_diff[gs_diff$dist_diff < 0,])
+hist(gs_diff$dist_diff)
+
+# inspection in Praat shows that gs23 (n=2) is actually better than gs24 (n=3)
+# now let's see if gs22 (n=1) is better than gs23
+gs = read.csv(paste(f_path, "gs22_aligned_dist.csv", sep = ""))
+gs$corpus = as.factor(substr(gs$wav, 1, 1))
+gs22_a = gs[gs$corpus == "a",]
+gs = read.csv(paste(f_path, "gs23_aligned_dist.csv", sep = ""))
+gs$corpus = as.factor(substr(gs$wav, 1, 1))
+gs23_a = gs[gs$corpus == "a",]
+gs_diff = merge(gs22_a, gs23_a, by = c("wav", "from", "to", "tier", "word", "cgn_start", "cgn_end"))
+gs_diff$dist_diff = gs_diff$tran_dist.y - gs_diff$tran_dist.x
+gs_diff = gs_diff[order(-gs_diff$dist_diff),]
+mean(gs_diff$dist_diff, na.rm = T)
+nrow(gs_diff[gs_diff$dist_diff > 0,])
+nrow(gs_diff[gs_diff$dist_diff == 0,])
+nrow(gs_diff[gs_diff$dist_diff < 0,])
+hist(gs_diff$dist_diff)
+
+## what if we compare gs21 and gs22
+gs = read.csv(paste(f_path, "gs21_aligned_dist.csv", sep = ""))
+gs$corpus = as.factor(substr(gs$wav, 1, 1))
+gs21_a = gs[gs$corpus == "a",]
+gs = read.csv(paste(f_path, "gs22_aligned_dist.csv", sep = ""))
+gs$corpus = as.factor(substr(gs$wav, 1, 1))
+gs22_a = gs[gs$corpus == "a",]
+gs_diff = merge(gs21_a, gs22_a, by = c("wav", "from", "to", "tier", "word", "cgn_start", "cgn_end"))
+gs_diff$dist_diff = gs_diff$tran_dist.y - gs_diff$tran_dist.x
+gs_diff = gs_diff[order(-gs_diff$dist_diff),]
+mean(gs_diff$dist_diff, na.rm = T)
+nrow(gs_diff[gs_diff$dist_diff > 0,])
+nrow(gs_diff[gs_diff$dist_diff == 0,])
+nrow(gs_diff[gs_diff$dist_diff < 0,])
+plot(density(gs_diff$dist_diff, na.rm = T))
+
+
+## just n info
 N_F1_a = c(gs04["N F-measure", "comp.a"], gs06["N F-measure", "comp.a"], 
          gs07["N F-measure", "comp.a"], gs08["N F-measure", "comp.a"], 
          gs09["N F-measure", "comp.a"])

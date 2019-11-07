@@ -9,7 +9,7 @@ tens_dir = "/Volumes/tensusers/timzee/" if sys.platform == "darwin" else "/vol/t
 corpus = "cgn"
 component = "k"
 index_file = "cgn_index_k_final.txt"
-lex_exp_n = 3
+lex_exp_n = 1
 enable_n_weights = "True"
 
 alphabet = {"a": "a", "b": "b e", "c": "s e", "d": "d e", "e": "e", "f": "E f", "g": "G e", "h": "h a", "i": "i", "j": "j e", "k": "k a", "l": "E l", "m": "E m", "n": "E n", "o": "o", "p": "p e", "q": "k y", "r": "E r", "s": "E s", "t": "t e", "u": "y", "v": "v e", "w": "w e", "x": "I k s", "y": "EI", "z": "z E t"}
@@ -23,6 +23,8 @@ with codecs.open(home_dir + "clst-asr-fa/alphemes.txt", "w", "utf-8") as f:
 
 with codecs.open(tens_dir + corpus + "/" + index_file, "r", "utf-8") as f:
     cgn_index = f.readlines()
+
+running_cores = 210
 
 num_cores = 60
 num_index_lines = len(cgn_index)
@@ -45,6 +47,7 @@ for core in range(num_cores):
     core_n = str(core + 1)
     s_line = core_dict[core_n]["start"]
     e_line = core_dict[core_n]["end"]
+    core_n = str(running_cores + core + 1)
     p = multiprocessing.Process(target=prepKaldi, args=[core_n, s_line, e_line])
     jobs.append(p)
     p.start()
@@ -60,8 +63,9 @@ f = codecs.open(tens_dir + corpus + "/prepared_index_comp-" + prep_name + ".txt"
 g = codecs.open(home_dir + "clst-asr-fa/oov_lex_comp-" + prep_name + ".txt", "w", "utf-8")
 h = codecs.open(tens_dir + corpus + "/oov_conv_table_comp-" + prep_name + ".txt", "w", "utf-8")
 x = codecs.open(home_dir + "clst-asr-fa/nnn_words.txt", "w", "utf-8")
+y = codecs.open(home_dir + "clst-asr-fa/kaldi_lex_comp-" + prep_name + ".txt", "w", "utf-8")
 for core in range(num_cores):
-    core_n = str(core + 1)
+    core_n = str(running_cores + core + 1)
     with codecs.open(tens_dir + corpus + "/prepared_index{}.txt".format(core_n), "r", "utf-8") as i:
         for l in i:
             f.write(l)
@@ -78,15 +82,20 @@ for core in range(num_cores):
         for l in m:
             x.write(l)
     os.remove(home_dir + "clst-asr-fa/nnn_words{}.txt".format(core_n))
+    with codecs.open(home_dir + "clst-asr-fa/kaldi_lex_used{}.txt".format(core_n), "r", "utf-8") as n:
+        for l in n:
+            y.write(l)
+    os.remove(home_dir + "clst-asr-fa/kaldi_lex_used{}.txt".format(core_n))
 f.close()
 g.close()
 h.close()
 x.close()
+y.close()
 
 print("Expanding Lexicon ...")
 exp_name = "lexicon_expanded.txt"
 
-subprocess.call([home_dir + "fa_files/run_lexical_expansion_multi.sh", "oov_lex_comp-" + prep_name + ".txt", exp_name, str(lex_exp_n), str(num_cores)])
+subprocess.call([home_dir + "fa_files/run_lexical_expansion_multi_v2.sh", "oov_lex_comp-" + prep_name + ".txt", "kaldi_lex_comp-" + prep_name + ".txt", exp_name, str(lex_exp_n), str(num_cores)])
 
 enable_n_weights = enable_n_weights == "True"
 

@@ -10,8 +10,9 @@ import multiprocessing
 
 # tens_path = "/Volumes/tensusers/timzee/IFAcorpus/" if sys.platform == "darwin" else "/vol/tensusers/timzee/IFAcorpus/"
 af_path = "/Volumes/tensusers/timzee/af_classification/" if sys.platform == "darwin" else "/vol/tensusers/timzee/af_classification/"
+#scratch = "/scratch/timzee/"
 
-chunk_folder = "training_chunks/"
+chunk_folder = "training_chunks/d/"
 # tg_folder = "SLcorpus/Labels/sentences/"
 
 encoding = "latin-1"
@@ -120,7 +121,9 @@ for fp in glob.glob(af_path + chunk_folder + "*.wav"):
 
 # wavpaths = ['/vol/tensusers/timzee/af_classification/training_chunks/a_nl_fn007837_324.909_325.376.wav', '/vol/tensusers/timzee/af_classification/training_chunks/o_nl_fn001154_225.772_226.646.wav']
 
-num_cores = 38
+running_cores = 39
+
+num_cores = 30
 num_lex_lines = len(wavpaths)
 # num_lex_lines = 1000
 core_dict = {}
@@ -176,15 +179,15 @@ def makeData(from_file, to_file, core):
             frame_e = frame_s + window
             if frame_e > end_time:  # because '0' samples can be appended to sig so it can be divided by an integer of frames
                 frame_e = end_time
-            int = intervals[int_i]
-            if frame_s < round(int.minTime, 3):
-                print(frame_s, round(int.minTime, 3))
-            assert frame_s >= round(int.minTime, 3)
-            if frame_e <= round(int.maxTime, 3):
+            intvl = intervals[int_i]
+            if frame_s < round(intvl.minTime, 3):
+                print(frame_s, round(intvl.minTime, 3))
+            assert frame_s >= round(intvl.minTime, 3)
+            if frame_e <= round(intvl.maxTime, 3):
                 # calculate the proportion of the frame that is within the useable centre of the interval
-                int_dur = round(int.duration(), 3)
+                int_dur = round(intvl.duration(), 3)
                 prop_dur = int_dur * prop_used
-                used_s = round(int.minTime, 3) + (int_dur - prop_dur) / 2
+                used_s = round(intvl.minTime, 3) + (int_dur - prop_dur) / 2
                 used_e = used_s + prop_dur
                 x1 = used_s - frame_s
                 x1 = 0 if x1 <= 0 else window if x1 > window else x1
@@ -194,15 +197,15 @@ def makeData(from_file, to_file, core):
 #                print(prop_f_in_used_i, int_dur, used_s, used_e, frame_s, frame_e)
                 if prop_f_in_used_i > 0.5:
                     useable_frame_indices.append(frame - 1)
-                    label_list = getFeatureLabel(int.mark)
+                    label_list = getFeatureLabel(intvl.mark)
                 else:
                     label_list = [99 for i in range(len(features))]
                 row = np.array([np.append(np_mfcc_all[frame - 1, ], label_list)])
                 classes = np.append(classes, row, axis=0)
             else:
-                assert frame_e > round(int.maxTime, 3)
-                proportions = [(round(int.maxTime, 3) - frame_s, int_i)]
-                new_int = int
+                assert frame_e > round(intvl.maxTime, 3)
+                proportions = [(round(intvl.maxTime, 3) - frame_s, int_i)]
+                new_int = intvl
                 new_int_i = int_i
                 next_int_i = int_i
                 while frame_e > round(new_int.maxTime, 3):
@@ -240,8 +243,9 @@ def makeData(from_file, to_file, core):
                     new_feat = classes[old_row - (2 * frame_window):old_row + 1, :num_cols_per_frame - len(features)].flatten()
                     new_row = np.array([np.append(np.append(new_feat, corpora[corpus]), new_labels)])
                     # samples = np.append(samples, new_row, axis=0)
-                    with open(af_path + "AF_s" + core + ".csv", "a") as f:
-                        np.savetxt(f, new_row, delimiter=",")
+                    with open(af_path + "AF_s" + str(int(core) + running_cores) + ".csv", "a") as f:
+#                    with open(scratch + "AF_s" + core + ".csv", "a") as f:
+                        np.savetxt(f, new_row, fmt='%.5e', delimiter=",")
 
 #    with open(af_path + "AF_s" + core + ".csv", "w") as f:
 #        np.savetxt(f, samples, delimiter=",")
@@ -263,14 +267,17 @@ for job in jobs:
 
 print("Merging files...")
 
-with open(af_path + "Bootstrap_s_large.csv", "w") as f:
+with open(af_path + "Bootstrap_s_large_d.csv", "w") as f:
+#with open(scratch + "Bootstrap_s_large_a.csv", "w") as f:
     all_samples = np.zeros((0, num_cols))
 #    print(all_samples.shape)
     for c in core_dict:
-        with open(af_path + "AF_s" + c + ".csv", "r") as g:
+        with open(af_path + "AF_s" + str(int(c) + running_cores) + ".csv", "r") as g:
+#        with open(scratch + "AF_s" + c + ".csv", "r") as g:
             smpl = np.loadtxt(g, delimiter=",")
         print(smpl.shape)
         if smpl.shape[0] != 0:
             all_samples = np.append(all_samples, smpl, axis=0)
-        os.remove(af_path + "AF_s" + c + ".csv")
-    np.savetxt(f, all_samples, delimiter=",")
+        os.remove(af_path + "AF_s" + str(int(c) + running_cores) + ".csv")
+#        os.remove(scratch + "AF_s" + c + ".csv")
+    np.savetxt(f, all_samples, fmt='%.5e', delimiter=",")

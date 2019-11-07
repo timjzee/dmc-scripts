@@ -5,7 +5,7 @@ if (Sys.info()[1] == "Darwin"){
   f_path = "/vol/tensusers/timzee/grid_search/"
 }
 
-gs_num = "gs01"
+gs_num = "gs21"
 
 gs = read.csv(paste(f_path, gs_num, "_aligned_dist.csv", sep = ""))
 gs$corpus = as.factor(substr(gs$wav, 1, 1))

@@ -222,7 +222,8 @@ def create_gen(gen, tran):
         for rulenumber in range(25):
             outp = apply_rule(rulenumber, tran)
             for o in outp:
-                print("[-{}- gen] {} {}".format(gen, ortho, o))
+                print("{}\t{}".format(ortho, o))
+#                print("[-{}- gen] {} {}".format(gen, ortho, o))
             output.extend(outp)
             for i in output:
                 create_gen(gen + 1, i)
@@ -231,5 +232,6 @@ def create_gen(gen, tran):
 
 for input in sys.stdin:
     ortho, pron = input[:-1].split("\t")
-    print("[-0- gen] {} {}".format(ortho, pron))
+    print("{}\t{}".format(ortho, pron))
+#    print("[-0- gen] {} {}".format(ortho, pron))
     create_gen(1, pron)

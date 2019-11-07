@@ -1,8 +1,9 @@
 form Give chunks
-    word chunk_path /Volumes/tensusers/timzee/cgn/fa_eval_subset.csv
+    word chunk_path /Volumes/tensusers/timzee/cgn/fa_eval_a.csv
     word cgn_path /Volumes/bigdata2/corpora2/CGN2/data/audio/wav/comp-
-    word kaldi_path /Volumes/tensusers/timzee/cgn/kaldi_annot/comp-
-    word output_path /Volumes/tensusers/timzee/cgn/man_annot/
+    word kaldi_path /Volumes/tensusers/timzee/cgn/kaldi_annot/v2/comp-
+    word output_path /Volumes/tensusers/timzee/cgn/man_annot/comp-
+    word log_path /Volumes/tensusers/timzee/cgn/man_annot/
 endform
 
 # Make sure input file has a header
@@ -21,10 +22,17 @@ endPause: "Continue", 1
 procedure annotateChunk: annotateChunk.id
     selectObject: "Table chunks"
     filepath$ = Get value: annotateChunk.id, "wav"
-    if fileReadable(output_path$ + "comp-" + filepath$ + ".awd") == 0
-        Read from file: kaldi_path$ + filepath$ + ".awd"
+    name_length = length(filepath$)
+    if fileReadable(output_path$ + filepath$ + ".awd") == 0
+        if left$(filepath$, 1) == "p"
+            pair_length = name_length - 10
+            pair_folder$ = "PP" + mid$(filepath$, 3, pair_length)
+            Read from file: "/Volumes/tensusers/timzee/ECSD/kaldi_annot/v2/" + pair_folder$ + "/" + filepath$ + ".awd"
+        else
+            Read from file: kaldi_path$ + filepath$ + ".awd"
+        endif
     else
-        Read from file: output_path$ + "comp-" + filepath$ + ".awd"
+        Read from file: output_path$ + filepath$ + ".awd"
     endif
     s_name$ = selected$("TextGrid")
     selectObject: "Table chunks"
@@ -34,8 +42,14 @@ procedure annotateChunk: annotateChunk.id
     c_tier = Get value: annotateChunk.id, "tier"
     c_speaker$ = Get value: annotateChunk.id, "speaker"
     word_chunk_i = Get value: annotateChunk.id, "word_chunk_i"
-    tier = c_tier * 4 - 3
+#    tier = c_tier * 4 - 3
     selectObject: "TextGrid " + s_name$
+    tier_name$ = ""
+    tier = 0
+    while tier_name$ != c_speaker$
+        tier += 1
+        tier_name$ = Get tier name: tier
+    endwhile
     speaker$ = Get tier name: tier
     assert c_speaker$ == speaker$
     word_int = Get high interval at time: tier, c_start
@@ -54,7 +68,14 @@ procedure annotateChunk: annotateChunk.id
     w_start = Get start time of interval: tier, word_int
     w_end = Get end time of interval: tier, word_int
 
-    Open long sound file: cgn_path$ + filepath$ + ".wav"
+    if left$(filepath$, 1) == "p"
+        pair_length = name_length - 10
+        pair_folder$ = "PP" + mid$(filepath$, 3, pair_length)
+        Open long sound file: "/Volumes/tensusers/timzee/ECSD/Speech/" + pair_folder$ + "/" + filepath$ + "_S.wav"
+        Rename: filepath$
+    else
+        Open long sound file: cgn_path$ + filepath$ + ".wav"
+    endif
     plusObject: "TextGrid " + s_name$
     View & Edit
     editor: "TextGrid " + s_name$
@@ -66,7 +87,7 @@ procedure annotateChunk: annotateChunk.id
         comment: "Click continue to save the annotation."
     endPause: "Continue", 1
     selectObject: "TextGrid " + s_name$
-    Save as text file: output_path$ + "comp-" + filepath$ + ".awd"
+    Save as text file: output_path$ + filepath$ + ".awd"
     Remove
     selectObject: "LongSound " + s_name$
     Remove

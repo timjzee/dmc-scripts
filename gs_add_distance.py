@@ -5,7 +5,7 @@ import re
 
 tz_path = "/Volumes/timzee/" if sys.platform == "darwin" else "/home/timzee/"
 tens_path = "/Volumes/tensusers/timzee/" if sys.platform == "darwin" else "/vol/tensusers/timzee/"
-gs_num = "gs20"
+gs_num = "gs21"
 
 kaldi2ipa = {}
 cgn2ipa = {}

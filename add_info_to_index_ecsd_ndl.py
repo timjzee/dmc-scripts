@@ -11,10 +11,9 @@ from HTMLParser import HTMLParser
 from htmlentitydefs import entitydefs
 import multiprocessing
 import subprocess
-import glob
 
 tens_path = "/Volumes/tensusers/timzee/" if sys.platform == "darwin" else "/vol/tensusers/timzee/"
-ifadv_path = "/Volumes/tensusers/timzee/IFADVcorpus/Annotations/" if sys.platform == "darwin" else "/vol/tensusers/timzee/IFADVcorpus/Annotations/"
+ecsd_path = "/Volumes/tensusers/timzee/ECSD/Annotations/" if sys.platform == "darwin" else "/vol/tensusers/timzee/ECSD/Annotations/"
 tz_path = "/Volumes/timzee/" if sys.platform == "darwin" else "/home/timzee/"
 
 ndl_window_start = -2
@@ -28,14 +27,14 @@ del entitydefs["quot"]
 del entitydefs["lt"]
 del entitydefs["gt"]
 
-input_file_path = tens_path + "IFADVcorpus/ifadv_index2.txt"
+input_file_path = tens_path + "ECSD/ecsd_index2.txt"
 with codecs.open(input_file_path, "r", "utf-8") as f:
     input_file = f.readlines()
 
 running_cores = 0
 
 # Do not run with more than 5 cores.
-num_cores = 4
+num_cores = 5
 num_index_lines = len(input_file)
 # num_index_lines = 1465779
 core_dict = {}
@@ -115,7 +114,7 @@ with codecs.open(tens_path + "other/cow2.counts", "r", "utf-8") as f:
 
 print("Loading OOV Conversion Table")
 oov_conv = {}
-with codecs.open(tens_path + "IFADVcorpus/oov_conv_table_comp-IFADVcorpus.txt", "r", "utf-8") as f:
+with codecs.open(tens_path + "ECSD/oov_conv_table_comp-ecsd.txt", "r", "utf-8") as f:
     for counter, line in enumerate(f, 1):
         if counter > 1:
             c_key, input_w, orig_w, input_i, orig_i, meta_i, meta_l = line[:-1].split("\t")
@@ -131,16 +130,9 @@ time_words = ["ochtends", "morgens", "middags", "avonds", "nachts", "maandags", 
 
 excl_words = ["weegs", "graads", "wils"]
 
-speakers = {}
-with codecs.open(tens_path + "IFADVcorpus/speakers.csv", "r", "utf-8") as f:
-    for c, l in enumerate(f, 1):
-        if c > 1:
-            file_f, s1, s2 = l[:-1].split(",")
-            speakers[file_f] = {"spreker1": s1, "spreker2": s2}
-
 
 def createTemp(tg_path):
-    with codecs.open(tg_path, "r") as f:
+    with codecs.open(tg_path, "r", encoding="utf-8") as f:
         tg_string = f.read()
     tempf = tempfile.NamedTemporaryFile()
     tempf.write(tg_string.encode("utf-8"))
@@ -156,10 +148,9 @@ def loadTextGrid(tg_path):
 
 
 def getSpeaker(fp, tier):
-    ort_path = glob.glob(ifadv_path + "ort/" + fp + "*.ort")[0]
-    tg = loadTextGrid(ort_path)
-    spreker = tg.getNames()[int(tier) - 1]
-    spkr = speakers[fp][spreker]
+    folder_n = fp.split("_part")[0].upper()
+    tg = loadTextGrid(ecsd_path + "ort/" + folder_n + "/" + fp + ".TextGrid")
+    spkr = tg.getNames()[int(tier) - 1]
     return spkr
 
 
@@ -188,14 +179,16 @@ def checkCanonical(w, position, chunk_id):
 
 def getAnnotInfo(orig_path, c_start, c_end, spkr, word_index):
     """Calls a Praat script which finds the chunk and returns info on phonetic context."""
-    output = subprocess.check_output([tz_path + "praat_nogui", "--run", tz_path + "GitHub/dmc-scripts/getAnnotInfo.praat", orig_path, c_start, c_end, spkr, str(word_index), "IFADVcorpus/kaldi_annot/v2/"]).decode("utf-8")[:-1].split(" ")
-#    print(output)
+    folder_n = orig_path.split("_part")[0].upper()
+    output = subprocess.check_output([tz_path + "praat_nogui", "--run", tz_path + "GitHub/dmc-scripts/getAnnotInfo.praat", orig_path, c_start, c_end, spkr, str(word_index), "ECSD/kaldi_annot/v2/" + folder_n + "/"]).decode("utf-8")[:-1].split(" ")
+    print(output)
     return output
 
 
 def getNDLphons(orig_path, c_start, c_end, spkr, word_index, wndw_start, wndw_end):
     """Calls a Praat script which finds the chunk and returns info on phonetic context."""
-    output = subprocess.check_output([tz_path + "praat_nogui", "--run", tz_path + "GitHub/dmc-scripts/getNDLphons.praat", orig_path, c_start, c_end, spkr, str(word_index), str(wndw_start), str(wndw_end), "IFADVcorpus/kaldi_annot/v2/"]).decode("utf-8")[:-1].split(" ")
+    folder_n = orig_path.split("_part")[0].upper()
+    output = subprocess.check_output([tz_path + "praat_nogui", "--run", tz_path + "GitHub/dmc-scripts/getNDLphons.praat", orig_path, c_start, c_end, spkr, str(word_index), str(wndw_start), str(wndw_end), "ECSD/kaldi_annot/v2/" + folder_n + "/"]).decode("utf-8")[:-1].split(" ")
 #    print(output)
     return output
 
@@ -213,7 +206,7 @@ def getSentenceInfo(rt, spkr, from_t, to_t, wrd):
                         if h.unescape(word.attrib["w"]) == wrd:
                             candidates.append((int(word.attrib["ref"].split(".")[1]), int(word.attrib["ref"].split(".")[2])))
     # in case later sentence is positioned above earlier sentence in xml
-    match = sorted(candidates)[0] if len(candidates) > 0 else (None, None)
+    match = sorted(candidates)[0]
     return match
 
 
@@ -385,7 +378,9 @@ def parseLine(f_path, chan, from_time, to_time, ort, tier, new_file):
     global hnr
     speaker = getSpeaker(f_path, tier)
     if new_file:
-        with codecs.open(ifadv_path + "skp-ort/" + f_path + ".skp", "r", "utf-8") as h:
+        folder_n, part_n = f_path.split("_part")
+        file_n_uc = folder_n.upper() + "_part" + part_n
+        with codecs.open(ecsd_path + "skp-ort/" + folder_n.upper() + "/" + file_n_uc + ".skp", "r", "utf-8") as h:
             skp_txt = h.read()
 #        skp_txt = codecs.decode(skp_gz, "ascii")
 #        skp_txt = skp_txt.encode("utf-8")
@@ -396,7 +391,7 @@ def parseLine(f_path, chan, from_time, to_time, ort, tier, new_file):
         global skp_root
         skp_root = ET.fromstring(skp_txt)
 #        print(ET.tostring(skp_root))
-        with codecs.open(ifadv_path + "tag/" + f_path + ".tag", "r", "utf-8") as h:
+        with codecs.open(ecsd_path + "tag/" + folder_n.upper() + "/" + file_n_uc + ".tag", "r", "utf-8") as h:
             tag_txt = h.read()
 #        tag_txt = codecs.decode(tag_gz, "ascii")
 #        for ent in entitydefs:
@@ -418,7 +413,7 @@ def parseLine(f_path, chan, from_time, to_time, ort, tier, new_file):
         # check for segment / oov
         chunk_id = ",".join([f_path, tier, from_time, to_time])
         seg_var, split_up = checkCanonical(word, -1, chunk_id)
-        word = re.sub(r'\*[^ ]*', '', re.sub(r"[!?.,:;\t\n\r]*", "", word))
+        word = re.sub(r'\*[a-z]', '', re.sub(r"[!?.,:;\t\n\r]*", "", word))
         sent_i, word_sent_i = getSentenceInfo(skp_root, speaker, from_time, to_time, word)
         if not sent_i:
             continue
@@ -515,8 +510,8 @@ def readWriteMetaData(core_num="", start_line=1, end_line=num_index_lines):
 #    else:
     print("Reading from file")
     f = codecs.open(input_file_path, "r", "utf-8")
-    with codecs.open(tens_path + "IFADVcorpus/all_s" + core_num + ".csv", "w", "utf-8") as g:
-        with codecs.open(tens_path + "IFADVcorpus/ndl" + core_num + ".csv", "w", "utf-8") as h:
+    with codecs.open(tens_path + "ECSD/all_s" + core_num + ".csv", "w", "utf-8") as g:
+        with codecs.open(tens_path + "ECSD/ndl" + core_num + ".csv", "w", "utf-8") as h:
             output_header = "wav,chan,chunk_start,chunk_end,oov_in_chunk,tier,word_chunk_i,sent_i,word_sent_i,word_ort,word_phon,num_phon,phon_pron,prev_phon,prev_phon_pron,next_phon,next_phon_pron,overlap,oov_meta,word_pos,word_class,type_of_s,speaker,per_mil_wf,log_wf,lex_neb,lex_neb_freq,ptan,ptaf,cow_wf,next_word,next_wf,bigram_f,prev_word,prev_wf,prev_bigram_f,num_syl,word_stress,ndl_boundary_diph,other_ndl_cues\n"
             g.write(output_header)
             ndl_header = "Cues,Outcomes\n"
@@ -550,17 +545,17 @@ def multiProcess():
     for job in jobs:
         job.join()
     # combine separate files
-    with codecs.open(tens_path + "IFADVcorpus/all_s_comb_ifadv_ndl.csv", "w", encoding="utf-8") as g:
+    with codecs.open(tens_path + "ECSD/all_s_comb_ecsd_ndl.csv", "w", encoding="utf-8") as g:
         for core in range(num_cores):
             core_n = str(core + 1 + running_cores)
-            with codecs.open(tens_path + "IFADVcorpus/all_s" + core_n + ".csv", "r", encoding="utf-8") as f:
+            with codecs.open(tens_path + "ECSD/all_s" + core_n + ".csv", "r", encoding="utf-8") as f:
                 for fln, f_line in enumerate(f, 1):
                     if not (core > 0 and fln == 1):
                         g.write(f_line)
-    with codecs.open(tens_path + "IFADVcorpus/ndl_ifadv.csv", "w", encoding="utf-8") as g:
+    with codecs.open(tens_path + "ECSD/ndl_ecsd.csv", "w", encoding="utf-8") as g:
         for core in range(num_cores):
             core_n = str(core + 1 + running_cores)
-            with codecs.open(tens_path + "IFADVcorpus/ndl" + core_n + ".csv", "r", encoding="utf-8") as f:
+            with codecs.open(tens_path + "ECSD/ndl" + core_n + ".csv", "r", encoding="utf-8") as f:
                 for fln, f_line in enumerate(f, 1):
                     if not (core > 0 and fln == 1):
                         g.write(f_line)

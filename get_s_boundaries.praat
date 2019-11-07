@@ -1,7 +1,7 @@
 form Give chunks
-    word chunk_path /Volumes/tensusers/timzee/cgn/fa_eval_subset.csv
+    word chunk_path /Volumes/tensusers/timzee/cgn/fa_eval_k.csv
     word cgn_path /Volumes/bigdata2/corpora2/CGN2/data/audio/wav/comp-
-    word kaldi_path /Volumes/tensusers/timzee/cgn/kaldi_annot/comp-
+    word kaldi_path /Volumes/tensusers/timzee/cgn/kaldi_annot/v2/comp-
     word output_path /Volumes/tensusers/timzee/cgn/man_annot/
 endform
 
@@ -90,4 +90,4 @@ for id from 1 to num_chunks
 endfor
 
 selectObject: "Table chunks"
-Save as comma-separated file: "/Volumes/tensusers/timzee/cgn/eval_boundaries.csv"
+Save as comma-separated file: "/Volumes/tensusers/timzee/cgn/eval_boundaries_k.csv"

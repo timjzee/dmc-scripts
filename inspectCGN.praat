@@ -1,7 +1,7 @@
 form Give chunks
-    word chunk_path /Volumes/tensusers/timzee/cgn/eval_genitives.csv
+    word chunk_path /Volumes/tensusers/timzee/cgn/fa_eval_k.csv
     word cgn_path /Volumes/bigdata2/corpora2/CGN2/data/audio/wav/comp-
-    word kaldi_path /Volumes/tensusers/timzee/cgn/kaldi_annot/comp-
+    word kaldi_path /Volumes/tensusers/timzee/cgn/kaldi_annot/v2/comp-
     word output_path /Volumes/tensusers/timzee/cgn/man_annot/
 endform
 

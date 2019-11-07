@@ -65,44 +65,48 @@ def create_predict_input_fn(features, batch_size):
 
 feature_columns = [tf.feature_column.numeric_column(i) for i in _CSV_COLUMNS]
 classifiers = {
-    "s": tf.estimator.DNNClassifier(feature_columns=feature_columns, n_classes=2, hidden_units=[300], model_dir=tens_path + "s_model_large")
+    "s": tf.estimator.DNNClassifier(feature_columns=feature_columns, n_classes=2, hidden_units=[300], model_dir=tens_path + "s_8k_model")
 }
 
-
-file_paths = glob.glob(tens_path + "pred_fragments/*.wav")
-#file_paths = [
-#    "/vol/tensusers/timzee/af_classification/pred_fragments/fn001107_1_149.402_149.832.wav",
-#    "/vol/tensusers/timzee/af_classification/pred_fragments/fn001107_1_185.039_185.659.wav",
-#    "/vol/tensusers/timzee/af_classification/pred_fragments/fn001107_1_35.097_35.547.wav",
-#    "/vol/tensusers/timzee/af_classification/pred_fragments/fn001338_1_236.670_237.140.wav"
-#    "/vol/tensusers/timzee/af_classification/pred_fragments/fn000254_2_412.278_412.848.wav",
-#    "/vol/tensusers/timzee/af_classification/pred_fragments/fn000254_2_983.158_983.618.wav",
-#    "/vol/tensusers/timzee/af_classification/pred_fragments/fn000261_2_417.028_417.518.wav",
-#    "/vol/tensusers/timzee/af_classification/pred_fragments/fn000265_2_233.057_233.487.wav",
-#    "/vol/tensusers/timzee/af_classification/pred_fragments/fn000265_2_59.917_60.377.wav"
+frag_fol = "d"
+file_paths = glob.glob(tens_path + "pred_fragments/" + frag_fol + "/*.wav")
+# file_paths = [
+#    "/vol/tensusers/timzee/af_classification/pred_fragments/af_eval/fn001107_1_149.402_149.832.wav",
+#    "/vol/tensusers/timzee/af_classification/pred_fragments/af_eval/fn001107_1_185.039_185.659.wav",
+#    "/vol/tensusers/timzee/af_classification/pred_fragments/af_eval/fn001107_1_35.097_35.547.wav",
+#    "/vol/tensusers/timzee/af_classification/pred_fragments/af_eval/fn001338_1_236.670_237.140.wav",
+#    "/vol/tensusers/timzee/af_classification/pred_fragments/af_eval/fn000254_2_412.278_412.848.wav",
+#    "/vol/tensusers/timzee/af_classification/pred_fragments/af_eval/fn000254_2_983.158_983.618.wav",
+#    "/vol/tensusers/timzee/af_classification/pred_fragments/af_eval/fn000261_2_417.028_417.518.wav",
+#    "/vol/tensusers/timzee/af_classification/pred_fragments/af_eval/fn000265_2_233.057_233.487.wav",
+#    "/vol/tensusers/timzee/af_classification/pred_fragments/af_eval/fn000265_2_59.917_60.377.wav"
 #    "/vol/tensusers/timzee/af_classification/pred_fragments/ifadv/DVA10O_1_101.173_101.623.wav",
 #    "/vol/tensusers/timzee/af_classification/pred_fragments/ifadv/DVA10O_1_10.214_10.704.wav",
 #    "/vol/tensusers/timzee/af_classification/pred_fragments/ifadv/DVA10O_1_103.825_104.425.wav",
 #    "/vol/tensusers/timzee/af_classification/pred_fragments/ifadv/DVA10O_1_108.375_108.825.wav",
 #    "/vol/tensusers/timzee/af_classification/pred_fragments/ifadv/DVA10O_1_108.505_108.935.wav"
-#]
+# ]
 
 for fp in file_paths:
     fragment_id = ".".join(fp.split(".")[:-1]).split("/")[-1]
     # get corpus info
-#    if fragment_id[0] in ["F", "M"]:
-#        corpus = "ifa"
-#    elif fragment_id[0] == "D":
-#        corpus = "ifadv"
-#    elif fragment_id[0] == "p":
-#        corpus = "ecsd"
-#    else:
+    if fragment_id[0] in ["F", "M"]:
+        corpus = "ifa"
+    elif fragment_id[0] == "D":
+        corpus = "ifadv"
+    elif fragment_id[0] == "p":
+        corpus = "ecsd"
+    else:
+        corpus = "cgn-" + frag_fol
 #        corpus = "cgn-" + fragment_id[0]
-    fn_num = int(fragment_id.split("_")[0][2:])
-    corpus = "cgn-o" if fn_num > 1000 and fn_num < 1566 else "cgn-a"
+#        fn_num = int(fragment_id.split("_")[0][2:])
+#        corpus = "cgn-o" if fn_num > 1000 and fn_num < 1566 else "cgn-a"
     #
-    wav, chan, start_time, end_time = fragment_id.split("_")
     print(fragment_id)
+    fragment_id_split = fragment_id.split("_")
+    wav = "_".join(fragment_id_split[:-3])
+    chan, start_time, end_time = fragment_id_split[-3:]
+#    wav, chan, start_time, end_time = fragment_id.split("_")
     rate, sig = scipy.io.wavfile.read(fp)
     np_mfcc = python_speech_features.mfcc(sig, rate, winlen=window, winstep=step)
     np_mfcc_d = python_speech_features.delta(np_mfcc, 2)
@@ -117,7 +121,7 @@ for fp in file_paths:
             unseen_samples = np.append(unseen_samples, np.array(new_row), axis=0)
     # save unseen samples for inspection
     summary_text = pd.DataFrame(np_mfcc).describe()
-    summary_text.to_csv(tens_path + "pred_mfcc/corp_large/" + fragment_id + "_sum.csv", float_format="%.2f")
+    summary_text.to_csv(tens_path + "pred_mfcc/" + corpus + "/" + fragment_id + "_sum.csv", float_format="%.2f")
     pd_samples = pd.DataFrame(data=unseen_samples, columns=_CSV_COLUMNS)
     predict_test_input_fn = create_predict_input_fn(pd_samples, batch_size=batch_size)
     tg = textgrid.TextGrid(minTime=float(start_time))
@@ -139,7 +143,7 @@ for fp in file_paths:
             prob_i = expected_features[af]
             af_probs = list(probabilities[:, prob_i])
 #            print(af_probs)
-            with open(tens_path + "pred_textgrids/corp_large/" + fragment_id + "_" + af + ".IntensityTier", "w") as f:
+            with open(tens_path + "pred_textgrids/" + corpus + "/" + fragment_id + "_" + af + ".IntensityTier", "w") as f:
                 f.write('File type = "ooTextFile"\nObject class = "IntensityTier"\n\n{}\n{}\n{}\n'.format(start_time, end_time, len(af_probs)))
                 for frame_i, prob in enumerate(af_probs, 0):
                     f_time = min_time + frame_i * step
@@ -161,7 +165,7 @@ for fp in file_paths:
         if max_time < float(end_time):  # add the empty interval for the final buffer (due to windowing over subsequent 5 frames)
             tier.add(max_time, float(end_time), "")
         tg.append(tier)
-    with open(tens_path + "pred_textgrids/corp_large/" + fragment_id + "_" + af + ".TextGrid", "w") as f:
+    with open(tens_path + "pred_textgrids/" + corpus + "/" + fragment_id + "_" + af + ".TextGrid", "w") as f:
         tg.write(f)
 
 
