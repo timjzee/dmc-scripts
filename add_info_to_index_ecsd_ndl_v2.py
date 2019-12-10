@@ -3,7 +3,6 @@
 import sys
 import select
 import re
-import gzip
 import tempfile
 import textgrid
 import codecs
@@ -14,7 +13,7 @@ import multiprocessing
 import subprocess
 
 tens_path = "/Volumes/tensusers/timzee/" if sys.platform == "darwin" else "/vol/tensusers/timzee/"
-cgn_path = "/Volumes/bigdata2/corpora2/CGN2/data/annot/" if sys.platform == "darwin" else "/vol/bigdata2/corpora2/CGN2/data/annot/"
+ecsd_path = "/Volumes/tensusers/timzee/ECSD/Annotations/" if sys.platform == "darwin" else "/vol/tensusers/timzee/ECSD/Annotations/"
 tz_path = "/Volumes/timzee/" if sys.platform == "darwin" else "/home/timzee/"
 
 ndl_window_start = -2
@@ -28,12 +27,11 @@ del entitydefs["quot"]
 del entitydefs["lt"]
 del entitydefs["gt"]
 
-component = "c"
-input_file_path = tens_path + "cgn/cgn_index_c_mono_nl2.txt"
+input_file_path = tens_path + "ECSD/ecsd_index2.txt"
 with codecs.open(input_file_path, "r", "utf-8") as f:
     input_file = f.readlines()
 
-running_cores = 68
+running_cores = 0
 
 # Do not run with more than 5 cores.
 num_cores = 5
@@ -116,7 +114,7 @@ with codecs.open(tens_path + "other/cow2.counts", "r", "utf-8") as f:
 
 print("Loading OOV Conversion Table")
 oov_conv = {}
-with codecs.open(tens_path + "cgn/oov_conv_table_comp-" + component + ".txt", "r", "utf-8") as f:
+with codecs.open(tens_path + "ECSD/oov_conv_table_comp-ecsd.txt", "r", "utf-8") as f:
     for counter, line in enumerate(f, 1):
         if counter > 1:
             c_key, input_w, orig_w, input_i, orig_i, meta_i, meta_l = line[:-1].split("\t")
@@ -134,9 +132,8 @@ excl_words = ["weegs", "graads", "wils"]
 
 
 def createTemp(tg_path):
-    with gzip.open(tg_path) as f:
-        gz_bytes = f.read()
-    tg_string = codecs.decode(gz_bytes, "iso-8859-1")
+    with codecs.open(tg_path, "r", encoding="utf-8") as f:
+        tg_string = f.read()
     tempf = tempfile.NamedTemporaryFile()
     tempf.write(tg_string.encode("utf-8"))
     tempf.flush()
@@ -151,7 +148,8 @@ def loadTextGrid(tg_path):
 
 
 def getSpeaker(fp, tier):
-    tg = loadTextGrid(cgn_path + "text/ort/comp-" + fp + ".ort.gz")
+    folder_n = fp.split("_part")[0].upper()
+    tg = loadTextGrid(ecsd_path + "ort/" + folder_n + "/" + fp + ".TextGrid")
     spkr = tg.getNames()[int(tier) - 1]
     return spkr
 
@@ -166,6 +164,7 @@ def checkCanonical(w, position, chunk_id):
         phonlist = kaldi_lex[nw].split(" ")
         return [phonlist, False]
     elif re.sub(r"[!?.,:;\t\n\r]*", "", w) in oov_conv[chunk_id]["orig_w"]:
+        print(w, "in OOV table")
         w_i = oov_conv[chunk_id]["orig_w"].index(re.sub(r"[!?.,:;\t\n\r]*", "", w))
         sw = oov_conv[chunk_id]["input_w"][w_i].split(" ")[position]
         if sw in kaldi_lex:
@@ -174,36 +173,40 @@ def checkCanonical(w, position, chunk_id):
         else:
             return [None, True]
     else:
+        print(w, "not in OOV table")
         return [None, False]
 
 
 def getAnnotInfo(orig_path, c_start, c_end, spkr, word_index):
     """Calls a Praat script which finds the chunk and returns info on phonetic context."""
-    output = subprocess.check_output([tz_path + "praat_nogui", "--run", tz_path + "GitHub/dmc-scripts/getAnnotInfo.praat", orig_path, c_start, c_end, spkr, str(word_index), "cgn/kaldi_annot/v2/comp-"]).decode("utf-8")[:-1].split(" ")
-#    print(output)
+    folder_n = orig_path.split("_part")[0].upper()
+    output = subprocess.check_output([tz_path + "praat_nogui", "--run", tz_path + "GitHub/dmc-scripts/getAnnotInfo.praat", orig_path, c_start, c_end, spkr, str(word_index), "ECSD/kaldi_annot/v2/" + folder_n + "/"]).decode("utf-8")[:-1].split(" ")
+    print(output)
     return output
 
 
 def getNDLphons(orig_path, c_start, c_end, spkr, word_index, wndw_start, wndw_end):
     """Calls a Praat script which finds the chunk and returns info on phonetic context."""
-    output = subprocess.check_output([tz_path + "praat_nogui", "--run", tz_path + "GitHub/dmc-scripts/getNDLphons.praat", orig_path, c_start, c_end, spkr, str(word_index), str(wndw_start), str(wndw_end), "cgn/kaldi_annot/v2/comp-"]).decode("utf-8")[:-1].split(" ")
+    folder_n = orig_path.split("_part")[0].upper()
+    output = subprocess.check_output([tz_path + "praat_nogui", "--run", tz_path + "GitHub/dmc-scripts/getNDLphons.praat", orig_path, c_start, c_end, spkr, str(word_index), str(wndw_start), str(wndw_end), "ECSD/kaldi_annot/v2/" + folder_n + "/"]).decode("utf-8")[:-1].split(" ")
 #    print(output)
     return output
 
 
 def getSentenceInfo(rt, spkr, from_t, to_t, wrd):
     candidates = []
-    wrd = "'s" if wrd == "da's" else wrd
+#    wrd = "'s" if wrd == "da's" else wrd
     for child in rt:
         if child.tag == "tau":
             if child.attrib["s"] == spkr:
                 for word in child:
-                    if word.attrib["tb"] == from_t and word.attrib["te"] == to_t:
+                    if "{0:.3f}".format(float(word.attrib["tb"])).encode("utf-8") == from_t and "{0:.3f}".format(float(word.attrib["te"])).encode("utf-8") == to_t:
+#                        print("{0:.3f}".format(float(word.attrib["tb"])), from_t, "{0:.3f}".format(float(word.attrib["te"])), to_t)
 #                        print(wrd.encode("utf-8"), h.unescape(word.attrib["w"]).encode("utf-8"))
                         if h.unescape(word.attrib["w"]) == wrd:
                             candidates.append((int(word.attrib["ref"].split(".")[1]), int(word.attrib["ref"].split(".")[2])))
     # in case later sentence is positioned above earlier sentence in xml
-    match = sorted(candidates)[0] if len(candidates) > 0 else (None, None)
+    match = sorted(candidates)[0]
     return match
 
 
@@ -212,12 +215,12 @@ def getPOS(rt, s_ind, w_ind, wrd):
     # if list is empty --> cross-referencing mistake in CGN; e.g. fv701108.12.8 in .skp = fv701108.13.8 in .tag
     if len(pw_list) == 0:
         print("CROSS-REFERENCE DOES NOT EXIST IN .TAG")
-        return "NA", "NA", "NA"
+        return "NA", "NA", "NA", ["NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA"]
     pw = pw_list[0]
     # we check for wordform, in case cross-reference does exist but is for another word due to CGN mistake
     if not h.unescape(pw.attrib["w"]) in wrd:
         print("WORDFORM MISMATCH IN CROSS-REFERENCE")
-        return "NA", "NA", "NA"
+        return "NA", "NA", "NA", ["NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA"]
     w_pos = re.sub(",", ";", pw.attrib["pos"])
     pos_attr = re.search(r"(?<=\().*(?=\))", w_pos).group().split(";")
     word_class = re.search(r".+(?=\()", w_pos).group()
@@ -269,7 +272,115 @@ def getPOS(rt, s_ind, w_ind, wrd):
         type_of_s = "NA"
     else:
         type_of_s = "S"
-    return w_pos, word_class, type_of_s
+    # Get dependency grammar features
+    pau = rt.findall(".//pau[@ref='{}']".format(".".join([rt.attrib["ref"], str(s_ind)])))[0]
+    pau_children = list(pau)
+    pw_index = pau_children.index(pw)
+#    if pw_index + 1 == len(pau_children):
+#        f1 = "end"  # dep label of closest right-adjacent link
+#        f2 = 0  # number of links above the closest right-adjacent link
+#        f4 = 0
+#    else:
+    # get closest incoming and outgoing link to the right
+    dep_index_out = int(pw.attrib["depindex"])
+    dep_out = pw.attrib["dep"]
+    out_tup = (dep_index_out, dep_out, True)
+    origindex = pw.attrib["origindex"]
+    dep_index_in = 0
+    dep_in = ""
+    for pw_right in pau_children[pw_index:]:
+        if pw_right.attrib["depindex"] == origindex:
+            dep_index_in = int(pw_right.attrib["origindex"])
+            dep_in = pw_right.attrib["dep"]
+            break
+    in_tup = (dep_index_in, dep_in, False)
+    if dep_index_in and dep_index_out > int(origindex):  # if both incoming and outgoing right-adjacent links exist
+        f1_index, f1, outgoing = min(out_tup, in_tup)
+    else:
+        if dep_index_in:  # only incoming
+            f1 = dep_in
+            f1_index = dep_index_in
+            outgoing = False
+        elif dep_index_out > int(origindex):  # only outgoing
+            f1 = dep_out
+            f1_index = dep_index_out
+            outgoing = True
+        else:
+            f1 = "end"
+            f1_index = int(origindex) + 1
+            outgoing = True
+    # now check for right-going and left-going links above closest right-adjacent link
+    f2 = 0
+    left_enc1 = 1000
+    left_enc2 = 1000
+    for pw_left in pau_children[:pw_index]:  # right-going links from preceding words
+        if int(pw_left.attrib["depindex"]) >= f1_index:
+            f2 += 1
+        # Number of words enclosed by shortest left-adjacent link
+        if pw_left.attrib["depindex"] == origindex:
+            left_enc1 = pw_index - pau_children.index(pw_left) - 1
+            left_enc1 = 0 if left_enc1 < 0 else left_enc1
+        if int(pw_left.attrib["origindex"]) == dep_index_out:
+            left_enc2 = pw_index - pau_children.index(pw_left) - 1
+            left_enc2 = 0 if left_enc2 < 0 else left_enc2
+    if left_enc1 == left_enc2 == 1000:
+        f3 = 0
+    else:
+        f3 = min(left_enc1, left_enc2)
+    if not outgoing:
+        if dep_index_out > f1_index:  # right-going link from current word
+            f2 += 1
+    num_link = 0
+    num_right_link = 0
+    for pw_right in pau_children[pw_index + 1:]:
+        if (int(pw_right.attrib["depindex"]) <= origindex) and (int(pw_right.attrib["depindex"]) != 0):  # left-going links from current and subsequent words
+            num_link += 1
+            if not outgoing:
+                if num_link > 1:
+                    f2 += 1
+            else:
+                f2 += 1
+        # Number of words enclosed by shortest right-adjacent link
+        if not outgoing:
+            if int(pw_right.attrib["depindex"]) == origindex and num_link == 1:
+                right_enc = pau_children.index(pw_right) - pw_index - 1
+                f4 = right_enc if right_enc >= 0 else 0
+        elif outgoing and f1 != "end":
+            if int(pw_right.attrib["origindex"]) == f1_index:
+                num_right_link += 1
+                if num_right_link == 1:
+                    right_enc = pau_children.index(pw_right) - pw_index - 1
+                    f4 = right_enc if right_enc >= 0 else 0
+        else:
+            f4 = 0
+    # Number of links going left/right from current word
+    if dep_index_out == 0:
+        f5 = 0
+        f6 = 0
+    elif dep_index_out > int(origindex):
+        f5 = 0
+        f6 = 1
+    else:
+        f5 = 1
+        f6 = 0
+    # Number of links going left/right from next word
+    if pw_index + 1 == len(pau_children):
+        f7 = 0
+        f8 = 0
+    else:
+        next_pw = pau_children[pw_index + 1]
+        dep_index_out_next = int(next_pw.attrib["depindex"])
+        origindex_next = int(next_pw.attrib["origindex"])
+        if dep_index_out_next == 0:
+            f7 = 0
+            f8 = 0
+        elif dep_index_out_next > origindex_next:
+            f7 = 0
+            f8 = 1
+        else:
+            f7 = 1
+            f8 = 0
+    return w_pos, word_class, type_of_s, [str(feat) for feat in [f1, f2, f3, f4, f5, f6, f7, f8]]
 
 
 def phones2diphones(phone_list):
@@ -341,7 +452,7 @@ def getNDLinfo(rt, s_index, w_in_sent, orig_path, c_start, c_end, spkr, w_in_chu
 
 def findWord(rt, s_index, w_index, shift):
     file_name = rt.attrib["ref"]
-    matches = rt.findall(".//tw[@ref='{}']".format(file_name + "." + str(s_index) + "." + str(w_index + shift)))  # i suspect this never finds a match if shift == -1
+    matches = rt.findall(".//tw[@ref='{}']".format(file_name + "." + str(s_index) + "." + str(w_index + shift)))
     if len(matches) == 0:
         if shift > 0:
             matches = rt.findall(".//tw[@ref='{}']".format(file_name + "." + str(s_index + 1) + "." + str(shift)))
@@ -375,22 +486,24 @@ def parseLine(f_path, chan, from_time, to_time, ort, tier, new_file):
     global hnr
     speaker = getSpeaker(f_path, tier)
     if new_file:
-        with gzip.open(cgn_path + "xml/skp-ort/comp-" + f_path + ".skp.gz") as h:
-            skp_gz = h.read()
-        skp_txt = codecs.decode(skp_gz, "ascii")
+        folder_n, part_n = f_path.split("_part")
+        file_n_uc = folder_n.upper() + "_part" + part_n
+        with codecs.open(ecsd_path + "skp-ort2/" + folder_n.upper() + "/" + file_n_uc + ".skp", "r", "utf-8") as h:
+            skp_txt = h.read()
+#        skp_txt = codecs.decode(skp_gz, "ascii")
 #        skp_txt = skp_txt.encode("utf-8")
-        for ent in entitydefs:
-            skp_txt = re.sub(r"&{};".format(ent), entitydefs[ent].decode("latin-1"), skp_txt)
+#        for ent in entitydefs:
+#            skp_txt = re.sub(r"&{};".format(ent), entitydefs[ent].decode("latin-1"), skp_txt)
 #            skp_txt.replace("&" + ent + ";", entitydefs[ent].decode("latin-1"))
 #        print(skp_txt)
         global skp_root
         skp_root = ET.fromstring(skp_txt)
 #        print(ET.tostring(skp_root))
-        with gzip.open(cgn_path + "xml/tag/comp-" + f_path + ".tag.gz") as h:
-            tag_gz = h.read()
-        tag_txt = codecs.decode(tag_gz, "ascii")
-        for ent in entitydefs:
-            tag_txt = re.sub(r"&{};".format(ent), entitydefs[ent].decode("latin-1"), tag_txt)
+        with codecs.open(ecsd_path + "tag2/" + folder_n.upper() + "/" + file_n_uc + ".tag", "r", "utf-8") as h:
+            tag_txt = h.read()
+#        tag_txt = codecs.decode(tag_gz, "ascii")
+#        for ent in entitydefs:
+#            tag_txt = re.sub(r"&{};".format(ent), entitydefs[ent].decode("latin-1"), tag_txt)
         global tag_root
         tag_root = ET.fromstring(tag_txt)
 #        hnr = getHNR(f_path, chan, tier)
@@ -408,7 +521,7 @@ def parseLine(f_path, chan, from_time, to_time, ort, tier, new_file):
         # check for segment / oov
         chunk_id = ",".join([f_path, tier, from_time, to_time])
         seg_var, split_up = checkCanonical(word, -1, chunk_id)
-        word = re.sub(r'\*[^ ]*', '', re.sub(r"[!?.,:;\t\n\r]*", "", word))
+        word = re.sub(r'\*[a-z]', '', re.sub(r"[!?.,:;\t\n\r]*", "", word))
         sent_i, word_sent_i = getSentenceInfo(skp_root, speaker, from_time, to_time, word)
         if not sent_i:
             continue
@@ -438,7 +551,7 @@ def parseLine(f_path, chan, from_time, to_time, ort, tier, new_file):
             next_wf = cow_uni[cow_next_word] if cow_next_word in cow_uni else "0"
             bigram = cow_word + " " + cow_next_word
             bigram_f = cow[bigram] if bigram in cow else "0"
-            prev_word = findWord(skp_root, sent_i, word_sent_i, -1)  # this is broken
+            prev_word = findWord(skp_root, sent_i, word_sent_i, -1)
             cow_prev_word = re.sub(r"'", "", prev_word.lower())
             prev_wf = cow_uni[cow_prev_word] if cow_prev_word in cow_uni else "0"
             prev_bigram = cow_prev_word + " " + cow_word
@@ -471,7 +584,7 @@ def parseLine(f_path, chan, from_time, to_time, ort, tier, new_file):
                             prev_phon = "NA"
 #            oov_meta = getOOVmeta(chunk_id, counter)
             phon_pron, next_phon_pron, prev_phon_pron, overlap, oov_meta = getAnnotInfo(f_path, from_time, to_time, speaker, counter)
-            word_pos, word_class, type_of_s = getPOS(tag_root, sent_i, word_sent_i, word)
+            word_pos, word_class, type_of_s, syntax_feats = getPOS(tag_root, sent_i, word_sent_i, word)
             num_syl, word_stress = celex[word] if word in celex else ["NA", "NA"]
             # if no syllable info in CELEX or affixed word not in CELEX
             if type_of_s not in ["S", "OTHER", "NA"] and num_syl == "NA" and word_stress == "NA":
@@ -485,7 +598,7 @@ def parseLine(f_path, chan, from_time, to_time, ort, tier, new_file):
             else:
                 lexome3 = ""
             other_ndl_cues = "_".join(cue_lexomes + pre_diphones + post_diphones)
-            output_lines.append([str(word_chunk_i), str(sent_i), str(word_sent_i), word, word_phon, num_phon, phon_pron, prev_phon, prev_phon_pron, next_phon, next_phon_pron, overlap, oov_meta, word_pos, word_class, type_of_s, speaker, subtlexwf, lg10wf, lex_neb_num, lex_neb_freq, ptan, ptaf, cow_wf, next_word, next_wf, bigram_f, prev_word, prev_wf, prev_bigram_f, num_syl, word_stress, boundary_diphones, other_ndl_cues])
+            output_lines.append([str(word_chunk_i), str(sent_i), str(word_sent_i), word, word_phon, num_phon, phon_pron, prev_phon, prev_phon_pron, next_phon, next_phon_pron, overlap, oov_meta, word_pos, word_class, type_of_s, speaker, subtlexwf, lg10wf, lex_neb_num, lex_neb_freq, ptan, ptaf, cow_wf, next_word, next_wf, bigram_f, prev_word, prev_wf, prev_bigram_f, num_syl, word_stress, boundary_diphones, other_ndl_cues] + syntax_feats)
             print(word, word_pos, type_of_s)
         if boundary_diphones != "":
             ndl_lines.append(["_".join(cue_lexomes + pre_diphones + [boundary_diphones] + post_diphones), "_".join([outcome for outcome in [lexome1, lexome2, lexome3] if outcome != ""])])
@@ -505,9 +618,9 @@ def readWriteMetaData(core_num="", start_line=1, end_line=num_index_lines):
 #    else:
     print("Reading from file")
     f = codecs.open(input_file_path, "r", "utf-8")
-    with codecs.open(tens_path + "cgn/all_s" + core_num + ".csv", "w", "utf-8") as g:
-        with codecs.open(tens_path + "cgn/ndl" + core_num + ".csv", "w", "utf-8") as h:
-            output_header = "wav,chan,chunk_start,chunk_end,oov_in_chunk,tier,word_chunk_i,sent_i,word_sent_i,word_ort,word_phon,num_phon,phon_pron,prev_phon,prev_phon_pron,next_phon,next_phon_pron,overlap,oov_meta,word_pos,word_class,type_of_s,speaker,per_mil_wf,log_wf,lex_neb,lex_neb_freq,ptan,ptaf,cow_wf,next_word,next_wf,bigram_f,prev_word,prev_wf,prev_bigram_f,num_syl,word_stress,ndl_boundary_diph,other_ndl_cues\n"
+    with codecs.open(tens_path + "ECSD/all_s" + core_num + ".csv", "w", "utf-8") as g:
+        with codecs.open(tens_path + "ECSD/ndl" + core_num + ".csv", "w", "utf-8") as h:
+            output_header = "wav,chan,chunk_start,chunk_end,oov_in_chunk,tier,word_chunk_i,sent_i,word_sent_i,word_ort,word_phon,num_phon,phon_pron,prev_phon,prev_phon_pron,next_phon,next_phon_pron,overlap,oov_meta,word_pos,word_class,type_of_s,speaker,per_mil_wf,log_wf,lex_neb,lex_neb_freq,ptan,ptaf,cow_wf,next_word,next_wf,bigram_f,prev_word,prev_wf,prev_bigram_f,num_syl,word_stress,ndl_boundary_diph,other_ndl_cues,syntax_f1,syntax_f2,syntax_f3,syntax_f4,syntax_f5,syntax_f6,syntax_f7,syntax_f8\n"
             g.write(output_header)
             ndl_header = "Cues,Outcomes\n"
             h.write(ndl_header)
@@ -540,17 +653,17 @@ def multiProcess():
     for job in jobs:
         job.join()
     # combine separate files
-    with codecs.open(tens_path + "cgn/all_s_comb_" + component + "2_ndl.csv", "w", encoding="utf-8") as g:
+    with codecs.open(tens_path + "ECSD/all_s_comb_ecsd_ndl.csv", "w", encoding="utf-8") as g:
         for core in range(num_cores):
             core_n = str(core + 1 + running_cores)
-            with codecs.open(tens_path + "cgn/all_s" + core_n + ".csv", "r", encoding="utf-8") as f:
+            with codecs.open(tens_path + "ECSD/all_s" + core_n + ".csv", "r", encoding="utf-8") as f:
                 for fln, f_line in enumerate(f, 1):
                     if not (core > 0 and fln == 1):
                         g.write(f_line)
-    with codecs.open(tens_path + "cgn/ndl_comp-" + component + "2.csv", "w", encoding="utf-8") as g:
+    with codecs.open(tens_path + "ECSD/ndl_ecsd.csv", "w", encoding="utf-8") as g:
         for core in range(num_cores):
             core_n = str(core + 1 + running_cores)
-            with codecs.open(tens_path + "cgn/ndl" + core_n + ".csv", "r", encoding="utf-8") as f:
+            with codecs.open(tens_path + "ECSD/ndl" + core_n + ".csv", "r", encoding="utf-8") as f:
                 for fln, f_line in enumerate(f, 1):
                     if not (core > 0 and fln == 1):
                         g.write(f_line)

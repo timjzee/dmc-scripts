@@ -1,9 +1,9 @@
 #!/usr/bin/env python2
+# -*- coding: utf-8 -*-
 
 import sys
 import select
 import re
-import gzip
 import tempfile
 import textgrid
 import codecs
@@ -14,7 +14,7 @@ import multiprocessing
 import subprocess
 
 tens_path = "/Volumes/tensusers/timzee/" if sys.platform == "darwin" else "/vol/tensusers/timzee/"
-cgn_path = "/Volumes/bigdata2/corpora2/CGN2/data/annot/" if sys.platform == "darwin" else "/vol/bigdata2/corpora2/CGN2/data/annot/"
+ecsd_path = "/Volumes/tensusers/timzee/ECSD/Annotations/" if sys.platform == "darwin" else "/vol/tensusers/timzee/ECSD/Annotations/"
 tz_path = "/Volumes/timzee/" if sys.platform == "darwin" else "/home/timzee/"
 
 ndl_window_start = -2
@@ -28,12 +28,11 @@ del entitydefs["quot"]
 del entitydefs["lt"]
 del entitydefs["gt"]
 
-component = "c"
-input_file_path = tens_path + "cgn/cgn_index_c_mono_nl2.txt"
+input_file_path = tens_path + "ECSD/ecsd_index2.txt"
 with codecs.open(input_file_path, "r", "utf-8") as f:
     input_file = f.readlines()
 
-running_cores = 68
+running_cores = 0
 
 # Do not run with more than 5 cores.
 num_cores = 5
@@ -116,7 +115,7 @@ with codecs.open(tens_path + "other/cow2.counts", "r", "utf-8") as f:
 
 print("Loading OOV Conversion Table")
 oov_conv = {}
-with codecs.open(tens_path + "cgn/oov_conv_table_comp-" + component + ".txt", "r", "utf-8") as f:
+with codecs.open(tens_path + "ECSD/oov_conv_table_comp-ecsd.txt", "r", "utf-8") as f:
     for counter, line in enumerate(f, 1):
         if counter > 1:
             c_key, input_w, orig_w, input_i, orig_i, meta_i, meta_l = line[:-1].split("\t")
@@ -128,15 +127,14 @@ with codecs.open(tens_path + "cgn/oov_conv_table_comp-" + component + ".txt", "r
                 "meta_i": [i for i in meta_i.split(",") if i != ""],
                 "meta_l": [i for i in meta_l.split(",") if i != ""]}
 
-time_words = ["ochtends", "morgens", "middags", "avonds", "nachts", "maandags", "dinsdags", "woensdags", "donderdags", "vrijdags", "zaterdags", "zondags", "weekends", "winters", "zomers", "daags"]
+# time_words = ["ochtends", "morgens", "middags", "avonds", "nachts", "maandags", "dinsdags", "woensdags", "donderdags", "vrijdags", "zaterdags", "zondags", "weekends", "winters", "zomers", "daags"]
 
-excl_words = ["weegs", "graads", "wils"]
+# excl_words = ["weegs", "graads", "wils"]
 
 
 def createTemp(tg_path):
-    with gzip.open(tg_path) as f:
-        gz_bytes = f.read()
-    tg_string = codecs.decode(gz_bytes, "iso-8859-1")
+    with codecs.open(tg_path, "r", encoding="utf-8") as f:
+        tg_string = f.read()
     tempf = tempfile.NamedTemporaryFile()
     tempf.write(tg_string.encode("utf-8"))
     tempf.flush()
@@ -151,7 +149,8 @@ def loadTextGrid(tg_path):
 
 
 def getSpeaker(fp, tier):
-    tg = loadTextGrid(cgn_path + "text/ort/comp-" + fp + ".ort.gz")
+    folder_n = fp.split("_part")[0].upper()
+    tg = loadTextGrid(ecsd_path + "ort/" + folder_n + "/" + fp + ".TextGrid")
     spkr = tg.getNames()[int(tier) - 1]
     return spkr
 
@@ -166,6 +165,7 @@ def checkCanonical(w, position, chunk_id):
         phonlist = kaldi_lex[nw].split(" ")
         return [phonlist, False]
     elif re.sub(r"[!?.,:;\t\n\r]*", "", w) in oov_conv[chunk_id]["orig_w"]:
+        print(w, "in OOV table")
         w_i = oov_conv[chunk_id]["orig_w"].index(re.sub(r"[!?.,:;\t\n\r]*", "", w))
         sw = oov_conv[chunk_id]["input_w"][w_i].split(" ")[position]
         if sw in kaldi_lex:
@@ -174,36 +174,40 @@ def checkCanonical(w, position, chunk_id):
         else:
             return [None, True]
     else:
+        print(w, "not in OOV table")
         return [None, False]
 
 
 def getAnnotInfo(orig_path, c_start, c_end, spkr, word_index):
     """Calls a Praat script which finds the chunk and returns info on phonetic context."""
-    output = subprocess.check_output([tz_path + "praat_nogui", "--run", tz_path + "GitHub/dmc-scripts/getAnnotInfo.praat", orig_path, c_start, c_end, spkr, str(word_index), "cgn/kaldi_annot/v2/comp-"]).decode("utf-8")[:-1].split(" ")
-#    print(output)
+    folder_n = orig_path.split("_part")[0].upper()
+    output = subprocess.check_output([tz_path + "praat_nogui", "--run", tz_path + "GitHub/dmc-scripts/getAnnotInfo.praat", orig_path, c_start, c_end, spkr, str(word_index), "ECSD/kaldi_annot/v2/" + folder_n + "/"]).decode("utf-8")[:-1].split(" ")
+    print(output)
     return output
 
 
 def getNDLphons(orig_path, c_start, c_end, spkr, word_index, wndw_start, wndw_end):
     """Calls a Praat script which finds the chunk and returns info on phonetic context."""
-    output = subprocess.check_output([tz_path + "praat_nogui", "--run", tz_path + "GitHub/dmc-scripts/getNDLphons.praat", orig_path, c_start, c_end, spkr, str(word_index), str(wndw_start), str(wndw_end), "cgn/kaldi_annot/v2/comp-"]).decode("utf-8")[:-1].split(" ")
+    folder_n = orig_path.split("_part")[0].upper()
+    output = subprocess.check_output([tz_path + "praat_nogui", "--run", tz_path + "GitHub/dmc-scripts/getNDLphons.praat", orig_path, c_start, c_end, spkr, str(word_index), str(wndw_start), str(wndw_end), "ECSD/kaldi_annot/v2/" + folder_n + "/"]).decode("utf-8")[:-1].split(" ")
 #    print(output)
     return output
 
 
 def getSentenceInfo(rt, spkr, from_t, to_t, wrd):
     candidates = []
-    wrd = "'s" if wrd == "da's" else wrd
+#    wrd = "'s" if wrd == "da's" else wrd
     for child in rt:
         if child.tag == "tau":
             if child.attrib["s"] == spkr:
                 for word in child:
-                    if word.attrib["tb"] == from_t and word.attrib["te"] == to_t:
+                    if "{0:.3f}".format(float(word.attrib["tb"])).encode("utf-8") == from_t and "{0:.3f}".format(float(word.attrib["te"])).encode("utf-8") == to_t:
+#                        print("{0:.3f}".format(float(word.attrib["tb"])), from_t, "{0:.3f}".format(float(word.attrib["te"])), to_t)
 #                        print(wrd.encode("utf-8"), h.unescape(word.attrib["w"]).encode("utf-8"))
                         if h.unescape(word.attrib["w"]) == wrd:
                             candidates.append((int(word.attrib["ref"].split(".")[1]), int(word.attrib["ref"].split(".")[2])))
     # in case later sentence is positioned above earlier sentence in xml
-    match = sorted(candidates)[0] if len(candidates) > 0 else (None, None)
+    match = sorted(candidates)[0]
     return match
 
 
@@ -219,57 +223,92 @@ def getPOS(rt, s_ind, w_ind, wrd):
         print("WORDFORM MISMATCH IN CROSS-REFERENCE")
         return "NA", "NA", "NA"
     w_pos = re.sub(",", ";", pw.attrib["pos"])
+    lem = pw.attrib["lem"]
     pos_attr = re.search(r"(?<=\().*(?=\))", w_pos).group().split(";")
     word_class = re.search(r".+(?=\()", w_pos).group()
     if word_class == "N":
-        if "mv" in pos_attr:
-            type_of_s = "PL"
-        elif "gen" in pos_attr:
-            if re.search(r"({})$".format("|".join(time_words)), wrd):
-                type_of_s = "GEN-TIME"
-            else:
-                if re.search(r"({})$".format("|".join(excl_words)), wrd):
-                    type_of_s = "OTHER"
-                else:
-                    type_of_s = "GEN-POSS"
+        if "dat" in pos_attr or "gen" in pos_attr:
+            type_of_en = "OTHER"
+        elif "mv" in pos_attr:
+            type_of_en = "PL"
         else:
-            type_of_s = "S"
+            type_of_en = "EN"
     elif word_class == "ADJ":
-        if "met-s" in pos_attr:
-            type_of_s = "PART"
-        elif "dim" in pos_attr:
-            type_of_s = "OTHER"  # stilletjes
+        if "bijz" in pos_attr:
+            type_of_en = "OTHER"
+        elif "mv-n" in pos_attr:
+            if "met-e" in pos_attr:
+                type_of_en = "ADJ-PL"
+            else:
+                type_of_en = "OTHER"
         else:
-            type_of_s = "S"
+            if lem == wrd[:-2]:
+                type_of_en = "ADJ"
+            else:
+                type_of_en = "OTHER"
     elif word_class == "WW":
-        type_of_s = "S"
+        if "pv" in pos_attr:
+            type_of_en = "VERB"
+        elif "inf" in pos_attr:
+            if "vrij" in pos_attr:
+                type_of_en = "VERB-INF"
+            elif "prenom" in pos_attr:
+                type_of_en = "VERB-ADJ"
+            else:
+                type_of_en = "VERB-NOUN"
+                assert "nom" in pos_attr
+        elif "vd" in pos_attr:
+            if ("ge" in wrd and "ge" not in lem) or (wrd[:2] == "ge"):
+                if "mv-n" in pos_attr:
+                    type_of_en = "VERB-PL"      # gekwetsten
+                else:
+                    type_of_en = "OTHER"        # we hebben gegeven/afgekeken --> circumfix
+            else:
+                if "vrij" in pos_attr:
+                    type_of_en = "VERB-PART"
+                elif "prenom" in pos_attr:
+                    type_of_en = "VERB-ADJ"
+        else:
+            type_of_en = "VERB-PL"
+            assert "mv-n" in pos_attr
     elif word_class == "TW":
-        if "prenom" in pos_attr:
-            if "bijz" in pos_attr:
-                type_of_s = "OTHER"  # eens geestes zijn
+        if "bijz" in pos_attr:
+            type_of_en = "OTHER"
+        elif "hoofd" in pos_attr:
+            if "mv-n" in pos_attr:
+                type_of_en = "NUM-CARD"
             else:
-                type_of_s = "S"
-        if "nom" in pos_attr:
-            type_of_s = "OTHER"  # met z'n tweetjes
+                type_of_en = "EN"           # zeven
         else:
-            type_of_s = "S"
+            type_of_en = "NUM-PL"
+            assert "mv-n" in pos_attr
     elif word_class == "VNW":
-        if "gen" in pos_attr:
-            if "onbep" in pos_attr and "pron" in pos_attr:
-                type_of_s = "GEN-POSS"  # iemands
-            elif "recip" in pos_attr:
-                type_of_s = "GEN-POSS"  # elkaars
+        if "bez" in pos_attr:
+            if "stan" in pos_attr:
+                if "prenom" in pos_attr:
+                    type_of_en = "EN"       # m'n
+                else:
+                    type_of_en = "PRON-PL"
+                    assert "nom" in pos_attr and "mv-n" in pos_attr
             else:
-                type_of_s = "OTHER"  # mijns inziens, wiens
+                type_of_en = "OTHER"        # te mijnen huize
+        elif "aanw" in pos_attr:
+            type_of_en = "OTHER"            # dezen, degenen
+        elif "onbep" in pos_attr:
+            if "stan" in pos_attr and "getal-n" in pos_attr:
+                type_of_en = "PRON-PL"      # allen, velen
+            else:
+                type_of_en = "OTHER"        # te allen prijze
         else:
-            type_of_s = "S"
+            type_of_en = "OTHER"
     elif word_class == "LID":
-        type_of_s = "OTHER"  # des
-    elif word_class == "SPEC" or word_class == "LET":
-        type_of_s = "NA"
+        if "onbep" in pos_attr and "stan" in pos_attr:
+            type_of_en = "EN"
+        else:
+            type_of_en = "OTHER"
     else:
-        type_of_s = "S"
-    return w_pos, word_class, type_of_s
+        type_of_en = "EN"
+    return w_pos, word_class, type_of_en
 
 
 def phones2diphones(phone_list):
@@ -341,7 +380,7 @@ def getNDLinfo(rt, s_index, w_in_sent, orig_path, c_start, c_end, spkr, w_in_chu
 
 def findWord(rt, s_index, w_index, shift):
     file_name = rt.attrib["ref"]
-    matches = rt.findall(".//tw[@ref='{}']".format(file_name + "." + str(s_index) + "." + str(w_index + shift)))  # i suspect this never finds a match if shift == -1
+    matches = rt.findall(".//tw[@ref='{}']".format(file_name + "." + str(s_index) + "." + str(w_index + shift)))
     if len(matches) == 0:
         if shift > 0:
             matches = rt.findall(".//tw[@ref='{}']".format(file_name + "." + str(s_index + 1) + "." + str(shift)))
@@ -375,22 +414,24 @@ def parseLine(f_path, chan, from_time, to_time, ort, tier, new_file):
     global hnr
     speaker = getSpeaker(f_path, tier)
     if new_file:
-        with gzip.open(cgn_path + "xml/skp-ort/comp-" + f_path + ".skp.gz") as h:
-            skp_gz = h.read()
-        skp_txt = codecs.decode(skp_gz, "ascii")
+        folder_n, part_n = f_path.split("_part")
+        file_n_uc = folder_n.upper() + "_part" + part_n
+        with codecs.open(ecsd_path + "skp-ort2/" + folder_n.upper() + "/" + file_n_uc + ".skp", "r", "utf-8") as h:
+            skp_txt = h.read()
+#        skp_txt = codecs.decode(skp_gz, "ascii")
 #        skp_txt = skp_txt.encode("utf-8")
-        for ent in entitydefs:
-            skp_txt = re.sub(r"&{};".format(ent), entitydefs[ent].decode("latin-1"), skp_txt)
+#        for ent in entitydefs:
+#            skp_txt = re.sub(r"&{};".format(ent), entitydefs[ent].decode("latin-1"), skp_txt)
 #            skp_txt.replace("&" + ent + ";", entitydefs[ent].decode("latin-1"))
 #        print(skp_txt)
         global skp_root
         skp_root = ET.fromstring(skp_txt)
 #        print(ET.tostring(skp_root))
-        with gzip.open(cgn_path + "xml/tag/comp-" + f_path + ".tag.gz") as h:
-            tag_gz = h.read()
-        tag_txt = codecs.decode(tag_gz, "ascii")
-        for ent in entitydefs:
-            tag_txt = re.sub(r"&{};".format(ent), entitydefs[ent].decode("latin-1"), tag_txt)
+        with codecs.open(ecsd_path + "tag2/" + folder_n.upper() + "/" + file_n_uc + ".tag", "r", "utf-8") as h:
+            tag_txt = h.read()
+#        tag_txt = codecs.decode(tag_gz, "ascii")
+#        for ent in entitydefs:
+#            tag_txt = re.sub(r"&{};".format(ent), entitydefs[ent].decode("latin-1"), tag_txt)
         global tag_root
         tag_root = ET.fromstring(tag_txt)
 #        hnr = getHNR(f_path, chan, tier)
@@ -408,7 +449,7 @@ def parseLine(f_path, chan, from_time, to_time, ort, tier, new_file):
         # check for segment / oov
         chunk_id = ",".join([f_path, tier, from_time, to_time])
         seg_var, split_up = checkCanonical(word, -1, chunk_id)
-        word = re.sub(r'\*[^ ]*', '', re.sub(r"[!?.,:;\t\n\r]*", "", word))
+        word = re.sub(r'\*[a-z]', '', re.sub(r"[!?.,:;\t\n\r]*", "", word))
         sent_i, word_sent_i = getSentenceInfo(skp_root, speaker, from_time, to_time, word)
         if not sent_i:
             continue
@@ -418,75 +459,75 @@ def parseLine(f_path, chan, from_time, to_time, ort, tier, new_file):
         cue_lexomes, pre_diphones, boundary_diphones, post_diphones, lexome1, lexome2, lexome3 = getNDLinfo(tag_root, sent_i, word_sent_i, f_path, from_time, to_time, speaker, counter, seg_var[-1] if seg_var else None)
         if not seg_var:
             oov = True
-        elif seg_var[-1] != segment:
-            pass
-        else:
-            word_chunk_i = counter
-            word_phon = " ".join(seg_var)
-            num_phon = str(len(seg_var))
-            subtlexwf, lg10wf = subtlex[word] if word in subtlex else ["NA", "NA"]
-            cow_word = re.sub(r"'", "", word.lower())
-            cow_wf = cow_uni[cow_word] if cow_word in cow_uni else "0"
-            otan, otaf, ptan, ptaf = neighbours[word] if word in neighbours else ["NA", "NA", "NA", "NA"]
-            lex_neb_num, lex_neb_freq = neighbours_lex[word] if word in neighbours_lex else ["NA", "NA"]
-#            sent_i, word_sent_i = getSentenceInfo(skp_root, speaker, from_time, to_time, word)
-#            found = skp_root.findall(".//tw[@ref='{}']".format(".".join([f_path.split("/")[-1], str(sent_i), str(word_sent_i)])))[0]
-#            parent = skp_root.findall("./tau[@ref='{}']".format(".".join([f_path.split("/")[-1], str(sent_i)])))[0]
-#            parent.remove(found)
-            next_word = findWord(skp_root, sent_i, word_sent_i, 1)
-            cow_next_word = re.sub(r"'", "", next_word.lower())
-            next_wf = cow_uni[cow_next_word] if cow_next_word in cow_uni else "0"
-            bigram = cow_word + " " + cow_next_word
-            bigram_f = cow[bigram] if bigram in cow else "0"
-            prev_word = findWord(skp_root, sent_i, word_sent_i, -1)  # this is broken
-            cow_prev_word = re.sub(r"'", "", prev_word.lower())
-            prev_wf = cow_uni[cow_prev_word] if cow_prev_word in cow_uni else "0"
-            prev_bigram = cow_prev_word + " " + cow_word
-            prev_bigram_f = cow[prev_bigram] if prev_bigram in cow else "0"
-            if counter == len(word_list):
-                next_phon = "SIL"
-            else:
-                next_trans = checkCanonical(word_list[counter], 0, chunk_id)[0]
-                if next_trans:
-                    next_phon = next_trans[0]
+        elif len(word) >= 2:
+            if word[-2:].encode("utf-8") in ["en", "ën", "'n"] and (seg_var[-1] == "@" or seg_var[-2:] == ["@", "n"]):
+                word_chunk_i = counter
+                word_phon = " ".join(seg_var)
+                num_phon = str(len(seg_var))
+                subtlexwf, lg10wf = subtlex[word] if word in subtlex else ["NA", "NA"]
+                cow_word = re.sub(r"'", "", word.lower())
+                cow_wf = cow_uni[cow_word] if cow_word in cow_uni else "0"
+                otan, otaf, ptan, ptaf = neighbours[word] if word in neighbours else ["NA", "NA", "NA", "NA"]
+                lex_neb_num, lex_neb_freq = neighbours_lex[word] if word in neighbours_lex else ["NA", "NA"]
+    #            sent_i, word_sent_i = getSentenceInfo(skp_root, speaker, from_time, to_time, word)
+    #            found = skp_root.findall(".//tw[@ref='{}']".format(".".join([f_path.split("/")[-1], str(sent_i), str(word_sent_i)])))[0]
+    #            parent = skp_root.findall("./tau[@ref='{}']".format(".".join([f_path.split("/")[-1], str(sent_i)])))[0]
+    #            parent.remove(found)
+                next_word = findWord(skp_root, sent_i, word_sent_i, 1)
+                cow_next_word = re.sub(r"'", "", next_word.lower())
+                next_wf = cow_uni[cow_next_word] if cow_next_word in cow_uni else "0"
+                bigram = cow_word + " " + cow_next_word
+                bigram_f = cow[bigram] if bigram in cow else "0"
+                prev_word = findWord(skp_root, sent_i, word_sent_i, -1)
+                cow_prev_word = re.sub(r"'", "", prev_word.lower())
+                prev_wf = cow_uni[cow_prev_word] if cow_prev_word in cow_uni else "0"
+                prev_bigram = cow_prev_word + " " + cow_word
+                prev_bigram_f = cow[prev_bigram] if prev_bigram in cow else "0"
+                if counter == len(word_list):
+                    next_phon = "SIL"
                 else:
-                    next_phon = "NA"
-            if len(seg_var) > 1:
-                prev_phon = seg_var[-2]
-            else:
-                if split_up:
-                    prev_trans = checkCanonical(word, -2, chunk_id)[0]
-                    if prev_trans:
-                        prev_phon = prev_trans[-1]
+                    next_trans = checkCanonical(word_list[counter], 0, chunk_id)[0]
+                    if next_trans:
+                        next_phon = next_trans[0]
                     else:
-                        prev_phon = "NA"
+                        next_phon = "NA"
+                if len(seg_var) > 1:
+                    prev_phon = seg_var[-2]
                 else:
-                    if counter == 1:
-                        prev_phon = "SIL"
-                    else:
-                        prev_trans = checkCanonical(word_list[counter - 2], -1, chunk_id)[0]
+                    if split_up:
+                        prev_trans = checkCanonical(word, -2, chunk_id)[0]
                         if prev_trans:
                             prev_phon = prev_trans[-1]
                         else:
                             prev_phon = "NA"
-#            oov_meta = getOOVmeta(chunk_id, counter)
-            phon_pron, next_phon_pron, prev_phon_pron, overlap, oov_meta = getAnnotInfo(f_path, from_time, to_time, speaker, counter)
-            word_pos, word_class, type_of_s = getPOS(tag_root, sent_i, word_sent_i, word)
-            num_syl, word_stress = celex[word] if word in celex else ["NA", "NA"]
-            # if no syllable info in CELEX or affixed word not in CELEX
-            if type_of_s not in ["S", "OTHER", "NA"] and num_syl == "NA" and word_stress == "NA":
-                word_stem = re.sub(r"'?s?$", "", word)
-                num_syl, word_stress = celex[word_stem] if word_stem in celex else ["NA", "NA"]
-            # update NDL outcome
-            if type_of_s == "S":
-                lexome3 = "NONMORPH"
-            elif type_of_s not in ["OTHER", "NA", "GEN-TIME"]:
-                lexome3 = re.sub(r'-', "", type_of_s[:])
-            else:
-                lexome3 = ""
-            other_ndl_cues = "_".join(cue_lexomes + pre_diphones + post_diphones)
-            output_lines.append([str(word_chunk_i), str(sent_i), str(word_sent_i), word, word_phon, num_phon, phon_pron, prev_phon, prev_phon_pron, next_phon, next_phon_pron, overlap, oov_meta, word_pos, word_class, type_of_s, speaker, subtlexwf, lg10wf, lex_neb_num, lex_neb_freq, ptan, ptaf, cow_wf, next_word, next_wf, bigram_f, prev_word, prev_wf, prev_bigram_f, num_syl, word_stress, boundary_diphones, other_ndl_cues])
-            print(word, word_pos, type_of_s)
+                    else:
+                        if counter == 1:
+                            prev_phon = "SIL"
+                        else:
+                            prev_trans = checkCanonical(word_list[counter - 2], -1, chunk_id)[0]
+                            if prev_trans:
+                                prev_phon = prev_trans[-1]
+                            else:
+                                prev_phon = "NA"
+    #            oov_meta = getOOVmeta(chunk_id, counter)
+                phon_pron, next_phon_pron, prev_phon_pron, overlap, oov_meta = getAnnotInfo(f_path, from_time, to_time, speaker, counter)
+                word_pos, word_class, type_of_en = getPOS(tag_root, sent_i, word_sent_i, word)
+                num_syl, word_stress = celex[word] if word in celex else ["NA", "NA"]
+                # if no syllable info in CELEX or affixed word not in CELEX
+                if type_of_en not in ["EN", "OTHER", "NA"] and num_syl == "NA" and word_stress == "NA":
+                    word_stem = re.sub(r"['eë]n$", "", word)
+                    num_syl, word_stress = celex[word_stem] if word_stem in celex else ["NA", "NA"]
+                    num_syl = str(int(num_syl) + 1) if num_syl != "NA" else "NA"
+                # update NDL outcome
+                if type_of_en == "EN":
+                    lexome3 = "NONMORPH"
+                elif type_of_en not in ["OTHER", "NA"]:
+                    lexome3 = type_of_en.split("-")[-1]
+                else:
+                    lexome3 = ""
+                other_ndl_cues = "_".join(cue_lexomes + pre_diphones + post_diphones)
+                output_lines.append([str(word_chunk_i), str(sent_i), str(word_sent_i), word, word_phon, num_phon, phon_pron, prev_phon, prev_phon_pron, next_phon, next_phon_pron, overlap, oov_meta, word_pos, word_class, type_of_en, speaker, subtlexwf, lg10wf, lex_neb_num, lex_neb_freq, ptan, ptaf, cow_wf, next_word, next_wf, bigram_f, prev_word, prev_wf, prev_bigram_f, num_syl, word_stress, boundary_diphones, other_ndl_cues])
+                print(word, word_pos, type_of_en)
         if boundary_diphones != "":
             ndl_lines.append(["_".join(cue_lexomes + pre_diphones + [boundary_diphones] + post_diphones), "_".join([outcome for outcome in [lexome1, lexome2, lexome3] if outcome != ""])])
         else:
@@ -505,9 +546,9 @@ def readWriteMetaData(core_num="", start_line=1, end_line=num_index_lines):
 #    else:
     print("Reading from file")
     f = codecs.open(input_file_path, "r", "utf-8")
-    with codecs.open(tens_path + "cgn/all_s" + core_num + ".csv", "w", "utf-8") as g:
-        with codecs.open(tens_path + "cgn/ndl" + core_num + ".csv", "w", "utf-8") as h:
-            output_header = "wav,chan,chunk_start,chunk_end,oov_in_chunk,tier,word_chunk_i,sent_i,word_sent_i,word_ort,word_phon,num_phon,phon_pron,prev_phon,prev_phon_pron,next_phon,next_phon_pron,overlap,oov_meta,word_pos,word_class,type_of_s,speaker,per_mil_wf,log_wf,lex_neb,lex_neb_freq,ptan,ptaf,cow_wf,next_word,next_wf,bigram_f,prev_word,prev_wf,prev_bigram_f,num_syl,word_stress,ndl_boundary_diph,other_ndl_cues\n"
+    with codecs.open(tens_path + "ECSD/all_en" + core_num + ".csv", "w", "utf-8") as g:
+        with codecs.open(tens_path + "ECSD/ndl_en" + core_num + ".csv", "w", "utf-8") as h:
+            output_header = "wav,chan,chunk_start,chunk_end,oov_in_chunk,tier,word_chunk_i,sent_i,word_sent_i,word_ort,word_phon,num_phon,phon_pron,prev_phon,prev_phon_pron,next_phon,next_phon_pron,overlap,oov_meta,word_pos,word_class,type_of_en,speaker,per_mil_wf,log_wf,lex_neb,lex_neb_freq,ptan,ptaf,cow_wf,next_word,next_wf,bigram_f,prev_word,prev_wf,prev_bigram_f,num_syl,word_stress,ndl_boundary_diph,other_ndl_cues\n"
             g.write(output_header)
             ndl_header = "Cues,Outcomes\n"
             h.write(ndl_header)
@@ -540,17 +581,17 @@ def multiProcess():
     for job in jobs:
         job.join()
     # combine separate files
-    with codecs.open(tens_path + "cgn/all_s_comb_" + component + "2_ndl.csv", "w", encoding="utf-8") as g:
+    with codecs.open(tens_path + "ECSD/all_en_comb_ecsd_ndl.csv", "w", encoding="utf-8") as g:
         for core in range(num_cores):
             core_n = str(core + 1 + running_cores)
-            with codecs.open(tens_path + "cgn/all_s" + core_n + ".csv", "r", encoding="utf-8") as f:
+            with codecs.open(tens_path + "ECSD/all_en" + core_n + ".csv", "r", encoding="utf-8") as f:
                 for fln, f_line in enumerate(f, 1):
                     if not (core > 0 and fln == 1):
                         g.write(f_line)
-    with codecs.open(tens_path + "cgn/ndl_comp-" + component + "2.csv", "w", encoding="utf-8") as g:
+    with codecs.open(tens_path + "ECSD/ndl_en_ecsd.csv", "w", encoding="utf-8") as g:
         for core in range(num_cores):
             core_n = str(core + 1 + running_cores)
-            with codecs.open(tens_path + "cgn/ndl" + core_n + ".csv", "r", encoding="utf-8") as f:
+            with codecs.open(tens_path + "ECSD/ndl_en" + core_n + ".csv", "r", encoding="utf-8") as f:
                 for fln, f_line in enumerate(f, 1):
                     if not (core > 0 and fln == 1):
                         g.write(f_line)

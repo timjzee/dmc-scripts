@@ -223,6 +223,7 @@ lines(density(bounds[bounds$cgn_comp == "o",]$tim_min_kal_dur))
 abline(v = 0)
 
 
+par(mfrow = c(2,4), mar=c(2,2,2,1), oma=c(0,0,2,0))
 
 ### check k
 bounds = read.csv(paste(cgn_path, "eval_boundaries_k.csv", sep = ""))
@@ -233,25 +234,26 @@ bounds$nn_dur = bounds$nn_end - bounds$nn_start
 bounds$tim_min_kal_dur = bounds$tim_dur - bounds$kal_dur
 bounds$kal_min_nn_dur = bounds$kal_dur - bounds$nn_dur
 bounds$tim_min_nn_dur = bounds$tim_dur - bounds$nn_dur
-mean(abs(bounds$tim_min_nn_dur), na.rm = TRUE)
-mean(abs(bounds$tim_min_kal_dur), na.rm = TRUE)
-plot(density(bounds$tim_min_nn_dur, na.rm = TRUE), xlim = c(-0.2, 0.2), lty = "dashed", main = "Duration difference to reference in CGN-K")
-lines(density(bounds$tim_min_kal_dur))
-abline(v = 0)
-legend("right", legend = c("KALDI", "NN"),
-       col = c("black", "black"),
-       lty = c("solid", "dashed"), cex=0.7)
+# mean(abs(bounds$tim_min_nn_dur), na.rm = TRUE)
+# mean(abs(bounds$tim_min_kal_dur), na.rm = TRUE)
+# plot(density(bounds$tim_min_nn_dur, na.rm = TRUE), xlim = c(-0.2, 0.2), lty = "dashed", main = "Duration difference to reference in CGN-K")
+# lines(density(bounds$tim_min_kal_dur))
+# abline(v = 0)
+# legend("right", legend = c("KALDI", "NN"),
+#        col = c("black", "black"),
+#        lty = c("solid", "dashed"), cex=0.7)
 bounds$new_dur = bounds$nn_end - bounds$kal_start + 0.01
 bounds$tim_min_new_dur = bounds$tim_dur - bounds$new_dur
 bounds$tim_min_kal_dur = bounds$tim_dur - bounds$kal_dur
 mean(abs(bounds$tim_min_new_dur), na.rm = TRUE)
 mean(abs(bounds$tim_min_kal_dur), na.rm = TRUE)
-plot(density(bounds$tim_min_new_dur, na.rm = TRUE), xlim = c(-0.2, 0.2), lty = "dashed", main = "Duration difference to reference in CGN-K (end bound. only)")
+plot(density(bounds$tim_min_new_dur, na.rm = TRUE), xlim = c(-0.1, 0.1), lty = "dashed", 
+     main = "CGN-K")
 lines(density(bounds$tim_min_kal_dur))
 abline(v = 0)
-legend("right", legend = c("KALDI", "NN"),
-       col = c("black", "black"),
-       lty = c("solid", "dashed"), cex=0.7)
+# legend("right", legend = c("KALDI", "NN"),
+#        col = c("black", "black"),
+#        lty = c("solid", "dashed"), cex=0.7)
 
 ### check ifadv
 bounds = read.csv(paste(ifadv_path, "eval_boundaries_ifadv.csv", sep = ""))
@@ -262,25 +264,26 @@ bounds$nn_dur = bounds$nn_end - bounds$nn_start
 bounds$tim_min_kal_dur = bounds$tim_dur - bounds$kal_dur
 bounds$kal_min_nn_dur = bounds$kal_dur - bounds$nn_dur
 bounds$tim_min_nn_dur = bounds$tim_dur - bounds$nn_dur
-mean(abs(bounds$tim_min_nn_dur), na.rm = TRUE)
-mean(abs(bounds$tim_min_kal_dur), na.rm = TRUE)
-plot(density(bounds$tim_min_nn_dur, na.rm = TRUE), xlim = c(-0.2, 0.2), lty = "dashed", main = "Duration difference to reference in IFADV")
-lines(density(bounds$tim_min_kal_dur))
-abline(v = 0)
-legend("right", legend = c("KALDI", "NN"),
-       col = c("black", "black"),
-       lty = c("solid", "dashed"), cex=0.7)
+# mean(abs(bounds$tim_min_nn_dur), na.rm = TRUE)
+# mean(abs(bounds$tim_min_kal_dur), na.rm = TRUE)
+# plot(density(bounds$tim_min_nn_dur, na.rm = TRUE), xlim = c(-0.2, 0.2), lty = "dashed", main = "Duration difference to reference in IFADV")
+# lines(density(bounds$tim_min_kal_dur))
+# abline(v = 0)
+# legend("right", legend = c("KALDI", "NN"),
+#        col = c("black", "black"),
+#        lty = c("solid", "dashed"), cex=0.7)
 bounds$new_dur = bounds$nn_end - bounds$kal_start + 0.01
 bounds$tim_min_new_dur = bounds$tim_dur - bounds$new_dur
 bounds$tim_min_kal_dur = bounds$tim_dur - bounds$kal_dur
 mean(abs(bounds$tim_min_new_dur), na.rm = TRUE)
 mean(abs(bounds$tim_min_kal_dur), na.rm = TRUE)
-plot(density(bounds$tim_min_new_dur, na.rm = TRUE), xlim = c(-0.2, 0.2), lty = "dashed", main = "Duration difference to reference in IFADV (end bound. only)")
+plot(density(bounds$tim_min_new_dur, na.rm = TRUE), xlim = c(-0.1, 0.1), lty = "dashed", 
+     main = "IFADV")
 lines(density(bounds$tim_min_kal_dur))
 abline(v = 0)
-legend("right", legend = c("KALDI", "NN"),
-       col = c("black", "black"),
-       lty = c("solid", "dashed"), cex=0.7)
+# legend("right", legend = c("KALDI", "NN"),
+#        col = c("black", "black"),
+#        lty = c("solid", "dashed"), cex=0.7)
 
 ### check ecsd
 bounds = read.csv(paste(ecsd_path, "eval_boundaries_ecsd.csv", sep = ""))
@@ -291,25 +294,26 @@ bounds$nn_dur = bounds$nn_end - bounds$nn_start
 bounds$tim_min_kal_dur = bounds$tim_dur - bounds$kal_dur
 bounds$kal_min_nn_dur = bounds$kal_dur - bounds$nn_dur
 bounds$tim_min_nn_dur = bounds$tim_dur - bounds$nn_dur
-mean(abs(bounds$tim_min_nn_dur), na.rm = TRUE)
-mean(abs(bounds$tim_min_kal_dur), na.rm = TRUE)
-plot(density(bounds$tim_min_nn_dur, na.rm = TRUE), xlim = c(-0.2, 0.2), lty = "dashed", main = "Duration difference to reference in ECSD")
-lines(density(bounds$tim_min_kal_dur))
-abline(v = 0)
-legend("right", legend = c("KALDI", "NN"),
-       col = c("black", "black"),
-       lty = c("solid", "dashed"), cex=0.7)
+# mean(abs(bounds$tim_min_nn_dur), na.rm = TRUE)
+# mean(abs(bounds$tim_min_kal_dur), na.rm = TRUE)
+# plot(density(bounds$tim_min_nn_dur, na.rm = TRUE), xlim = c(-0.2, 0.2), lty = "dashed", main = "Duration difference to reference in ECSD")
+# lines(density(bounds$tim_min_kal_dur))
+# abline(v = 0)
+# legend("right", legend = c("KALDI", "NN"),
+#        col = c("black", "black"),
+#        lty = c("solid", "dashed"), cex=0.7)
 bounds$new_dur = bounds$nn_end - bounds$kal_start + 0.01
 bounds$tim_min_new_dur = bounds$tim_dur - bounds$new_dur
 bounds$tim_min_kal_dur = bounds$tim_dur - bounds$kal_dur
 mean(abs(bounds$tim_min_new_dur), na.rm = TRUE)
 mean(abs(bounds$tim_min_kal_dur), na.rm = TRUE)
-plot(density(bounds$tim_min_new_dur, na.rm = TRUE), xlim = c(-0.2, 0.2), lty = "dashed", main = "Duration difference to reference in ECSD (end bound. only)")
+plot(density(bounds$tim_min_new_dur, na.rm = TRUE), xlim = c(-0.1, 0.1), lty = "dashed", 
+     main = "ECSD")
 lines(density(bounds$tim_min_kal_dur))
 abline(v = 0)
-legend("right", legend = c("KALDI", "NN"),
-       col = c("black", "black"),
-       lty = c("solid", "dashed"), cex=0.7)
+# legend("right", legend = c("KALDI", "NN"),
+#        col = c("black", "black"),
+#        lty = c("solid", "dashed"), cex=0.7)
 
 ### check o
 bounds = read.csv(paste(cgn_path, "eval_boundaries_o.csv", sep = ""))
@@ -320,25 +324,26 @@ bounds$nn_dur = bounds$nn_end - bounds$nn_start
 bounds$tim_min_kal_dur = bounds$tim_dur - bounds$kal_dur
 bounds$kal_min_nn_dur = bounds$kal_dur - bounds$nn_dur
 bounds$tim_min_nn_dur = bounds$tim_dur - bounds$nn_dur
-mean(abs(bounds$tim_min_nn_dur), na.rm = TRUE)
-mean(abs(bounds$tim_min_kal_dur), na.rm = TRUE)
-plot(density(bounds$tim_min_nn_dur, na.rm = TRUE), xlim = c(-0.2, 0.2), lty = "dashed", main = "Duration difference to reference in CGN-O")
-lines(density(bounds$tim_min_kal_dur))
-abline(v = 0)
-legend("right", legend = c("KALDI", "NN"),
-       col = c("black", "black"),
-       lty = c("solid", "dashed"), cex=0.7)
+# mean(abs(bounds$tim_min_nn_dur), na.rm = TRUE)
+# mean(abs(bounds$tim_min_kal_dur), na.rm = TRUE)
+# plot(density(bounds$tim_min_nn_dur, na.rm = TRUE), xlim = c(-0.2, 0.2), lty = "dashed", main = "Duration difference to reference in CGN-O")
+# lines(density(bounds$tim_min_kal_dur))
+# abline(v = 0)
+# legend("right", legend = c("KALDI", "NN"),
+#        col = c("black", "black"),
+#        lty = c("solid", "dashed"), cex=0.7)
 bounds$new_dur = bounds$nn_end - bounds$kal_start + 0.01
 bounds$tim_min_new_dur = bounds$tim_dur - bounds$new_dur
 bounds$tim_min_kal_dur = bounds$tim_dur - bounds$kal_dur
 mean(abs(bounds$tim_min_new_dur), na.rm = TRUE)
 mean(abs(bounds$tim_min_kal_dur), na.rm = TRUE)
-plot(density(bounds$tim_min_new_dur, na.rm = TRUE), xlim = c(-0.2, 0.2), lty = "dashed", main = "Duration difference to reference in CGN-O (end bound. only)")
+plot(density(bounds$tim_min_new_dur, na.rm = TRUE), xlim = c(-0.1, 0.1), lty = "dashed", 
+     main = "CGN-O")
 lines(density(bounds$tim_min_kal_dur))
 abline(v = 0)
-legend("right", legend = c("KALDI", "NN"),
-       col = c("black", "black"),
-       lty = c("solid", "dashed"), cex=0.7)
+# legend("right", legend = c("KALDI", "NN"),
+#        col = c("black", "black"),
+#        lty = c("solid", "dashed"), cex=0.7)
 
 ### check c
 bounds = read.csv(paste(cgn_path, "eval_boundaries_c.csv", sep = ""))
@@ -349,25 +354,25 @@ bounds$nn_dur = bounds$nn_end - bounds$nn_start
 bounds$tim_min_kal_dur = bounds$tim_dur - bounds$kal_dur
 bounds$kal_min_nn_dur = bounds$kal_dur - bounds$nn_dur
 bounds$tim_min_nn_dur = bounds$tim_dur - bounds$nn_dur
-mean(abs(bounds$tim_min_nn_dur), na.rm = TRUE)
-mean(abs(bounds$tim_min_kal_dur), na.rm = TRUE)
-plot(density(bounds$tim_min_nn_dur, na.rm = TRUE), xlim = c(-0.2, 0.2), lty = "dashed", main = "Duration difference to reference in CGN-C")
-lines(density(bounds$tim_min_kal_dur))
-abline(v = 0)
-legend("right", legend = c("KALDI", "NN"),
-       col = c("black", "black"),
-       lty = c("solid", "dashed"), cex=0.7)
+# mean(abs(bounds$tim_min_nn_dur), na.rm = TRUE)
+# mean(abs(bounds$tim_min_kal_dur), na.rm = TRUE)
+# plot(density(bounds$tim_min_nn_dur, na.rm = TRUE), xlim = c(-0.2, 0.2), lty = "dashed", main = "Duration difference to reference in CGN-C")
+# lines(density(bounds$tim_min_kal_dur))
+# abline(v = 0)
+# legend("right", legend = c("KALDI", "NN"),
+#        col = c("black", "black"),
+#        lty = c("solid", "dashed"), cex=0.7)
 bounds$new_dur = bounds$nn_end - bounds$kal_start + 0.01
 bounds$tim_min_new_dur = bounds$tim_dur - bounds$new_dur
 bounds$tim_min_kal_dur = bounds$tim_dur - bounds$kal_dur
 mean(abs(bounds$tim_min_new_dur), na.rm = TRUE)
 mean(abs(bounds$tim_min_kal_dur), na.rm = TRUE)
-plot(density(bounds$tim_min_new_dur, na.rm = TRUE), xlim = c(-0.2, 0.2), lty = "dashed", main = "Duration difference to reference in CGN-C (end bound. only)")
-lines(density(bounds$tim_min_kal_dur))
+plot(density(bounds$tim_min_kal_dur, na.rm = TRUE), xlim = c(-0.1, 0.1), main = "CGN-C")
+lines(density(bounds$tim_min_new_dur), lty = "dashed")
 abline(v = 0)
-legend("right", legend = c("KALDI", "NN"),
-       col = c("black", "black"),
-       lty = c("solid", "dashed"), cex=0.7)
+# legend("right", legend = c("KALDI", "NN"),
+#        col = c("black", "black"),
+#        lty = c("solid", "dashed"), cex=0.7)
 
 ### check d
 bounds = read.csv(paste(cgn_path, "eval_boundaries_d.csv", sep = ""))
@@ -378,25 +383,26 @@ bounds$nn_dur = bounds$nn_end - bounds$nn_start
 bounds$tim_min_kal_dur = bounds$tim_dur - bounds$kal_dur
 bounds$kal_min_nn_dur = bounds$kal_dur - bounds$nn_dur
 bounds$tim_min_nn_dur = bounds$tim_dur - bounds$nn_dur
-mean(abs(bounds$tim_min_nn_dur), na.rm = TRUE)
-mean(abs(bounds$tim_min_kal_dur), na.rm = TRUE)
-plot(density(bounds$tim_min_nn_dur, na.rm = TRUE), xlim = c(-0.2, 0.2), lty = "dashed", main = "Duration difference to reference in CGN-D")
-lines(density(bounds$tim_min_kal_dur))
-abline(v = 0)
-legend("right", legend = c("KALDI", "NN"),
-       col = c("black", "black"),
-       lty = c("solid", "dashed"), cex=0.7)
+# mean(abs(bounds$tim_min_nn_dur), na.rm = TRUE)
+# mean(abs(bounds$tim_min_kal_dur), na.rm = TRUE)
+# plot(density(bounds$tim_min_nn_dur, na.rm = TRUE), xlim = c(-0.2, 0.2), lty = "dashed", main = "Duration difference to reference in CGN-D")
+# lines(density(bounds$tim_min_kal_dur))
+# abline(v = 0)
+# legend("right", legend = c("KALDI", "NN"),
+#        col = c("black", "black"),
+#        lty = c("solid", "dashed"), cex=0.7)
 bounds$new_dur = bounds$nn_end - bounds$kal_start + 0.01
 bounds$tim_min_new_dur = bounds$tim_dur - bounds$new_dur
 bounds$tim_min_kal_dur = bounds$tim_dur - bounds$kal_dur
 mean(abs(bounds$tim_min_new_dur), na.rm = TRUE)
 mean(abs(bounds$tim_min_kal_dur), na.rm = TRUE)
-plot(density(bounds$tim_min_new_dur, na.rm = TRUE), xlim = c(-0.2, 0.2), lty = "dashed", main = "Duration difference to reference in CGN-D (end bound. only)")
+plot(density(bounds$tim_min_new_dur, na.rm = TRUE), xlim = c(-0.1, 0.1), lty = "dashed", 
+     main = "CGN-D")
 lines(density(bounds$tim_min_kal_dur))
 abline(v = 0)
-legend("right", legend = c("KALDI", "NN"),
-       col = c("black", "black"),
-       lty = c("solid", "dashed"), cex=0.7)
+# legend("right", legend = c("KALDI", "NN"),
+#        col = c("black", "black"),
+#        lty = c("solid", "dashed"), cex=0.7)
 
 ### check a
 bounds = read.csv(paste(cgn_path, "eval_boundaries_a.csv", sep = ""))
@@ -407,25 +413,34 @@ bounds$nn_dur = bounds$nn_end - bounds$nn_start
 bounds$tim_min_kal_dur = bounds$tim_dur - bounds$kal_dur
 bounds$kal_min_nn_dur = bounds$kal_dur - bounds$nn_dur
 bounds$tim_min_nn_dur = bounds$tim_dur - bounds$nn_dur
-mean(abs(bounds$tim_min_nn_dur), na.rm = TRUE)
-mean(abs(bounds$tim_min_kal_dur), na.rm = TRUE)
-plot(density(bounds$tim_min_nn_dur, na.rm = TRUE), xlim = c(-0.2, 0.2), lty = "dashed", main = "Duration difference to reference in CGN-A")
-lines(density(bounds$tim_min_kal_dur))
-abline(v = 0)
-legend("right", legend = c("KALDI", "NN"),
-       col = c("black", "black"),
-       lty = c("solid", "dashed"), cex=0.7)
+# mean(abs(bounds$tim_min_nn_dur), na.rm = TRUE)
+# mean(abs(bounds$tim_min_kal_dur), na.rm = TRUE)
+# plot(density(bounds$tim_min_nn_dur, na.rm = TRUE), xlim = c(-0.2, 0.2), lty = "dashed", main = "Duration difference to reference in CGN-A")
+# lines(density(bounds$tim_min_kal_dur))
+# abline(v = 0)
+# legend("right", legend = c("KALDI", "NN"),
+#        col = c("black", "black"),
+#        lty = c("solid", "dashed"), cex=0.7)
 bounds$new_dur = bounds$nn_end - bounds$kal_start + 0.01
 bounds$tim_min_new_dur = bounds$tim_dur - bounds$new_dur
 bounds$tim_min_kal_dur = bounds$tim_dur - bounds$kal_dur
 mean(abs(bounds$tim_min_new_dur), na.rm = TRUE)
 mean(abs(bounds$tim_min_kal_dur), na.rm = TRUE)
-plot(density(bounds$tim_min_new_dur, na.rm = TRUE), xlim = c(-0.2, 0.2), lty = "dashed", main = "Duration difference to reference in CGN-A (end bound. only)")
-lines(density(bounds$tim_min_kal_dur))
+plot(density(bounds$tim_min_kal_dur, na.rm = TRUE), xlim = c(-0.1, 0.1), main = "CGN-A")
+lines(density(bounds$tim_min_new_dur), lty = "dashed")
 abline(v = 0)
-legend("right", legend = c("KALDI", "NN"),
+# legend("right", legend = c("KALDI", "NN"),
+#        col = c("black", "black"),
+#        lty = c("solid", "dashed"), cex=0.7)
+
+
+plot(NULL,xaxt='n',yaxt='n',bty='n',ylab='',xlab='', xlim=0:1, ylim=0:1)
+legend("left", legend = c("KALDI", "NN (end bound.)"),
        col = c("black", "black"),
-       lty = c("solid", "dashed"), cex=0.7)
+       lty = c("solid", "dashed"), cex=1, box.lwd = 0)
+
+mtext("Duration difference to reference (end bound. only)", side = 3, outer = TRUE)
+
 
 
 

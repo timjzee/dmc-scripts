@@ -45,40 +45,46 @@ get_phon_class = function(x) {
   }
 }
 
-s_dur_a = read.csv(paste(cgn_path, "comp-a_s_ndl_static_final.csv", sep = ""))
+s_dur_a = read.csv(paste(cgn_path, "syntax_s_comb_comp-a2.csv", sep = ""))
 s_dur_a$corpus = as.factor("cgn-a")
 s_dur_a$register = as.factor("conversation")
 s_dur_a$mean_hnr = as.factor(s_dur_a$mean_hnr)
 s_dur_a$nn_end_score = as.factor(s_dur_a$nn_end_score)
-s_dur_c = read.csv(paste(cgn_path, "comp-c_s_ndl_static_final.csv", sep = ""))
+s_dur_a = s_dur_a[s_dur_a$overlap == FALSE,]
+s_dur_a = s_dur_a[ , !(names(s_dur_a) %in% c("overlap"))]
+s_dur_c = read.csv(paste(cgn_path, "syntax_s_comb_comp-c2.csv", sep = ""))
 s_dur_c$corpus = as.factor("cgn-c")
 s_dur_c$register = as.factor("conversation")
 s_dur_c$birth_year = as.integer(s_dur_c$birth_year)
 s_dur_c$mean_hnr = as.factor(s_dur_c$mean_hnr)
 s_dur_c$nn_end_score = as.factor(s_dur_c$nn_end_score)
-s_dur_d = read.csv(paste(cgn_path, "comp-d_s_ndl_static_final.csv", sep = ""))
+s_dur_c = s_dur_c[s_dur_c$overlap == FALSE,]
+s_dur_c = s_dur_c[ , !(names(s_dur_c) %in% c("overlap"))]
+s_dur_d = read.csv(paste(cgn_path, "syntax_s_comb_comp-d2.csv", sep = ""))
 s_dur_d$corpus = as.factor("cgn-d")
 s_dur_d$register = as.factor("conversation")
 s_dur_d$mean_hnr = as.factor(s_dur_d$mean_hnr)
 s_dur_d$nn_end_score = as.factor(s_dur_d$nn_end_score)
-s_dur_ifadv = read.csv(paste(ifadv_path, "ifadv_s_ndl_static_final.csv", sep = ""))
+s_dur_d = s_dur_d[s_dur_d$overlap == FALSE,]
+s_dur_d = s_dur_d[ , !(names(s_dur_d) %in% c("overlap"))]
+s_dur_ifadv = read.csv(paste(ifadv_path, "syntax_s_comb_ifadv.csv", sep = ""))
 s_dur_ifadv$corpus = as.factor("ifadv")
 s_dur_ifadv$register = as.factor("conversation")
 s_dur_ifadv$mean_hnr = as.factor(s_dur_ifadv$mean_hnr)
 s_dur_ifadv$nn_end_score = as.factor(s_dur_ifadv$nn_end_score)
 levels(s_dur_ifadv$speaker_sex) = c("sex2", "sex1")
-s_dur_ecsd = read.csv(paste(ecsd_path, "ecsd_s_ndl_static.csv", sep = ""))
+s_dur_ecsd = read.csv(paste(ecsd_path, "syntax_s_comb_ecsd.csv", sep = ""))
 s_dur_ecsd$corpus = as.factor("ecsd")
 s_dur_ecsd$register = as.factor("conversation")
 s_dur_ecsd$mean_hnr = as.factor(s_dur_ecsd$mean_hnr)
 s_dur_ecsd$nn_end_score = as.factor(s_dur_ecsd$nn_end_score)
 
-s_dur_k = read.csv(paste(cgn_path, "comp-k_s_ndl_static_final.csv", sep = ""))
+s_dur_k = read.csv(paste(cgn_path, "syntax_s_comb_comp-k.csv", sep = ""))
 s_dur_k$corpus = as.factor("cgn-k")
 s_dur_k$register = as.factor("news")
 s_dur_k$mean_hnr = as.factor(s_dur_k$mean_hnr)
 s_dur_k$nn_end_score = as.factor(s_dur_k$nn_end_score)
-s_dur_o = read.csv(paste(cgn_path, "comp-o_s_ndl_static_final.csv", sep = ""))
+s_dur_o = read.csv(paste(cgn_path, "syntax_s_comb_comp-o.csv", sep = ""))
 s_dur_o$corpus = as.factor("cgn-o")
 s_dur_o$register = as.factor("stories")
 s_dur_o$mean_hnr = as.factor(s_dur_o$mean_hnr)
@@ -140,12 +146,26 @@ nrow(s_dur)
 s_dur = s_dur[!(is.na(s_dur$speech_rate_pron) | is.na(s_dur$base_dur) 
                 | is.na(s_dur$num_syl_pron) | is.na(s_dur$num_cons_pron)
                 | is.na(s_dur$log_wf) | is.na(s_dur$lex_neb) | is.na(s_dur$log_bigf)
-                | is.na(s_dur$stress_dist)), ]
+                | is.na(s_dur$stress_dist) | is.na(s_dur$syntax_f2)
+                | is.na(s_dur$syntax_f3) | is.na(s_dur$syntax_f4)
+                | is.na(s_dur$syntax_f5) | is.na(s_dur$syntax_f6)
+                | is.na(s_dur$syntax_f7) | is.na(s_dur$syntax_f8)), ]
 nrow(s_dur)
+
+# convert syntax features to numeric
+s_dur$syntax_f2 = as.numeric(s_dur$syntax_f2)
+s_dur$syntax_f3 = as.numeric(s_dur$syntax_f3)
+s_dur$syntax_f4 = as.numeric(s_dur$syntax_f4)
+s_dur$syntax_f5 = as.numeric(s_dur$syntax_f5)
+s_dur$syntax_f6 = as.numeric(s_dur$syntax_f6)
+s_dur$syntax_f7 = as.numeric(s_dur$syntax_f7)
+s_dur$syntax_f8 = as.numeric(s_dur$syntax_f8)
 
 # Inspect collinearity
 continuous = c("speech_rate_pron", "base_dur", "num_syl_pron", 
-               "num_cons_pron", "log_wf", "lex_neb", "log_bigf", "stress_dist")
+               "num_cons_pron", "log_wf", "lex_neb", "log_bigf", "stress_dist",
+               "syntax_f2", "syntax_f3", "syntax_f4", "syntax_f5",
+               "syntax_f6", "syntax_f7", "syntax_f8")
 
 corrplot(cor(s_dur[, continuous], use = "complete.obs"), method = "number")
 vif(lm(log_s_dur ~ speech_rate_pron + base_dur + num_syl_pron 
@@ -153,27 +173,48 @@ vif(lm(log_s_dur ~ speech_rate_pron + base_dur + num_syl_pron
 collin.fnc(na.omit(s_dur[, continuous]))$cnumber
 
 # principle components
-col_pred = s_dur[, c("speech_rate_pron", "base_dur", "num_syl_pron", "num_cons_pron", "log_wf", "lex_neb", "log_bigf", "stress_dist")]
+col_pred = s_dur[, c("speech_rate_pron", "base_dur", "num_syl_pron", "num_cons_pron", 
+                     "log_wf", "lex_neb", "log_bigf", "stress_dist", "syntax_f2",
+                     "syntax_f3", "syntax_f4", "syntax_f5", "syntax_f6", "syntax_f7",
+                     "syntax_f8")]
 col_pred_pca = prcomp(col_pred, center = T, scale. = T)
 summary(col_pred_pca)
 
 rotation_df = as.data.frame(col_pred_pca$rotation)
-rotation_df_ordered = rotation_df[order(-abs(rotation_df$PC1)),]
-structure(rotation_df_ordered[, "PC1"],
+rotation_df_ordered = rotation_df[order(-abs(rotation_df$PC3)),]
+structure(rotation_df_ordered[, "PC3"],
           names=rownames(rotation_df_ordered))
 
-# keep pc1 - pc4, threshold of 0.9 cumulative proportion reached
+# keep pc1 - pc9, threshold of 0.9 cumulative proportion reached
 
 s_dur$PC1 = col_pred_pca$x[,1]
 s_dur$PC2 = col_pred_pca$x[,2]
 s_dur$PC3 = col_pred_pca$x[,3]
 s_dur$PC4 = col_pred_pca$x[,4]
+s_dur$PC5 = col_pred_pca$x[,5]
+s_dur$PC6 = col_pred_pca$x[,6]
+s_dur$PC7 = col_pred_pca$x[,7]
+s_dur$PC8 = col_pred_pca$x[,8]
+s_dur$PC9 = col_pred_pca$x[,9]
 
-continuous = c("PC1", "PC2", "PC3", "PC4")
+continuous = c("PC1", "PC2", "PC3", "PC4", "PC5", "PC6", "PC7", "PC8", "PC9")
 corrplot(cor(s_dur[, continuous], use = "complete.obs"), method = "number")
 
-categorical = c("type_of_s", "register", "next_phon_class", 
+categorical = c("type_of_s", 
+                "register", 
+                "next_phon_class", 
                 "prev_mention", "phrase_final")
+
+# remove lines for which categorical predictors are NA
+nrow(s_dur)
+s_dur = s_dur[!(is.na(s_dur$type_of_s) | is.na(s_dur$next_phon_class) 
+                | is.na(s_dur$prev_mention) | is.na(s_dur$register)
+                | is.na(s_dur$phrase_final)), ]
+nrow(s_dur)
+
+s_dur = s_dur[s_dur$type_of_s %in% c("S", "PL"),]
+s_dur$type_of_s = as.factor(as.character(s_dur$type_of_s))
+s_dur$type_of_s = relevel(s_dur$type_of_s, ref="S")
 
 cat_ass = matrix(c(cramerV(table(s_dur[,c("type_of_s", "type_of_s")]), bias.correct = TRUE),
                    cramerV(table(s_dur[,c("type_of_s", "register")]), bias.correct = TRUE),
@@ -210,24 +251,49 @@ cat_con = matrix(c(sqrt(summary(lm(PC1 ~ type_of_s, data = s_dur))$r.squared),
                    sqrt(summary(lm(PC2 ~ type_of_s, data = s_dur))$r.squared),
                    sqrt(summary(lm(PC3 ~ type_of_s, data = s_dur))$r.squared),
                    sqrt(summary(lm(PC4 ~ type_of_s, data = s_dur))$r.squared),
+                   sqrt(summary(lm(PC5 ~ type_of_s, data = s_dur))$r.squared),
+                   sqrt(summary(lm(PC6 ~ type_of_s, data = s_dur))$r.squared),
+                   sqrt(summary(lm(PC7 ~ type_of_s, data = s_dur))$r.squared),
+                   sqrt(summary(lm(PC8 ~ type_of_s, data = s_dur))$r.squared),
+                   sqrt(summary(lm(PC9 ~ type_of_s, data = s_dur))$r.squared),
                    sqrt(summary(lm(PC1 ~ register, data = s_dur))$r.squared),
                    sqrt(summary(lm(PC2 ~ register, data = s_dur))$r.squared),
                    sqrt(summary(lm(PC3 ~ register, data = s_dur))$r.squared),
                    sqrt(summary(lm(PC4 ~ register, data = s_dur))$r.squared),
+                   sqrt(summary(lm(PC5 ~ register, data = s_dur))$r.squared),
+                   sqrt(summary(lm(PC6 ~ register, data = s_dur))$r.squared),
+                   sqrt(summary(lm(PC7 ~ register, data = s_dur))$r.squared),
+                   sqrt(summary(lm(PC8 ~ register, data = s_dur))$r.squared),
+                   sqrt(summary(lm(PC9 ~ register, data = s_dur))$r.squared),
                    sqrt(summary(lm(PC1 ~ next_phon_class, data = s_dur))$r.squared),
                    sqrt(summary(lm(PC2 ~ next_phon_class, data = s_dur))$r.squared),
                    sqrt(summary(lm(PC3 ~ next_phon_class, data = s_dur))$r.squared),
                    sqrt(summary(lm(PC4 ~ next_phon_class, data = s_dur))$r.squared),
+                   sqrt(summary(lm(PC5 ~ next_phon_class, data = s_dur))$r.squared),
+                   sqrt(summary(lm(PC6 ~ next_phon_class, data = s_dur))$r.squared),
+                   sqrt(summary(lm(PC7 ~ next_phon_class, data = s_dur))$r.squared),
+                   sqrt(summary(lm(PC8 ~ next_phon_class, data = s_dur))$r.squared),
+                   sqrt(summary(lm(PC9 ~ next_phon_class, data = s_dur))$r.squared),
                    sqrt(summary(lm(PC1 ~ prev_mention, data = s_dur))$r.squared),
                    sqrt(summary(lm(PC2 ~ prev_mention, data = s_dur))$r.squared),
                    sqrt(summary(lm(PC3 ~ prev_mention, data = s_dur))$r.squared),
                    sqrt(summary(lm(PC4 ~ prev_mention, data = s_dur))$r.squared),
+                   sqrt(summary(lm(PC5 ~ prev_mention, data = s_dur))$r.squared),
+                   sqrt(summary(lm(PC6 ~ prev_mention, data = s_dur))$r.squared),
+                   sqrt(summary(lm(PC7 ~ prev_mention, data = s_dur))$r.squared),
+                   sqrt(summary(lm(PC8 ~ prev_mention, data = s_dur))$r.squared),
+                   sqrt(summary(lm(PC9 ~ prev_mention, data = s_dur))$r.squared),
                    sqrt(summary(lm(PC1 ~ phrase_final, data = s_dur))$r.squared),
                    sqrt(summary(lm(PC2 ~ phrase_final, data = s_dur))$r.squared),
                    sqrt(summary(lm(PC3 ~ phrase_final, data = s_dur))$r.squared),
-                   sqrt(summary(lm(PC4 ~ phrase_final, data = s_dur))$r.squared)
+                   sqrt(summary(lm(PC4 ~ phrase_final, data = s_dur))$r.squared),
+                   sqrt(summary(lm(PC5 ~ phrase_final, data = s_dur))$r.squared),
+                   sqrt(summary(lm(PC6 ~ phrase_final, data = s_dur))$r.squared),
+                   sqrt(summary(lm(PC7 ~ phrase_final, data = s_dur))$r.squared),
+                   sqrt(summary(lm(PC8 ~ phrase_final, data = s_dur))$r.squared),
+                   sqrt(summary(lm(PC9 ~ phrase_final, data = s_dur))$r.squared)
 ), 
-nrow = 5, ncol = 4, byrow = T, dimnames = list(
+nrow = 5, ncol = 9, byrow = T, dimnames = list(
   categorical,
   continuous))
 
@@ -243,14 +309,14 @@ s_dur = s_dur[ , !(names(s_dur) %in% drop)]
 
 s_dur = na.omit(s_dur)
 
-s_dur = s_dur[s_dur$type_of_s %in% c("S", "PL"),]
-s_dur$type_of_s = as.factor(as.character(s_dur$type_of_s))
-s_dur$type_of_s = relevel(s_dur$type_of_s, ref="S")
+#s_dur = s_dur[s_dur$type_of_s %in% c("S", "PL"),]
+#s_dur$type_of_s = as.factor(as.character(s_dur$type_of_s))
+#s_dur$type_of_s = relevel(s_dur$type_of_s, ref="S")
 
 ### try Mirjam's residuals method
 
-control = lmer(log_s_dur ~ PC1 + PC2 + PC3 + PC4 
-               + next_phon_class + prev_mention 
+control = lmer(log_s_dur ~ PC1 + PC2 + PC3 + PC4 + PC5 + PC6 + PC7 + PC8 + PC9
+               + next_phon_class + prev_mention
                + (1 | speaker) + (1 | word_ort),
                control = lmerControl(optCtrl = list(maxfun = 1e6, ftol_abs = 1e-8)),
                data=s_dur)
@@ -258,10 +324,10 @@ control = lmer(log_s_dur ~ PC1 + PC2 + PC3 + PC4
 s_dur$dur_resid = resid(control)
 s_dur_trim = s_dur[abs(scale(s_dur$dur_resid)) < 2.5,]
 
-control_trim = lmer(log_s_dur ~ PC1 + PC2 + PC3 + PC4 
-                    + next_phon_class + prev_mention 
+control_trim = lmer(log_s_dur ~ PC1 + PC2 + PC3 + PC4 + PC5 + PC6 + PC7 + PC8 + PC9
+                    + next_phon_class + prev_mention
                     + (1 | speaker) + (1 | word_ort),
-                    control = lmerControl(optCtrl = list(maxfun = 1e6)),
+                    control = lmerControl(optCtrl = list(maxfun = 1e6, ftol_abs = 1e-8)),
                     data=s_dur_trim)
 
 par(mfrow=c(2,2))
@@ -317,7 +383,7 @@ mean_news_s - mean_news_pl
 
 # Centre of Gravity
 
-control_cog = lmer(s_cog_window ~ PC1 + PC2 + PC3 + PC4
+control_cog = lmer(s_cog_window ~ PC1 + PC2 + PC3 + PC4 + PC5 + PC6 + PC7 + PC8 + PC9
                    + next_phon_class + prev_mention
                    + (1 | speaker) + (1 | word_ort),
                    control = lmerControl(optCtrl = list(maxfun = 1e6)),
@@ -326,7 +392,7 @@ control_cog = lmer(s_cog_window ~ PC1 + PC2 + PC3 + PC4
 s_dur$cog_resid = resid(control_cog)
 s_cog_trim = s_dur[abs(scale(s_dur$cog_resid)) < 2.5,]
 
-control_cog_trim = lmer(s_cog_window ~ PC1 + PC2 + PC3 + PC4
+control_cog_trim = lmer(s_cog_window ~ PC1 + PC2 + PC3 + PC4 + PC5 + PC6 + PC7 + PC8 + PC9
                         + next_phon_class + prev_mention
                         + (1 | speaker) + (1 | word_ort),
                         control = lmerControl(optCtrl = list(maxfun = 1e6)),

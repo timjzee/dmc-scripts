@@ -8,9 +8,9 @@ if (Sys.info()[1] == "Darwin"){
 }
 
 combined = read.csv(paste(cgn_path, "ndl_ifadv.csv", sep = ""))
-combined = combined %>% count(Cues, Outcomes)
-names(combined) = c("Cues", "Outcomes", "Frequency")
-head(combined)
-combined.w = estimateWeights(combined)
+combined2 = combined %>% count(Cues, Outcomes)
+names(combined2) = c("Cues", "Outcomes", "Frequency")
+head(combined2)
+combined.w = estimateWeights(combined2)
 
 saveRDS(combined.w, file = paste(cgn_path, "ifadv_ndl_weights.rds", sep = ""))

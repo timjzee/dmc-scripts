@@ -70,6 +70,10 @@ write.table(s_sub_df[ ,c("wav", "chan", "chunk_start", "chunk_end", "tier", "wor
             file = paste(f_path, "comp-c_s_ndl.csv", sep = ""), row.names=FALSE, col.names=TRUE, sep=",", quote = FALSE)
 
 
+#write.table(s_sub_df[ ,c("overlap")], 
+#            file = paste(f_path, "comp-a_overlap.csv", sep = ""), row.names=FALSE, col.names=TRUE, sep=",", quote = FALSE)
+
+
 #word_t = table(s_sub_df$word_ort)
 #s_sub_df$ort_freq = as.integer(word_t[s_sub_df$word_ort])
 #s_sub_df = s_sub_df[rowSums(is.na(s_sub_df)) != ncol(s_sub_df),]
