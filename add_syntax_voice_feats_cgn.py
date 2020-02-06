@@ -23,14 +23,17 @@ del entitydefs["quot"]
 del entitydefs["lt"]
 del entitydefs["gt"]
 
-input_file_path = tens_path + "cgn/comp-c_en_ndl_static_final.csv"
+component = "o"
+
+# input_file_path = tens_path + "cgn/test.tmp"
+input_file_path = tens_path + "cgn/comp-" + component + "_s_ndl_static_final.csv"
 with codecs.open(input_file_path, "r", "utf-8") as f:
     input_file = f.readlines()
 
 running_cores = 0
 
 # Do not run with more than 5 cores.
-num_cores = 32
+num_cores = 60
 num_index_lines = len(input_file)
 # num_index_lines = 1465779
 core_dict = {}
@@ -41,6 +44,57 @@ for i in range(num_cores):
         core_dict[str(i + 1 + running_cores)]["end"] = int(num_index_lines / num_cores) * (i + 1)
     else:
         core_dict[str(i + 1 + running_cores)]["end"] = num_index_lines
+
+
+print("Loading CELEX")
+# celex = {}
+# with codecs.open(tens_path + "other/DPW.CD", "r", "utf-8") as f:
+#    for line in f:
+#        l_list = line[:-1].split("\\")
+#        word = l_list[1]
+#        lem_i = l_list[3]
+#        celex[word] = lem_i
+
+celex_morph = {}
+with codecs.open(tens_path + "other/DML.CD", "r", "utf-8") as f:
+    for line in f:
+        l_list = line[:-1].split("\\")
+        celex_id = l_list[0]
+#        cel_lem = l_list[1]
+        morph_tag = l_list[12]
+        if morph_tag != "":
+            morph_tag2 = re.search(r'(?<=\[)[^\)]*(?=\]$)', morph_tag).group()
+#            celex_morph[celex_id] = {"tag": morph_tag2, "lem": cel_lem}
+            celex_morph[celex_id] = morph_tag2
+
+celex_phon = {}
+with codecs.open(tens_path + "other/DPL.CD", "r", "utf-8") as f:
+    for line in f:
+        l_list = line[:-1].split("\\")
+        celex_id = l_list[0]
+        cel_word = l_list[1]
+        phonemes = l_list[9]
+        if celex_id in celex_morph:
+            cel_morph = celex_morph[celex_id]
+            if cel_word in celex_phon:
+                celex_phon[cel_word][cel_morph] = phonemes
+            else:
+                celex_phon[cel_word] = {}
+                celex_phon[cel_word][cel_morph] = phonemes
+
+print("Loading OOV Conversion Table")
+oov_conv = {}
+with codecs.open(tens_path + "cgn/oov_conv_table_comp-" + component + ".txt", "r", "utf-8") as f:
+    for counter, line in enumerate(f, 1):
+        if counter > 1:
+            c_key, input_w, orig_w, input_i, orig_i, meta_i, meta_l = line[:-1].split("\t")
+            oov_conv[c_key] = {
+                "input_w": [i for i in input_w.split(",") if i != ""],
+                "orig_w": [i for i in orig_w.split(",") if i != ""],
+                "input_i": [i for i in input_i.split(",") if i != ""],
+                "orig_i": [i for i in orig_i.split(",") if i != ""],
+                "meta_i": [i for i in meta_i.split(",") if i != ""],
+                "meta_l": [i for i in meta_l.split(",") if i != ""]}
 
 
 def createTemp(tg_path):
@@ -60,7 +114,7 @@ def loadTextGrid(tg_path):
 
 
 def getSpeaker(fp, tier):
-    tg = loadTextGrid(cgn_path + "ort/comp-c/" + fp.split("/")[-1] + ".ort")
+    tg = loadTextGrid(cgn_path + "ort/comp-" + component + "/" + fp.split("/")[-1] + ".ort")
     spkr = tg.getNames()[int(tier) - 1]
     return spkr
 
@@ -80,20 +134,94 @@ def getSentenceInfo(rt, spkr, from_t, to_t, wrd):
     return match
 
 
-def getPOS(rt, s_ind, w_ind, wrd):
+def getSubWrd(w, chunk_id):
+#    print(w, chunk_id)
+    if chunk_id in oov_conv:
+        if re.sub(r"[!?.,:;\t\n\r]*", "", w) in oov_conv[chunk_id]["orig_w"]:
+            w_i = oov_conv[chunk_id]["orig_w"].index(re.sub(r"[!?.,:;\t\n\r]*", "", w))
+            sw = oov_conv[chunk_id]["input_w"][w_i].split(" ")[-1]
+            return sw
+        else:
+            return None
+    else:
+        return None
+
+
+def getVoice(item, c_tag, ch_i):
+    if item in celex_phon:
+#        print("A", c_tag)
+        if c_tag in celex_phon[item]:
+#            print("A1")
+            if len(celex_phon[item][c_tag]) > 0:
+                final_phoneme = celex_phon[item][c_tag][-1]
+                if final_phoneme in ["s", "z"]:
+                    return "voiceless" if final_phoneme == "s" else "voiced"
+                else:
+                    return "voiceless"
+            else:
+                return "NA"
+        else:
+            return "NA"
+    else:
+#        print("B")
+        subw = getSubWrd(item, ch_i)
+        if subw in celex_phon:
+            return getVoice(subw, c_tag, ch_i)
+        else:
+            return "NA"
+
+
+def getPOS(rt, s_ind, w_ind, wrd, chunk_i, word_class, s_type, w_ph):
     pw_list = rt.findall(".//pw[@ref='{}']".format(".".join([rt.attrib["ref"], str(s_ind), str(w_ind)])))
     # if list is empty --> cross-referencing mistake in CGN; e.g. fv701108.12.8 in .skp = fv701108.13.8 in .tag
     if len(pw_list) == 0:
         print("CROSS-REFERENCE DOES NOT EXIST IN .TAG")
-        return ["NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA"]
+        return ["NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA"], "NA"
     pw = pw_list[0]
     # we check for wordform, in case cross-reference does exist but is for another word due to CGN mistake
     if not h.unescape(pw.attrib["w"]) in wrd:
         print("WORDFORM MISMATCH IN CROSS-REFERENCE")
-        return ["NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA"]
+        return ["NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA"], "NA"
     # ignore words that are part of multi-word-units
     if pw.attrib["mwu"] == "1":
-        return ["NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA"]
+        return ["NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA"], "NA"
+    # Get Voice feature
+#    w_pos = re.sub(",", ";", pw.attrib["pos"])
+#    word_class = re.search(r".+(?=\()", w_pos).group()
+    if s_type == "S":
+        if wrd[-1] == "x" or wrd[-2:] in ["'s", "ch", "ts", "ks", "ps"]:
+            voicing_feat = "voiceless"
+        elif re.search(r'loos$', wrd):
+            voicing_feat = "voiced"
+        else:
+            if word_class == "WW":
+                w_lem = unicode(pw.attrib["lem"])
+#                print(w_lem, pw.attrib["pos"][0])
+                if pw.attrib["pos"][:2] == "WW":
+                    if wrd in ["is", "was"]:
+                        voicing_feat = "voiceless"
+                    elif w_lem[-3:] == "zen":
+                        voicing_feat = "voiced"
+                    elif w_lem[-3:] == "sen":
+                        voicing_feat = "voiceless"
+                    else:
+                        voicing_feat = getVoice(w_lem, "V", chunk_i)
+                else:
+                    voicing_feat = getVoice(w_lem, "V", chunk_i)
+            elif word_class in ["N", "ADJ"]:
+                if word_class == "N" and (w_ph.split(" ")[-2] in ["I", "E", "A", "U", "O", "@"]):
+                    voicing_feat = "voiceless"
+                else:
+                    w_lem = unicode(pw.attrib["lem"])
+                    cel_pos = word_class[0]
+                    if wrd == w_lem:
+                        voicing_feat = getVoice(wrd, cel_pos, chunk_i)
+                    else:
+                        voicing_feat = "voiceless"
+            else:
+                voicing_feat = "voiceless"
+    else:
+        voicing_feat = "voiceless"
     # Get dependency grammar features
     pau = rt.findall(".//pau[@ref='{}']".format(".".join([rt.attrib["ref"], str(s_ind)])))[0]
     pau_children = list(pau)
@@ -216,10 +344,10 @@ def getPOS(rt, s_ind, w_ind, wrd):
         else:
             f7 = 1
             f8 = 0
-    return [str(feat) for feat in [f1, f2, f3, f4, f5, f6, f7, f8]]
+    return [str(feat) for feat in [f1, f2, f3, f4, f5, f6, f7, f8]], voicing_feat
 
 
-def parseLine(f_path, from_time, to_time, tier, new_file, word):
+def parseLine(f_path, from_time, to_time, tier, new_file, word, w_cl, type_of_s, word_phons):
     global old_speaker
     global hnr
     speaker = getSpeaker(f_path, tier)
@@ -234,7 +362,7 @@ def parseLine(f_path, from_time, to_time, tier, new_file, word):
 #        print(skp_txt)
         global skp_root
         skp_root = ET.fromstring(skp_txt)
-        with codecs.open(cgn_path + "tag/comp-c/" + f_path.split("/")[-1] + ".tag", "r", "utf-8") as h:
+        with codecs.open(cgn_path + "tag/comp-" + component + "/" + f_path.split("/")[-1] + ".tag", "r", "utf-8") as h:
             tag_txt = h.read()
 #        tag_txt = codecs.decode(tag_gz, "ascii")
 #        for ent in entitydefs:
@@ -250,8 +378,8 @@ def parseLine(f_path, from_time, to_time, tier, new_file, word):
 
     word = re.sub(r'\*[a-z]', '', re.sub(r"[!?.,:;\t\n\r]*", "", word))
     sent_i, word_sent_i = getSentenceInfo(skp_root, speaker, from_time, to_time, word)
-    syntax_feats = getPOS(tag_root, sent_i, word_sent_i, word)
-    return syntax_feats
+    syntax_feats, voice_feat = getPOS(tag_root, sent_i, word_sent_i, word, ",".join([f_path, tier, from_time, to_time]), w_cl, type_of_s, word_phons)
+    return syntax_feats, voice_feat
 
 
 def readWriteMetaData(core_num="", start_line=1, end_line=num_index_lines):
@@ -262,8 +390,8 @@ def readWriteMetaData(core_num="", start_line=1, end_line=num_index_lines):
 #    else:
     print("Reading from file")
     f = codecs.open(input_file_path, "r", "utf-8")
-    with codecs.open(tens_path + "cgn/syntax_en" + core_num + ".csv", "w", "utf-8") as g:
-        output_header = "wav,chan,chunk_start,chunk_end,tier,word_chunk_i,sent_i,word_sent_i,word_ort,word_phon,num_phon,phon_pron,prev_phon,prev_phon_pron,next_phon,next_phon_pron,word_pos,word_class,type_of_en,speaker,per_mil_wf,log_wf,lex_neb,lex_neb_freq,ptan,ptaf,cow_wf,next_word,next_wf,bigram_f,prev_word,prev_wf,prev_bigram_f,num_syl,word_stress,ndl_boundary_diph,other_ndl_cues,en_phon,en_dur,en_start,en_end,en_cog_full,en_cog_window,proportion_voiced,proportion_voiced2,mean_hnr,speech_rate_pron,base_dur,num_syl_pron,speaker_sex,birth_year,next_phon_dur,prev_phon_dur,prev_mention,phrase_final,syntax_f1,syntax_f2,syntax_f3,syntax_f4,syntax_f5,syntax_f6,syntax_f7,syntax_f8\n"
+    with codecs.open(tens_path + "cgn/syntax_s" + core_num + ".csv", "w", "utf-8") as g:
+        output_header = "wav,chan,chunk_start,chunk_end,tier,word_chunk_i,sent_i,word_sent_i,word_ort,word_phon,num_phon,phon_pron,prev_phon,prev_phon_pron,next_phon,next_phon_pron,word_pos,word_class,type_of_s,speaker,per_mil_wf,log_wf,lex_neb,lex_neb_freq,ptan,ptaf,cow_wf,next_word,next_wf,bigram_f,prev_word,prev_wf,prev_bigram_f,num_syl,word_stress,ndl_boundary_diph,other_ndl_cues,s_dur,kal_start,kal_end,s_cog_full,s_cog_window,proportion_voiced,proportion_voiced2,mean_hnr,speech_rate_pron,base_dur,num_syl_pron,num_cons_pron,speaker_sex,birth_year,next_phon_dur,prev_phon_dur,prev_mention,phrase_final,nn_start,nn_end,nn_start_score,nn_end_score,syntax_f1,syntax_f2,syntax_f3,syntax_f4,syntax_f5,syntax_f6,syntax_f7,syntax_f8,underlying_voice\n"
         g.write(output_header)
         old_f_path = ""
         for l_num, line in enumerate(f, 1):
@@ -274,12 +402,15 @@ def readWriteMetaData(core_num="", start_line=1, end_line=num_index_lines):
                     continue
                 file_path = line_l[0]
                 c_start, c_end, tg_tier = line_l[2:5]
+                w_phons = line_l[9]
+                word_cl = line_l[17]
+                type_s = line_l[18]
                 c_start = "{0:.3f}".format(float(c_start))
                 c_end = "{0:.3f}".format(float(c_end))
                 w = line_l[8]
                 new = True if old_f_path != file_path else False
-                syn_feats = parseLine(file_path, c_start, c_end, tg_tier, new, w)
-                g.write(",".join(line_l + syn_feats) + "\n")
+                syn_feats, voice = parseLine(file_path, c_start, c_end, tg_tier, new, w, word_cl, type_s, w_phons)
+                g.write(",".join(line_l + syn_feats + [voice]) + "\n")
                 old_f_path = file_path[:]
     f.close()
 
@@ -296,10 +427,10 @@ def multiProcess():
     for job in jobs:
         job.join()
     # combine separate files
-    with codecs.open(tens_path + "cgn/syntax_en_comb_comp-c.csv", "w", encoding="utf-8") as g:
+    with codecs.open(tens_path + "cgn/synvoi_s_comb_comp-" + component + ".csv", "w", encoding="utf-8") as g:
         for core in range(num_cores):
             core_n = str(core + 1 + running_cores)
-            with codecs.open(tens_path + "cgn/syntax_en" + core_n + ".csv", "r", encoding="utf-8") as f:
+            with codecs.open(tens_path + "cgn/syntax_s" + core_n + ".csv", "r", encoding="utf-8") as f:
                 for fln, f_line in enumerate(f, 1):
                     if not (core > 0 and fln == 1):
                         g.write(f_line)

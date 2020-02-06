@@ -1,9 +1,9 @@
 form Give chunks
-    word chunk_path /Volumes/tensusers/timzee/cgn/fa_eval_a.csv
+    word chunk_path /Volumes/tensusers/timzee/cgn/comp-k_en_eval.csv
     word cgn_path /Volumes/bigdata2/corpora2/CGN2/data/audio/wav/comp-
     word kaldi_path /Volumes/tensusers/timzee/cgn/kaldi_annot/v2/comp-
-    word output_path /Volumes/tensusers/timzee/cgn/man_annot/comp-
-    word log_path /Volumes/tensusers/timzee/cgn/man_annot/
+    word output_path /Volumes/tensusers/timzee/cgn/man_annot/en/comp-
+    word log_path /Volumes/tensusers/timzee/cgn/man_annot/en/
 endform
 
 # Make sure input file has a header
@@ -103,10 +103,10 @@ elsif annotation_mode == 2
         @annotateChunk: id
         selectObject: "Table last_chunk"
         Set numeric value: 1, "chunk_id", id
-        Save as tab-separated file: output_path$ + "last_chunk.log"
+        Save as tab-separated file: log_path$ + "last_chunk.log"
     endfor
 else
-    Read Table from tab-separated file: output_path$ + "last_chunk.log"
+    Read Table from tab-separated file: log_path$ + "last_chunk.log"
     last_chunk = Get number of rows
     last_chunk_id = Get value: last_chunk, "chunk_id"
     Append row
@@ -117,6 +117,6 @@ else
         @annotateChunk: id
         selectObject: "Table last_chunk"
         Set numeric value: last_chunk + 1, "chunk_id", id
-        Save as tab-separated file: output_path$ + "last_chunk.log"
+        Save as tab-separated file: log_path$ + "last_chunk.log"
     endfor
 endif

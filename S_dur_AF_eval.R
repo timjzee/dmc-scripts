@@ -246,7 +246,9 @@ bounds$new_dur = bounds$nn_end - bounds$kal_start + 0.01
 bounds$tim_min_new_dur = bounds$tim_dur - bounds$new_dur
 bounds$tim_min_kal_dur = bounds$tim_dur - bounds$kal_dur
 mean(abs(bounds$tim_min_new_dur), na.rm = TRUE)
+nrow(bounds[abs(bounds$tim_min_new_dur) < 0.02,]) / nrow(bounds)
 mean(abs(bounds$tim_min_kal_dur), na.rm = TRUE)
+nrow(bounds[abs(bounds$tim_min_kal_dur) < 0.02,]) / nrow(bounds)
 plot(density(bounds$tim_min_new_dur, na.rm = TRUE), xlim = c(-0.1, 0.1), lty = "dashed", 
      main = "CGN-K")
 lines(density(bounds$tim_min_kal_dur))
@@ -276,7 +278,9 @@ bounds$new_dur = bounds$nn_end - bounds$kal_start + 0.01
 bounds$tim_min_new_dur = bounds$tim_dur - bounds$new_dur
 bounds$tim_min_kal_dur = bounds$tim_dur - bounds$kal_dur
 mean(abs(bounds$tim_min_new_dur), na.rm = TRUE)
+nrow(bounds[abs(bounds$tim_min_new_dur) < 0.02,]) / nrow(bounds)
 mean(abs(bounds$tim_min_kal_dur), na.rm = TRUE)
+nrow(bounds[abs(bounds$tim_min_kal_dur) < 0.02,]) / nrow(bounds)
 plot(density(bounds$tim_min_new_dur, na.rm = TRUE), xlim = c(-0.1, 0.1), lty = "dashed", 
      main = "IFADV")
 lines(density(bounds$tim_min_kal_dur))
@@ -306,7 +310,9 @@ bounds$new_dur = bounds$nn_end - bounds$kal_start + 0.01
 bounds$tim_min_new_dur = bounds$tim_dur - bounds$new_dur
 bounds$tim_min_kal_dur = bounds$tim_dur - bounds$kal_dur
 mean(abs(bounds$tim_min_new_dur), na.rm = TRUE)
+nrow(bounds[abs(bounds$tim_min_new_dur) < 0.02,]) / nrow(bounds)
 mean(abs(bounds$tim_min_kal_dur), na.rm = TRUE)
+nrow(bounds[abs(bounds$tim_min_kal_dur) < 0.02,]) / nrow(bounds)
 plot(density(bounds$tim_min_new_dur, na.rm = TRUE), xlim = c(-0.1, 0.1), lty = "dashed", 
      main = "ECSD")
 lines(density(bounds$tim_min_kal_dur))
@@ -336,7 +342,9 @@ bounds$new_dur = bounds$nn_end - bounds$kal_start + 0.01
 bounds$tim_min_new_dur = bounds$tim_dur - bounds$new_dur
 bounds$tim_min_kal_dur = bounds$tim_dur - bounds$kal_dur
 mean(abs(bounds$tim_min_new_dur), na.rm = TRUE)
+nrow(bounds[abs(bounds$tim_min_new_dur) < 0.02,]) / nrow(bounds)
 mean(abs(bounds$tim_min_kal_dur), na.rm = TRUE)
+nrow(bounds[abs(bounds$tim_min_kal_dur) < 0.02,]) / nrow(bounds)
 plot(density(bounds$tim_min_new_dur, na.rm = TRUE), xlim = c(-0.1, 0.1), lty = "dashed", 
      main = "CGN-O")
 lines(density(bounds$tim_min_kal_dur))
@@ -366,7 +374,9 @@ bounds$new_dur = bounds$nn_end - bounds$kal_start + 0.01
 bounds$tim_min_new_dur = bounds$tim_dur - bounds$new_dur
 bounds$tim_min_kal_dur = bounds$tim_dur - bounds$kal_dur
 mean(abs(bounds$tim_min_new_dur), na.rm = TRUE)
+nrow(bounds[abs(bounds$tim_min_new_dur) < 0.02,]) / nrow(bounds)
 mean(abs(bounds$tim_min_kal_dur), na.rm = TRUE)
+nrow(bounds[abs(bounds$tim_min_kal_dur) < 0.02,]) / nrow(bounds)
 plot(density(bounds$tim_min_kal_dur, na.rm = TRUE), xlim = c(-0.1, 0.1), main = "CGN-C")
 lines(density(bounds$tim_min_new_dur), lty = "dashed")
 abline(v = 0)
@@ -395,7 +405,9 @@ bounds$new_dur = bounds$nn_end - bounds$kal_start + 0.01
 bounds$tim_min_new_dur = bounds$tim_dur - bounds$new_dur
 bounds$tim_min_kal_dur = bounds$tim_dur - bounds$kal_dur
 mean(abs(bounds$tim_min_new_dur), na.rm = TRUE)
+nrow(bounds[abs(bounds$tim_min_new_dur) < 0.02,]) / nrow(bounds)
 mean(abs(bounds$tim_min_kal_dur), na.rm = TRUE)
+nrow(bounds[abs(bounds$tim_min_kal_dur) < 0.02,]) / nrow(bounds)
 plot(density(bounds$tim_min_new_dur, na.rm = TRUE), xlim = c(-0.1, 0.1), lty = "dashed", 
      main = "CGN-D")
 lines(density(bounds$tim_min_kal_dur))
@@ -425,7 +437,9 @@ bounds$new_dur = bounds$nn_end - bounds$kal_start + 0.01
 bounds$tim_min_new_dur = bounds$tim_dur - bounds$new_dur
 bounds$tim_min_kal_dur = bounds$tim_dur - bounds$kal_dur
 mean(abs(bounds$tim_min_new_dur), na.rm = TRUE)
+nrow(bounds[abs(bounds$tim_min_new_dur) < 0.02,]) / nrow(bounds)
 mean(abs(bounds$tim_min_kal_dur), na.rm = TRUE)
+nrow(bounds[abs(bounds$tim_min_kal_dur) < 0.02,]) / nrow(bounds)
 plot(density(bounds$tim_min_kal_dur, na.rm = TRUE), xlim = c(-0.1, 0.1), main = "CGN-A")
 lines(density(bounds$tim_min_new_dur), lty = "dashed")
 abline(v = 0)
@@ -440,6 +454,10 @@ legend("left", legend = c("KALDI", "NN (end bound.)"),
        lty = c("solid", "dashed"), cex=1, box.lwd = 0)
 
 mtext("Duration difference to reference (end bound. only)", side = 3, outer = TRUE)
+
+
+
+
 
 
 

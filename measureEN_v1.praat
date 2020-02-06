@@ -6,7 +6,7 @@ corpus$ = "cgn"
 if corpus$ == "IFADVcorpus"
     o_path$ = "/tensusers/timzee/IFADVcorpus/Speech/"
 elif corpus$ == "cgn"
-    component$ = "c"
+    component$ = "d"
     if component$ == "c" or component$ == "d"
         o_path$ = "/tensusers/timzee/cgn/mono_comp-"
     else
@@ -53,7 +53,7 @@ Read Table from tab-separated file: tens_path$ + "speakers.txt"
 
 #Create Table with column names: "spectral_info", 0, "wav speaker speaker_sex birth_year chunk_start chunk_end word_chunk_i sent_i word_sent_i word_ort next_phon next_phon_pron prev_phon prev_phon_pron word_pos word_class type_of_s base_dur speech_rate_pron num_syl_pron mean_hnr time freq_bin Pa_per_Hz dB_per_Hz"
 
-Read Table from comma-separated file: tens_path$ + "comp-c_en_ndl.csv"
+Read Table from comma-separated file: tens_path$ + "test_en_ndl.csv"
 table_name$ = selected$("Table")
 Append column: "en_phon"
 Append column: "en_dur"
@@ -62,6 +62,10 @@ Append column: "en_end"
 Append column: "en_cog_full"
 Append column: "en_cog_window"
 # add separate @ and n durations
+Append column: "schwa_start"
+Append column: "schwa_end"
+Append column: "n_start"
+Append column: "n_end"
 Append column: "proportion_voiced"
 Append column: "proportion_voiced2"
 Append column: "mean_hnr"
@@ -224,7 +228,7 @@ for en_line from 1 to n_inputlines
                     prev_phon_end = Get end time of interval: tier + 3, p_ind
                     prev_phon_pron$ = p_lab$
                     prev_phon_dur = prev_phon_end - prev_phon_start
-                    prev_phon_dur$ = string$(prev_phon_dur)
+                    prev_phon_dur$ = fixed$(prev_phon_dur, 3)
                 endif
             endif
         endfor
@@ -238,7 +242,7 @@ for en_line from 1 to n_inputlines
         next_phon_start = Get start time of interval: tier + 3, en_end_int + 1
         next_phon_end = Get end time of interval: tier + 3, en_end_int + 1
         next_phon_dur = next_phon_end - next_phon_start
-        next_phon_dur$ = string$(next_phon_dur)
+        next_phon_dur$ = fixed$(next_phon_dur, 3)
         if next_phon_pron$ == ""
             next_phon_pron$ = "SIL"
             next_phon_dur$ = "NA"
@@ -284,6 +288,10 @@ for en_line from 1 to n_inputlines
         en_end$ = "NA"
         en_cog_window$ = "NA"
         en_cog_full$ = "NA"
+        schwa_start$ = "NA"
+        schwa_end$ = "NA"
+        n_start$ = "NA"
+        n_end$ = "NA"
         proportion_voiced$ = "NA"
         proportion_voiced2$ = "NA"
         base_dur$ = "NA"
@@ -299,10 +307,33 @@ for en_line from 1 to n_inputlines
         en_start = Get start time of interval: tier + 3, en_start_int
         en_end = Get end time of interval: tier + 3, en_end_int
         en_duration = en_end - en_start
-        en_duration$ = string$(en_duration)
+        en_duration$ = fixed$(en_duration, 3)
+        # get separate measurements if applicable
+        # if en_phon$ == "@n"
+        if en_start_int != en_end_int
+            schwa_start$ = fixed$(en_start, 3)
+            schwa_end = Get end time of interval: tier + 3, en_start_int
+            schwa_end$ = fixed$(schwa_end, 3)
+            n_start = Get start time of interval: tier + 3, en_end_int
+            n_start$ = fixed$(n_start, 3)
+            n_end$ = fixed$(en_end, 3)
+        else
+            if en_phon$ == "@"
+                schwa_start$ = fixed$(en_start, 3)
+                schwa_end$ = fixed$(en_end, 3)
+                n_start$ = "NA"
+                n_end$ = "NA"
+            else
+                schwa_start$ = "NA"
+                schwa_end$ = "NA"
+                n_start$ = fixed$(en_start, 3)
+                n_end$ = fixed$(en_end, 3)
+            endif
+        endif
+        #
         w_start = Get start time of interval: tier, word_int
         base_dur = en_start - w_start
-        base_dur$ = string$(base_dur)
+        base_dur$ = fixed$(base_dur, 3)
         selectObject: "LongSound " + wav_name$
         Extract part: en_start + ((1 - cog_window) / 2) * en_duration, en_end - ((1 - cog_window) / 2) * en_duration, "yes"
         Extract one channel: c_channel
@@ -420,10 +451,14 @@ for en_line from 1 to n_inputlines
     Set string value: en_line, "prev_phon_pron", prev_phon_pron$
     Set string value: en_line, "en_phon", en_phon$
     Set string value: en_line, "en_dur", en_duration$
-    Set string value: en_line, "en_start", string$(en_start)
-    Set string value: en_line, "en_end", string$(en_end)
+    Set string value: en_line, "en_start", fixed$(en_start, 3)
+    Set string value: en_line, "en_end", fixed$(en_end, 3)
     Set string value: en_line, "en_cog_full", en_cog_full$
     Set string value: en_line, "en_cog_window", en_cog_window$
+    Set string value: en_line, "schwa_start", schwa_start$
+    Set string value: en_line, "schwa_end", schwa_end$
+    Set string value: en_line, "n_start", n_start$
+    Set string value: en_line, "n_end", n_end$
     Set string value: en_line, "proportion_voiced", proportion_voiced$
     Set string value: en_line, "proportion_voiced2", proportion_voiced2$
     Set string value: en_line, "base_dur", base_dur$

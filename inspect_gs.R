@@ -218,12 +218,12 @@ legend("right", legend = c("CGN-A", "CGN-K", "CGN-O"),
 
 generations = c(0,1,2,3)
 plot(generations, mean_dist_a[c(11,12,13,14)], type = "b", col = "red", ylim = c(0.8,2.6),
-     ylab = "weighted feature edit distance (panphon library)", 
-     xlab = "nGEN",
-     main = "Number of lexical expansion generations")
+     ylab = "Weighted feature edit distance", 
+     xlab = "Generation",
+     main = "Lexical expansion evaluation")
 lines(generations, mean_dist_k[c(11,12,13,14)], type = "b", col = "blue")
 lines(generations, mean_dist_o[c(11,12,13,14)], type = "b", col = "green")
-legend("right", legend = c("CGN-A", "CGN-K", "CGN-O"),
+legend("right", legend = c("CGN-A", "CGN-K", "CGN-O"), text.width = 0.55,
        col = c("red", "blue", "green"),
        lty = c("solid", "solid", "solid"), cex=0.7)
 
