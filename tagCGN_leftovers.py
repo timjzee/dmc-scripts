@@ -3,7 +3,7 @@ import glob
 import re
 
 tens_path = "/vol/tensusers/timzee/cgn/"
-tg_folder = "Annotations/ort/comp-a/"
+tg_folder = "Annotations/ort/comp-d/"
 
 repl_dict = {
     "trema": {"a": "ä", "e": "ë", "i": "ï", "o": "ö", "u": "ü", "y": "ÿ", "A": "Ä", "E": "Ë", "I": "Ï", "O": "Ö", "U": "Ü", "Y": "Ÿ"},
@@ -48,6 +48,8 @@ def replacePraatEscapes(i_ort):
 with open(tens_path + "Annotations/missing_pos_files.txt", "r") as f:
     missing_files = [l[:-1] for l in f]
 
+print("Loading .ort files")
+
 filepaths = []
 for fp in glob.glob(tens_path + tg_folder + "*.ort"):
     for mf in missing_files:
@@ -55,11 +57,15 @@ for fp in glob.glob(tens_path + tg_folder + "*.ort"):
             filepaths.append(fp)
             break
 
+print("Loading speakers")
+
 allowed_speakers = []
 with open(tens_path + "speakers.txt", "r") as f:
     for num, line in enumerate(f, 1):
         if num > 1:
             allowed_speakers.append(line.split("\t")[4])
+
+print("Extracting text")
 
 txt_dict = {}
 
@@ -90,10 +96,10 @@ for fp in filepaths:
                 line_txt = re.sub(r'[\.!?]*[?]+[\.!?]*', '?', line_txt)  # replace combos including at least 1 '?'
                 line_txt = re.sub(r'\.+', '.', line_txt)   # replace clusters of '.' with a single '.'
 #                line_txt = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\xff]', '', line_txt)  # gets rid of all unicode ?
-                line_txt = re.sub(r" '(?=[a-z]+[ .!?,])", " ''", line_txt)  # to make sure that preceding punctuation results in sentence demarcation
-                line_txt = re.sub(r" '(?=[a-z]+$)", " ''", line_txt)  # to make sure that preceding punctuation results in sentence demarcation
-                line_txt = re.sub(r"^'(?=[a-z]+[ .!?,])", "''", line_txt)  # such as 'kvind
-                line_txt = re.sub(r"^'(?=[a-z]+$)", "''", line_txt)  # such as 'kvind
+                line_txt = re.sub(r" '(?=[a-z]+[ .!?,-])", " ''", line_txt)  # to make sure that preceding punctuation results in sentence demarcation
+                line_txt = re.sub(r" '(?=[a-zA-Z-]+$)", " ''", line_txt)  # to make sure that preceding punctuation results in sentence demarcation
+                line_txt = re.sub(r"^'(?=[a-z]+[ .!?,-])", "''", line_txt)  # such as 'kvind
+                line_txt = re.sub(r"^'(?=[a-zA-Z-]+$)", "''", line_txt)  # such as 'kvind
                 line_txt = re.sub(r"(?<=[ .!?,])da's(?=[ .!?,])", "da''s", line_txt)  # handle da's
                 line_txt = re.sub(r"^da's(?=[ .!?,])", "da''s", line_txt)  # handle da's
                 line_txt = re.sub(r"^da's$", "da''s", line_txt)  # handle da's
@@ -114,12 +120,14 @@ for fp in filepaths:
                 else:
                     txt_dict[file_n][spkr] = line_txt + " "
 
+print("Run Frog")
+
 frog = Frog(FrogOptions(parser=True))
 
 
 def tag_files(files):
     for fl in files:
-        with open(tens_path + "Annotations/pos/comp-a/" + fl + ".pos", "w") as g:
+        with open(tens_path + "Annotations/pos/comp-d/" + fl + ".pos", "w") as g:
             for spkr in txt_dict[fl]:
                 print(fl, spkr)
                 text = txt_dict[fl][spkr]

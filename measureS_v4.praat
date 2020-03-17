@@ -2,7 +2,7 @@ prop$ = Report system properties
 os$ = extractWord$(prop$, newline$)
 
 
-corpus$ = "ECSD"
+corpus$ = "cgn"
 if corpus$ == "IFADVcorpus"
     o_path$ = "/tensusers/timzee/IFADVcorpus/Speech/"
 elif corpus$ == "cgn"
@@ -69,7 +69,7 @@ Read Table from tab-separated file: tens_path$ + "speakers.txt"
 
 #Create Table with column names: "spectral_info", 0, "wav speaker speaker_sex birth_year chunk_start chunk_end word_chunk_i sent_i word_sent_i word_ort next_phon next_phon_pron prev_phon prev_phon_pron word_pos word_class type_of_s base_dur speech_rate_pron num_syl_pron mean_hnr time freq_bin Pa_per_Hz dB_per_Hz"
 
-Read Table from comma-separated file: tens_path$ + "ecsd_s_ndl.csv"
+Read Table from comma-separated file: tens_path$ + "comp-d_s_vl_ndl.csv"
 table_name$ = selected$("Table")
 Append column: "s_dur"
 Append column: "kal_start"

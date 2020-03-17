@@ -1,33 +1,21 @@
 # -*- coding: utf-8 -*-
 
 import re
-import tempfile
 import textgrid  # https://github.com/kylebgorman/textgrid
 import sys
 import glob
 import codecs
-from HTMLParser import HTMLParser
-from htmlentitydefs import entitydefs
 from lxml import etree
-import gzip
-
 
 tens_path = "/Volumes/tensusers/timzee/cgn/" if sys.platform == "darwin" else "/vol/tensusers/timzee/cgn/"
 
-component = "d"
+component = "c"
 
 tg_folder = "Annotations/ort/comp-" + component + "/"
 
 cgn_path = "/vol/bigdata2/corpora2/CGN2/data/annot/"
 
 language = "v"
-
-h = HTMLParser()
-# get rid of predefined XML entities; these are handled by XML parser
-del entitydefs["amp"]
-del entitydefs["quot"]
-del entitydefs["lt"]
-del entitydefs["gt"]
 
 encoding = "utf-8"
 
@@ -57,21 +45,14 @@ for fp in glob.glob(tens_path + tg_folder + "f" + language + "*.ort"):
     filepaths.append(fp)
     wavpaths.append(fp.split("/")[-1].split(".")[0])
 
-# filepaths = ["/vol/tensusers/timzee/cgn/Annotations/ort/comp-c/fv701105.ort"]
-# wavpaths = ["fv701105"]
+# filepaths = ["/vol/tensusers/timzee/cgn/Annotations/ort/comp-d/fv700205.ort"]
+# wavpaths = ["fv700205"]
 
 allowed_speakers = []
 with open(tens_path + "speakers.txt", "r") as f:
     for num, line in enumerate(f, 1):
         if num > 1:
             allowed_speakers.append(line.split("\t")[4])
-
-
-def makeTempFile(fp):
-    tempf = tempfile.NamedTemporaryFile()
-    tempf.write(open(fp).read())
-    tempf.flush()
-    return tempf
 
 
 def replacePraatEscapes(i_ort):
@@ -96,12 +77,13 @@ def replacePraatEscapes(i_ort):
 
 def getSentence(tier, start_i, sen_i):
     """gets sentence by concatenating intervals until a '.', '?', or '...' is encountered"""
+#    print(start_i, sen_i)
     tier_l = tier.intervals
     int = tier_l[start_i]
     start_t = int.minTime
-    f_name = filepaths[counter]
+    f_name = wavpaths[counter]
     speaker_id = tier.name
-    sent = etree.Element("tau", ref="{}.{}".format(f_name, sen_i), s=speaker_id, tb=str(start_t))
+    sent = etree.Element("tau", ref="{}.{}".format(f_name, sen_i), s=speaker_id, tb="{:.3f}".format(start_t))
     sents = [sent]
     word_i = 0
     int_lab = " "
@@ -129,7 +111,7 @@ def getSentence(tier, start_i, sen_i):
             w_ort = replacePraatEscapes(w_ort.encode("utf-8"))
             if w_ort != "":
                 word_i += 1
-                word = etree.Element("tw", ref="{}.{}.{}".format(f_name, sen_i, word_i), tb=str(start_t), te=str(end_t), tt="in", tq="man", w=w_ort.decode("utf-8"))
+                word = etree.Element("tw", ref="{}.{}.{}".format(f_name, sen_i, word_i), tb="{:.3f}".format(start_t), te="{:.3f}".format(end_t), tt="in", tq="man", w=w_ort.decode("utf-8"))
                 sents[-1].append(word)
                 if w_n != len(words) and ("." in w or "?" in w):  # handles mistakes like waren...nou the same as POS file
                     # if a sentence delimiter occurs in the middle of a chunk
@@ -138,7 +120,7 @@ def getSentence(tier, start_i, sen_i):
                     sents[-1].attrib["tq"] = "man"
                     sen_i += 1
                     word_i = 0
-                    sents.append(etree.Element("tau", ref="{}.{}".format(f_name, sen_i), s=speaker_id, tb=str(start_t)))
+                    sents.append(etree.Element("tau", ref="{}.{}".format(f_name, sen_i), s=speaker_id, tb="{:.3f}".format(start_t)))
     sents[-1].attrib["te"] = str(end_t)
     sents[-1].attrib["tt"] = "in"
     sents[-1].attrib["tq"] = "man"
@@ -173,6 +155,7 @@ def make_tag_files(rt, spkrs):
 #            print("\n\n")
 #            print(i[0].split("\t")[0], text_dict[spkr]["ort"][n][0].get("w"))
 #            assert i[0].split("\t")[0][0] in text_dict[spkr]["ort"][n][0].get("w")
+#        print(etree.tostring(text_dict[spkr]["ort"][-1]))
         assert len(text_dict[spkr]["ort"]) == len(text_dict[spkr]["pos"])
     tag = etree.Element("ptext", ref=file_n)
     for sn in rt:
@@ -182,9 +165,9 @@ def make_tag_files(rt, spkrs):
             s_tags = all_spreker[s_index]
             s_tags = [i for i in s_tags if (i.split("\t")[1] != "LET()" or i.split("\t")[0] == "&" or re.search("^'[A-Za-z]+", i.split("\t")[0]))]  # we want to skip all interpunction except for &
             pau = etree.Element("pau", ref=sn.get("ref"), s=sn.get("s"))
-            print(s_tags)
+#            print(s_tags)
             for t_num, tag_l in enumerate(sn, 0):
-                print(etree.tostring(tag_l), t_num)
+#                print(etree.tostring(tag_l), t_num)
                 t_info = s_tags[t_num].split("\t")
     #            print(t_info, etree.tostring(tag_l), t_num)
                 assert t_info[0][0], tag_l.get("w")
@@ -198,56 +181,30 @@ def make_tag_files(rt, spkrs):
 
 
 def make_xml_files(fp):
-    speakers = []
-    with open(tens_path + tg_folder + fp + ".ort", "r") as f:
-        for line in f:
-            if "name =" in line:
-                spkr = re.search(r'(?<=name = ").*(?="[ ]*$)', line).group()
-                if spkr in allowed_speakers:
-                    speakers.append(spkr)
-    # load corrected xml file from different folder for certain files
-    if fp in ["fv701103", "fv701104", "fv701105"]:
-        with codecs.open(tens_path + "cgn_annot/" + fp + ".skp", "r", "ascii") as h:
-            skp_txt = h.read()
-    else:
-        with gzip.open(cgn_path + "xml/skp-ort/comp-" + component + "/" + language + "l/" + fp + ".skp.gz") as h:
-            skp_gz = h.read()
-        skp_txt = codecs.decode(skp_gz, "ascii")
-#        skp_txt = skp_txt.encode("utf-8")
-    for ent in entitydefs:
-        skp_txt = re.sub(r"&{};".format(ent), entitydefs[ent].decode("latin-1"), skp_txt)
-#            skp_txt.replace("&" + ent + ";", entitydefs[ent].decode("latin-1"))
-#        print(skp_txt)
+    tg = textgrid.TextGrid()
+    tg.read(fp)
     global skp_root
-    skp_root = etree.fromstring(skp_txt)
-    if fp in ["fv701104bla"]:
-        skp_root_list = [tau for tau in skp_root]
-        new_skp_root_list = []
-        consec = []
-        old_speaker = ""
-        old_s_time = ""
-        for num, t in enumerate(skp_root_list, 1):
-            if float(t.attrib["tb"]) > 0:
-                if t.attrib["s"] != old_speaker or t.attrib["tb"] != old_s_time:
-                    consec.reverse()
-                    new_skp_root_list = new_skp_root_list + consec[:]
-    #                new_skp_root_list.extend(consec.reverse())
-                    consec = []
-                old_speaker = t.attrib["s"]
-                old_s_time = t.attrib["tb"]
-                consec.append(t)
-                if num == len(skp_root_list):
-                    consec.reverse()
-                    new_skp_root_list = new_skp_root_list + consec[:]
-            else:
-                new_skp_root_list.append(t)
-        skp_root = etree.Element("ttext", ref=fp)
-        for nt in new_skp_root_list:
-            skp_root.append(nt)
+    skp_root = etree.Element("ttext", ref=wavpaths[counter])
+    speakers = []
+    for s1_tier in tg.tiers:
+        if s1_tier.name in allowed_speakers:
+            speakers.append(s1_tier.name)
+            s1_tier_l = s1_tier.intervals
+            s1_i = -1
+            while not s1_i + 1 >= len(s1_tier_l):
+                s1_i += 1
+                sentences, s1_i = getSentence(s1_tier, s1_i, len(skp_root) + 1)
+                for ns, s in enumerate(sentences, 1):
+                    if s1_i + 1 == len(s1_tier_l) and ns == len(sentences):
+                        if s1_tier_l[-1].mark.strip(" ") == "":
+                            break
+                    skp_root.append(s)
+    with codecs.open(tens_path + "Annotations/skp-ort/comp-" + component + "/" + wavpaths[counter] + ".skp", "w", "utf-8") as f:
+        f.write(etree.tostring(skp_root, encoding="UTF-8", pretty_print=True).decode("utf-8"))
     make_tag_files(skp_root, speakers)
 
 
-textgrid.textgrid.detectEncoding = lambda f: encoding
-for counter, filepath in enumerate(wavpaths, 0):
+#textgrid.textgrid.detectEncoding = lambda f: encoding
+for counter, filepath in enumerate(filepaths, 0):
     print(filepath)
     make_xml_files(filepath)

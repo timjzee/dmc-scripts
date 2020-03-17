@@ -28,15 +28,15 @@ del entitydefs["quot"]
 del entitydefs["lt"]
 del entitydefs["gt"]
 
-component = "c"
-input_file_path = tens_path + "cgn/cgn_index_c_mono_nl2.txt"
+component = "d"
+input_file_path = tens_path + "cgn/cgn_index_d_mono_vl.txt"
 with codecs.open(input_file_path, "r", "utf-8") as f:
     input_file = f.readlines()
 
-running_cores = 68
+running_cores = 0
 
 # Do not run with more than 5 cores.
-num_cores = 5
+num_cores = 8
 num_index_lines = len(input_file)
 # num_index_lines = 1465779
 core_dict = {}
@@ -282,6 +282,9 @@ def getNDLinfo(rt, s_index, w_in_sent, orig_path, c_start, c_end, spkr, w_in_chu
     window = []
     wndw_start = 100
     sem = "."
+    outcome1 = "NA"
+    outcome2 = "NA"
+    outcome3 = "NA"
     for i in range(w_in_sent + ndl_window_start, w_in_sent + ndl_window_end + 1):
         matches = rt.findall(".//pw[@ref='{}']".format(file_name + "." + str(s_index) + "." + str(i)))
         if len(matches) != 0:
@@ -313,29 +316,35 @@ def getNDLinfo(rt, s_index, w_in_sent, orig_path, c_start, c_end, spkr, w_in_chu
 #                    outcome3 = "NONMORPH" if w == lem else ""
                 outcome2 = sem + lem + sem if w != lem else ""
 #    print(w_in_chun, wndw_start, wndw_end)
-    pre_phons, boundary, post_phons = getNDLphons(orig_path, c_start, c_end, spkr, w_in_chun, wndw_start, wndw_end)
-    print(pre_phons, boundary, post_phons)
-    if boundary == "":
-        boundary_diph = ""
-    elif "_" not in boundary:
-        assert pre_phons == ""
-        boundary_diph = "#" + boundary
+    if wndw_start != 100:
+        pre_phons, boundary, post_phons = getNDLphons(orig_path, c_start, c_end, spkr, w_in_chun, wndw_start, wndw_end)
+        print(pre_phons, boundary, post_phons)
+        if boundary == "":
+            boundary_diph = ""
+        elif "_" not in boundary:
+            assert pre_phons == ""
+            boundary_diph = "#" + boundary
+        else:
+            boundary_diph = "".join(boundary.split("_"))
+        if boundary != "" and wndw_start > ndl_window_start:
+            if pre_phons == "":
+                pre_phons = "#"
+            else:
+                pre_phons = "#_" + pre_phons
+        if boundary != "" and wndw_end < ndl_window_end:
+            if post_phons == "":
+                post_phons = "#"
+            else:
+                post_phons = post_phons + "_#"
+        pre_phon_list = pre_phons.split("_")
+        boundary_phon_list = boundary.split("_")
+        pre_diph = phones2diphones(pre_phon_list + [boundary_phon_list[0]]) if pre_phons != "" else []
+        post_diph = phones2diphones([boundary.split("_")[-1]] + post_phons.split("_")) if post_phons != "" else []
     else:
-        boundary_diph = "".join(boundary.split("_"))
-    if boundary != "" and wndw_start > ndl_window_start:
-        if pre_phons == "":
-            pre_phons = "#"
-        else:
-            pre_phons = "#_" + pre_phons
-    if boundary != "" and wndw_end < ndl_window_end:
-        if post_phons == "":
-            post_phons = "#"
-        else:
-            post_phons = post_phons + "_#"
-    pre_phon_list = pre_phons.split("_")
-    boundary_phon_list = boundary.split("_")
-    pre_diph = phones2diphones(pre_phon_list + [boundary_phon_list[0]]) if pre_phons != "" else []
-    post_diph = phones2diphones([boundary.split("_")[-1]] + post_phons.split("_")) if post_phons != "" else []
+        window = []
+        pre_diph = []
+        boundary_diph = ""
+        post_diph = []
     return window, pre_diph, boundary_diph, post_diph, outcome1, outcome2, outcome3
 
 
@@ -540,14 +549,14 @@ def multiProcess():
     for job in jobs:
         job.join()
     # combine separate files
-    with codecs.open(tens_path + "cgn/all_s_comb_" + component + "2_ndl.csv", "w", encoding="utf-8") as g:
+    with codecs.open(tens_path + "cgn/all_s_comb_" + component + "_vl_ndl.csv", "w", encoding="utf-8") as g:
         for core in range(num_cores):
             core_n = str(core + 1 + running_cores)
             with codecs.open(tens_path + "cgn/all_s" + core_n + ".csv", "r", encoding="utf-8") as f:
                 for fln, f_line in enumerate(f, 1):
                     if not (core > 0 and fln == 1):
                         g.write(f_line)
-    with codecs.open(tens_path + "cgn/ndl_comp-" + component + "2.csv", "w", encoding="utf-8") as g:
+    with codecs.open(tens_path + "cgn/ndl_comp-" + component + "_vl.csv", "w", encoding="utf-8") as g:
         for core in range(num_cores):
             core_n = str(core + 1 + running_cores)
             with codecs.open(tens_path + "cgn/ndl" + core_n + ".csv", "r", encoding="utf-8") as f:

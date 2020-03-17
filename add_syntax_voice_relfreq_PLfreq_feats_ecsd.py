@@ -1,4 +1,5 @@
 #!/usr/bin/env python2
+# -*- coding: utf-8 -*-
 
 import sys
 import re
@@ -9,10 +10,9 @@ from lxml import etree as ET
 from HTMLParser import HTMLParser
 from htmlentitydefs import entitydefs
 import multiprocessing
-import glob
 
 tens_path = "/Volumes/tensusers/timzee/" if sys.platform == "darwin" else "/vol/tensusers/timzee/"
-ifadv_path = "/Volumes/tensusers/timzee/IFADVcorpus/Annotations/" if sys.platform == "darwin" else "/vol/tensusers/timzee/IFADVcorpus/Annotations/"
+ecsd_path = "/Volumes/tensusers/timzee/ECSD/Annotations/" if sys.platform == "darwin" else "/vol/tensusers/timzee/ECSD/Annotations/"
 tz_path = "/Volumes/timzee/" if sys.platform == "darwin" else "/home/timzee/"
 
 h = HTMLParser()
@@ -22,15 +22,14 @@ del entitydefs["quot"]
 del entitydefs["lt"]
 del entitydefs["gt"]
 
-input_file_path = tens_path + "IFADVcorpus/ifadv_s_ndl_static_final.csv"
-# input_file_path = tens_path + "IFADVcorpus/test.csv"
+input_file_path = tens_path + "ECSD/ecsd_s_ndl_static.csv"
 with codecs.open(input_file_path, "r", "utf-8") as f:
     input_file = f.readlines()
 
 running_cores = 0
 
 # Do not run with more than 5 cores.
-num_cores = 30
+num_cores = 1
 num_index_lines = len(input_file)
 # num_index_lines = 1465779
 core_dict = {}
@@ -41,13 +40,6 @@ for i in range(num_cores):
         core_dict[str(i + 1 + running_cores)]["end"] = int(num_index_lines / num_cores) * (i + 1)
     else:
         core_dict[str(i + 1 + running_cores)]["end"] = num_index_lines
-
-speakers = {}
-with codecs.open(tens_path + "IFADVcorpus/speakers.csv", "r", "utf-8") as f:
-    for c, l in enumerate(f, 1):
-        if c > 1:
-            file_f, s1, s2 = l[:-1].split(",")
-            speakers[file_f] = {"spreker1": s1, "spreker2": s2}
 
 
 print("Loading CELEX")
@@ -78,7 +70,7 @@ with codecs.open(tens_path + "other/DPL.CD", "r", "utf-8") as f:
 
 print("Loading OOV Conversion Table")
 oov_conv = {}
-with codecs.open(tens_path + "IFADVcorpus/oov_conv_table_comp-IFADVcorpus.txt", "r", "utf-8") as f:
+with codecs.open(tens_path + "ECSD/oov_conv_table_comp-ECSD.txt", "r", "utf-8") as f:
     for counter, line in enumerate(f, 1):
         if counter > 1:
             c_key, input_w, orig_w, input_i, orig_i, meta_i, meta_l = line[:-1].split("\t")
@@ -101,6 +93,26 @@ with codecs.open(tens_path + "other/SUBTLEX-NL.txt", "r", "utf-8") as f:
             freq_lemma = float(l_list[5])
             subtlex[word] = freq_count / freq_lemma
 
+print("Loading SUBTLEX2")
+subtlex2 = {}
+with codecs.open(tens_path + "other/SUBTLEX-NL.with-pos.txt", "r", "utf-8") as f:
+    for l_num, line in enumerate(f, 1):
+        if l_num > 1:
+            l_list = line[:-1].split("\t")
+            word = l_list[0]
+            pos = [p for p in l_list[14].split(".") if p != ""]
+            pos_freqs = [int(p) for p in l_list[15].split(".") if p != ""]
+            lem_freqs = [int(p) for p in l_list[16].split(".") if p != ""]
+            assert len(pos) == len(pos_freqs)
+            if "N" in pos:
+                subtlex2[word] = {pos_lab: (pos_freqs[pos_i], lem_freqs[pos_i]) for pos_i, pos_lab in enumerate(pos, 0)}
+
+long_vowels = ["ee", "uu", "oo", "aa"]
+# long_diph = ["ei", "eu", "ui", "ou", "oe", "au", "ij", "ooi", "aai"]
+# short_vowels = ["e", "u", "i", "o", "a", "y"]
+# vowels = long_vowels + long_diph + short_vowels
+consonants = ["q", "w", "r", "t", "p", "s", "d", "f", "g", "h", "j", "k", "l", "z", "x", "c", "v", "b", "n", "m"]
+
 
 def createTemp(tg_path):
     with codecs.open(tg_path, "r", encoding="utf-8") as f:
@@ -119,10 +131,9 @@ def loadTextGrid(tg_path):
 
 
 def getSpeaker(fp, tier):
-    ort_path = glob.glob(ifadv_path + "ort2/" + fp + "*.ort")[0]
-    tg = loadTextGrid(ort_path)
-    spreker = tg.getNames()[int(tier) - 1]
-    spkr = speakers[fp][spreker]
+    folder_n = fp.split("_part")[0].upper()
+    tg = loadTextGrid(ecsd_path + "ort/" + folder_n + "/" + fp + ".TextGrid")
+    spkr = tg.getNames()[int(tier) - 1]
     return spkr
 
 
@@ -140,7 +151,7 @@ def getSentenceInfo(rt, spkr, from_t, to_t, wrd):
                         if h.unescape(word.attrib["w"]) == wrd:
                             candidates.append((int(word.attrib["ref"].split(".")[1]), int(word.attrib["ref"].split(".")[2])))
     # in case later sentence is positioned above earlier sentence in xml
-    match = sorted(candidates)[0] if len(candidates) > 0 else (None, None)
+    match = sorted(candidates)[0]
     return match
 
 
@@ -219,7 +230,7 @@ def getPOS(rt, s_ind, w_ind, wrd, chunk_i, word_class, s_type, w_ph):
                 if word_class == "N" and (w_ph.split(" ")[-2] in ["I", "E", "A", "U", "O", "@"]):
                     voicing_feat = "voiceless"
                 else:
-                    w_lem = unicode(pw.attrib["lem"])
+#                    w_lem = unicode(pw.attrib["lem"])
                     cel_pos = word_class[0]
                     if wrd == w_lem:
                         voicing_feat = getVoice(wrd, cel_pos, chunk_i)
@@ -236,48 +247,31 @@ def getPOS(rt, s_ind, w_ind, wrd, chunk_i, word_class, s_type, w_ph):
     # get closest incoming and outgoing link to the right
     dep_index_out = int(pw.attrib["depindex"])
     dep_out = pw.attrib["dep"]
-    # get phrase chunks
-#    out_phrase1 = pw.attrib["chunker"]
-#    out_phrase2 = "NONE"
-#    for ch in pau_children:
-#        if int(ch.attrib["origindex"]) == dep_index_out:
-#            out_phrase2 = ch.attrib["chunker"]
-#    out_tup = (dep_index_out, dep_out, True, out_phrase1, out_phrase2)
     out_tup = (dep_index_out, dep_out, True)
     origindex = pw.attrib["origindex"]
     dep_index_in = 0
     dep_in = ""
-#    in_phrase1 = ""
     for pw_right in pau_children[pw_index:]:
         if pw_right.attrib["depindex"] == origindex:
             dep_index_in = int(pw_right.attrib["origindex"])
             dep_in = pw_right.attrib["dep"]
-#            in_phrase1 = pw_right.attrib["chunker"]
             break
-#    in_tup = (dep_index_in, dep_in, False, in_phrase1, out_phrase1)
     in_tup = (dep_index_in, dep_in, False)
     if dep_index_in and dep_index_out > int(origindex):  # if both incoming and outgoing right-adjacent links exist
         f1_index, f1, outgoing = min(out_tup, in_tup)
-#        f1_index, f1, outgoing, phrase1, phrase2 = min(out_tup, in_tup)
     else:
         if dep_index_in:  # only incoming
             f1 = dep_in
             f1_index = dep_index_in
             outgoing = False
-#            phrase1 = in_phrase1
-#            phrase2 = out_phrase1
         elif dep_index_out > int(origindex):  # only outgoing
             f1 = dep_out
             f1_index = dep_index_out
             outgoing = True
-#            phrase1 = out_phrase1
-#            phrase2 = out_phrase2
         else:
             f1 = "end"
             f1_index = int(origindex) + 1
             outgoing = True
-#            phrase1 = out_phrase1
-#            phrase2 = "end"
     # now check for right-going and left-going links above closest right-adjacent link
     f2 = 0
     left_enc1 = 1000
@@ -368,16 +362,17 @@ def getPOS(rt, s_ind, w_ind, wrd, chunk_i, word_class, s_type, w_ph):
         else:
             f7 = 1
             f8 = 0
-#    return [str(feat) for feat in [f1, f2, f3, f4, f5, f6, f7, f8, phrase1, phrase2]]
     return [str(feat) for feat in [f1, f2, f3, f4, f5, f6, f7, f8]], voicing_feat, w_lem
 
 
-def parseLine(f_path, from_time, to_time, tier, new_file, word, w_cl, type_of_s, word_phons):
+def parseLine(f_path, from_time, to_time, tier, new_file, word, w_cl, type_of_s, word_phons, word_stress):
     global old_speaker
     global hnr
     speaker = getSpeaker(f_path, tier)
     if new_file:
-        with codecs.open(ifadv_path + "skp-ort2/" + f_path + ".skp", "r", "utf-8") as h:
+        folder_n, part_n = f_path.split("_part")
+        file_n_uc = folder_n.upper() + "_part" + part_n
+        with codecs.open(ecsd_path + "skp-ort2/" + folder_n.upper() + "/" + file_n_uc + ".skp", "r", "utf-8") as h:
             skp_txt = h.read()
 #        skp_txt = codecs.decode(skp_gz, "ascii")
 #        skp_txt = skp_txt.encode("utf-8")
@@ -387,7 +382,7 @@ def parseLine(f_path, from_time, to_time, tier, new_file, word, w_cl, type_of_s,
 #        print(skp_txt)
         global skp_root
         skp_root = ET.fromstring(skp_txt)
-        with codecs.open(ifadv_path + "tag2/" + f_path + ".tag", "r", "utf-8") as h:
+        with codecs.open(ecsd_path + "tag2/" + folder_n.upper() + "/" + file_n_uc + ".tag", "r", "utf-8") as h:
             tag_txt = h.read()
 #        tag_txt = codecs.decode(tag_gz, "ascii")
 #        for ent in entitydefs:
@@ -405,9 +400,36 @@ def parseLine(f_path, from_time, to_time, tier, new_file, word, w_cl, type_of_s,
     rel_f1 = str(subtlex[word]) if word in subtlex else "NA"
     rel_f2 = "1" if type_of_s == "S" else rel_f1
     rel_freq = [rel_f1, rel_f2]
+    if re.search(r"[ie]es$", word):
+        if word_stress:
+            en_word = re.sub(r"s$", "ën", word.encode("utf-8"))
+        else:
+            en_word = re.sub(r"es$", "ën", word.encode("utf-8"))
+    elif re.search(r"(" + "|".join(consonants) + ")es$", word):  # turn words like ziektes into ziekten
+        en_word = re.sub(r"s$", "n", word)
+    elif re.search("(" + "|".join(consonants) + ")[euioay][rtpdfgklbnm]s$", word) and word_stress:  # turn words like hotel into hotellen
+        en_word = re.sub(r"[rtpdfgklbnm]s$", lambda m: m.group()[0] * 2 + "en", word)               # but do not turn appel into appellen
+    elif re.search("(" + "|".join(long_vowels) + ")(" + "|".join(consonants) + ")s$", word):        # turn words like uurs into uren
+        en_word = re.sub("(" + "|".join(long_vowels) + ")(" + "|".join(consonants) + ")s$", lambda m: m.group()[0] + m.group()[2] + "en", word)
+    else:
+        en_word = re.sub(r"'*s$", "en", word)
+    s_freq, lem_freq = subtlex2[word]["N"] if word in subtlex2 else (0, 0)
+    if en_word in subtlex2 and word in subtlex2:
+        if subtlex2[en_word]["N"][1] == subtlex2[word]["N"][1]:
+            en_freq = subtlex2[en_word]["N"][0]
+        elif word in ["hersens", "idees"]:
+            en_freq = subtlex2[en_word]["N"][0]
+            lem_freq += subtlex2[en_word]["N"][1]
+        else:
+            en_freq = 0
+    else:
+        en_freq = 0
+#    en_freq = subtlex2[en_word]["N"] if (en_word in subtlex2) else 0
+    rel_freq_pl = str(float(s_freq + en_freq) / float(lem_freq)) if lem_freq > 0 else "NA"
+    pl_prop = str(float(s_freq) / float(s_freq + en_freq)) if (s_freq + en_freq > 0) else "NA"
     sent_i, word_sent_i = getSentenceInfo(skp_root, speaker, from_time, to_time, word)
     syntax_feats, voice_feat, lem = getPOS(tag_root, sent_i, word_sent_i, word, ",".join([f_path, tier, from_time, to_time]), w_cl, type_of_s, word_phons)
-    return syntax_feats, voice_feat, lem, rel_freq
+    return syntax_feats, voice_feat, lem, rel_freq, str(s_freq), str(en_freq), pl_prop, str(lem_freq), rel_freq_pl
 
 
 def readWriteMetaData(core_num="", start_line=1, end_line=num_index_lines):
@@ -418,13 +440,12 @@ def readWriteMetaData(core_num="", start_line=1, end_line=num_index_lines):
 #    else:
     print("Reading from file")
     f = codecs.open(input_file_path, "r", "utf-8")
-    with codecs.open(tens_path + "IFADVcorpus/syntax_s" + core_num + ".csv", "w", "utf-8") as g:
-        output_header = "wav,chan,chunk_start,chunk_end,tier,word_chunk_i,sent_i,word_sent_i,word_ort,word_phon,num_phon,phon_pron,prev_phon,prev_phon_pron,next_phon,next_phon_pron,word_pos,word_class,type_of_s,speaker,per_mil_wf,log_wf,lex_neb,lex_neb_freq,ptan,ptaf,cow_wf,next_word,next_wf,bigram_f,prev_word,prev_wf,prev_bigram_f,num_syl,word_stress,ndl_boundary_diph,other_ndl_cues,s_dur,kal_start,kal_end,s_cog_full,s_cog_window,proportion_voiced,proportion_voiced2,mean_hnr,speech_rate_pron,base_dur,num_syl_pron,num_cons_pron,speaker_sex,birth_year,next_phon_dur,prev_phon_dur,prev_mention,phrase_final,nn_start,nn_end,nn_start_score,nn_end_score,syntax_f1,syntax_f2,syntax_f3,syntax_f4,syntax_f5,syntax_f6,syntax_f7,syntax_f8,underlying_voice,lemma,rel_freq1,rel_freq2\n"
+    with codecs.open(tens_path + "ECSD/syntax_s" + core_num + ".csv", "w", "utf-8") as g:
+        output_header = "wav,chan,chunk_start,chunk_end,tier,word_chunk_i,sent_i,word_sent_i,word_ort,word_phon,num_phon,phon_pron,prev_phon,prev_phon_pron,next_phon,next_phon_pron,word_pos,word_class,type_of_s,speaker,per_mil_wf,log_wf,lex_neb,lex_neb_freq,ptan,ptaf,cow_wf,next_word,next_wf,bigram_f,prev_word,prev_wf,prev_bigram_f,num_syl,word_stress,ndl_boundary_diph,other_ndl_cues,s_dur,kal_start,kal_end,s_cog_full,s_cog_window,proportion_voiced,proportion_voiced2,mean_hnr,speech_rate_pron,base_dur,num_syl_pron,num_cons_pron,speaker_sex,birth_year,next_phon_dur,prev_phon_dur,prev_mention,phrase_final,nn_start,nn_end,nn_start_score,nn_end_score,syntax_f1,syntax_f2,syntax_f3,syntax_f4,syntax_f5,syntax_f6,syntax_f7,syntax_f8,underlying_voice,lemma,rel_freq1,rel_freq2,s_freq,en_freq,pl_prop,lem_freq,rel_freq_pl\n"
         g.write(output_header)
         old_f_path = ""
         for l_num, line in enumerate(f, 1):
             if l_num >= start_line and l_num <= end_line:
-                print("core " + core_num + ": " + line[:-1].encode("utf-8"))
                 line_l = line[:-1].split(",")
                 if line_l[1] == "chan":
                     continue
@@ -433,13 +454,20 @@ def readWriteMetaData(core_num="", start_line=1, end_line=num_index_lines):
                 w_phons = line_l[9]
                 word_cl = line_l[17]
                 type_s = line_l[18]
+                if type_s != "PL":
+                    g.write(line[:-1] + ",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA\n")
+                    continue
 #                print(line_l)
+                print("core " + core_num + ": " + line[:-1].encode("utf-8"))
+                num_syl = line_l[33]
+                word_stress = line_l[34]
+                stressed = num_syl == word_stress
                 c_start = "{0:.3f}".format(float(c_start))
                 c_end = "{0:.3f}".format(float(c_end))
                 w = line_l[8]
                 new = True if old_f_path != file_path else False
-                syn_feats, voice, lemma, relfreq = parseLine(file_path, c_start, c_end, tg_tier, new, w, word_cl, type_s, w_phons)
-                g.write(",".join(line_l + syn_feats + [voice, lemma] + relfreq) + "\n")
+                syn_feats, voice, lemma, relfreq, pl_s_freq, pl_en_freq, pl_propo, lemma_freq, relfreq_pl = parseLine(file_path, c_start, c_end, tg_tier, new, w, word_cl, type_s, w_phons, stressed)
+                g.write(",".join(line_l + syn_feats + [voice, lemma] + relfreq + [pl_s_freq, pl_en_freq, pl_propo, lemma_freq, relfreq_pl]) + "\n")
                 old_f_path = file_path[:]
     f.close()
 
@@ -456,10 +484,10 @@ def multiProcess():
     for job in jobs:
         job.join()
     # combine separate files
-    with codecs.open(tens_path + "IFADVcorpus/synvoirel_s_comb_ifadv.csv", "w", encoding="utf-8") as g:
+    with codecs.open(tens_path + "ECSD/synvoirelPL_s_comb_ecsd.csv", "w", encoding="utf-8") as g:
         for core in range(num_cores):
             core_n = str(core + 1 + running_cores)
-            with codecs.open(tens_path + "IFADVcorpus/syntax_s" + core_n + ".csv", "r", encoding="utf-8") as f:
+            with codecs.open(tens_path + "ECSD/syntax_s" + core_n + ".csv", "r", encoding="utf-8") as f:
                 for fln, f_line in enumerate(f, 1):
                     if not (core > 0 and fln == 1):
                         g.write(f_line)

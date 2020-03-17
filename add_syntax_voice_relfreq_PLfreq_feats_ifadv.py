@@ -1,4 +1,5 @@
 #!/usr/bin/env python2
+# -*- coding: utf-8 -*-
 
 import sys
 import re
@@ -30,7 +31,7 @@ with codecs.open(input_file_path, "r", "utf-8") as f:
 running_cores = 0
 
 # Do not run with more than 5 cores.
-num_cores = 30
+num_cores = 1
 num_index_lines = len(input_file)
 # num_index_lines = 1465779
 core_dict = {}
@@ -100,6 +101,26 @@ with codecs.open(tens_path + "other/SUBTLEX-NL.txt", "r", "utf-8") as f:
             freq_count = float(l_list[1])
             freq_lemma = float(l_list[5])
             subtlex[word] = freq_count / freq_lemma
+
+print("Loading SUBTLEX2")
+subtlex2 = {}
+with codecs.open(tens_path + "other/SUBTLEX-NL.with-pos.txt", "r", "utf-8") as f:
+    for l_num, line in enumerate(f, 1):
+        if l_num > 1:
+            l_list = line[:-1].split("\t")
+            word = l_list[0]
+            pos = [p for p in l_list[14].split(".") if p != ""]
+            pos_freqs = [int(p) for p in l_list[15].split(".") if p != ""]
+            lem_freqs = [int(p) for p in l_list[16].split(".") if p != ""]
+            assert len(pos) == len(pos_freqs)
+            if "N" in pos:
+                subtlex2[word] = {pos_lab: (pos_freqs[pos_i], lem_freqs[pos_i]) for pos_i, pos_lab in enumerate(pos, 0)}
+
+long_vowels = ["ee", "uu", "oo", "aa"]
+# long_diph = ["ei", "eu", "ui", "ou", "oe", "au", "ij", "ooi", "aai"]
+# short_vowels = ["e", "u", "i", "o", "a", "y"]
+# vowels = long_vowels + long_diph + short_vowels
+consonants = ["q", "w", "r", "t", "p", "s", "d", "f", "g", "h", "j", "k", "l", "z", "x", "c", "v", "b", "n", "m"]
 
 
 def createTemp(tg_path):
@@ -372,7 +393,7 @@ def getPOS(rt, s_ind, w_ind, wrd, chunk_i, word_class, s_type, w_ph):
     return [str(feat) for feat in [f1, f2, f3, f4, f5, f6, f7, f8]], voicing_feat, w_lem
 
 
-def parseLine(f_path, from_time, to_time, tier, new_file, word, w_cl, type_of_s, word_phons):
+def parseLine(f_path, from_time, to_time, tier, new_file, word, w_cl, type_of_s, word_phons, word_stress):
     global old_speaker
     global hnr
     speaker = getSpeaker(f_path, tier)
@@ -405,9 +426,36 @@ def parseLine(f_path, from_time, to_time, tier, new_file, word, w_cl, type_of_s,
     rel_f1 = str(subtlex[word]) if word in subtlex else "NA"
     rel_f2 = "1" if type_of_s == "S" else rel_f1
     rel_freq = [rel_f1, rel_f2]
+    if re.search(r"[ie]es$", word):
+        if word_stress:
+            en_word = re.sub(r"s$", "ën", word.encode("utf-8"))
+        else:
+            en_word = re.sub(r"es$", "ën", word.encode("utf-8"))
+    elif re.search(r"(" + "|".join(consonants) + ")es$", word):  # turn words like ziektes into ziekten
+        en_word = re.sub(r"s$", "n", word)
+    elif re.search("(" + "|".join(consonants) + ")[euioay][rtpdfgklbnm]s$", word) and word_stress:  # turn words like hotel into hotellen
+        en_word = re.sub(r"[rtpdfgklbnm]s$", lambda m: m.group()[0] * 2 + "en", word)               # but do not turn appel into appellen
+    elif re.search("(" + "|".join(long_vowels) + ")(" + "|".join(consonants) + ")s$", word):        # turn words like uurs into uren
+        en_word = re.sub("(" + "|".join(long_vowels) + ")(" + "|".join(consonants) + ")s$", lambda m: m.group()[0] + m.group()[2] + "en", word)
+    else:
+        en_word = re.sub(r"'*s$", "en", word)
+    s_freq, lem_freq = subtlex2[word]["N"] if word in subtlex2 else (0, 0)
+    if en_word in subtlex2 and word in subtlex2:
+        if subtlex2[en_word]["N"][1] == subtlex2[word]["N"][1]:
+            en_freq = subtlex2[en_word]["N"][0]
+        elif word in ["hersens", "idees"]:
+            en_freq = subtlex2[en_word]["N"][0]
+            lem_freq += subtlex2[en_word]["N"][1]
+        else:
+            en_freq = 0
+    else:
+        en_freq = 0
+#    en_freq = subtlex2[en_word]["N"] if (en_word in subtlex2) else 0
+    rel_freq_pl = str(float(s_freq + en_freq) / float(lem_freq)) if lem_freq > 0 else "NA"
+    pl_prop = str(float(s_freq) / float(s_freq + en_freq)) if (s_freq + en_freq > 0) else "NA"
     sent_i, word_sent_i = getSentenceInfo(skp_root, speaker, from_time, to_time, word)
     syntax_feats, voice_feat, lem = getPOS(tag_root, sent_i, word_sent_i, word, ",".join([f_path, tier, from_time, to_time]), w_cl, type_of_s, word_phons)
-    return syntax_feats, voice_feat, lem, rel_freq
+    return syntax_feats, voice_feat, lem, rel_freq, str(s_freq), str(en_freq), pl_prop, str(lem_freq), rel_freq_pl
 
 
 def readWriteMetaData(core_num="", start_line=1, end_line=num_index_lines):
@@ -419,12 +467,11 @@ def readWriteMetaData(core_num="", start_line=1, end_line=num_index_lines):
     print("Reading from file")
     f = codecs.open(input_file_path, "r", "utf-8")
     with codecs.open(tens_path + "IFADVcorpus/syntax_s" + core_num + ".csv", "w", "utf-8") as g:
-        output_header = "wav,chan,chunk_start,chunk_end,tier,word_chunk_i,sent_i,word_sent_i,word_ort,word_phon,num_phon,phon_pron,prev_phon,prev_phon_pron,next_phon,next_phon_pron,word_pos,word_class,type_of_s,speaker,per_mil_wf,log_wf,lex_neb,lex_neb_freq,ptan,ptaf,cow_wf,next_word,next_wf,bigram_f,prev_word,prev_wf,prev_bigram_f,num_syl,word_stress,ndl_boundary_diph,other_ndl_cues,s_dur,kal_start,kal_end,s_cog_full,s_cog_window,proportion_voiced,proportion_voiced2,mean_hnr,speech_rate_pron,base_dur,num_syl_pron,num_cons_pron,speaker_sex,birth_year,next_phon_dur,prev_phon_dur,prev_mention,phrase_final,nn_start,nn_end,nn_start_score,nn_end_score,syntax_f1,syntax_f2,syntax_f3,syntax_f4,syntax_f5,syntax_f6,syntax_f7,syntax_f8,underlying_voice,lemma,rel_freq1,rel_freq2\n"
+        output_header = "wav,chan,chunk_start,chunk_end,tier,word_chunk_i,sent_i,word_sent_i,word_ort,word_phon,num_phon,phon_pron,prev_phon,prev_phon_pron,next_phon,next_phon_pron,word_pos,word_class,type_of_s,speaker,per_mil_wf,log_wf,lex_neb,lex_neb_freq,ptan,ptaf,cow_wf,next_word,next_wf,bigram_f,prev_word,prev_wf,prev_bigram_f,num_syl,word_stress,ndl_boundary_diph,other_ndl_cues,s_dur,kal_start,kal_end,s_cog_full,s_cog_window,proportion_voiced,proportion_voiced2,mean_hnr,speech_rate_pron,base_dur,num_syl_pron,num_cons_pron,speaker_sex,birth_year,next_phon_dur,prev_phon_dur,prev_mention,phrase_final,nn_start,nn_end,nn_start_score,nn_end_score,syntax_f1,syntax_f2,syntax_f3,syntax_f4,syntax_f5,syntax_f6,syntax_f7,syntax_f8,underlying_voice,lemma,rel_freq1,rel_freq2,s_freq,en_freq,pl_prop,lem_freq,rel_freq_pl\n"
         g.write(output_header)
         old_f_path = ""
         for l_num, line in enumerate(f, 1):
             if l_num >= start_line and l_num <= end_line:
-                print("core " + core_num + ": " + line[:-1].encode("utf-8"))
                 line_l = line[:-1].split(",")
                 if line_l[1] == "chan":
                     continue
@@ -433,13 +480,20 @@ def readWriteMetaData(core_num="", start_line=1, end_line=num_index_lines):
                 w_phons = line_l[9]
                 word_cl = line_l[17]
                 type_s = line_l[18]
+                if type_s != "PL":
+                    g.write(line[:-1] + ",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA\n")
+                    continue
 #                print(line_l)
+                print("core " + core_num + ": " + line[:-1].encode("utf-8"))
+                num_syl = line_l[33]
+                word_stress = line_l[34]
+                stressed = num_syl == word_stress
                 c_start = "{0:.3f}".format(float(c_start))
                 c_end = "{0:.3f}".format(float(c_end))
                 w = line_l[8]
                 new = True if old_f_path != file_path else False
-                syn_feats, voice, lemma, relfreq = parseLine(file_path, c_start, c_end, tg_tier, new, w, word_cl, type_s, w_phons)
-                g.write(",".join(line_l + syn_feats + [voice, lemma] + relfreq) + "\n")
+                syn_feats, voice, lemma, relfreq, pl_s_freq, pl_en_freq, pl_propo, lemma_freq, relfreq_pl = parseLine(file_path, c_start, c_end, tg_tier, new, w, word_cl, type_s, w_phons, stressed)
+                g.write(",".join(line_l + syn_feats + [voice, lemma] + relfreq + [pl_s_freq, pl_en_freq, pl_propo, lemma_freq, relfreq_pl]) + "\n")
                 old_f_path = file_path[:]
     f.close()
 
@@ -456,7 +510,7 @@ def multiProcess():
     for job in jobs:
         job.join()
     # combine separate files
-    with codecs.open(tens_path + "IFADVcorpus/synvoirel_s_comb_ifadv.csv", "w", encoding="utf-8") as g:
+    with codecs.open(tens_path + "IFADVcorpus/synvoirelPL_s_comb_ifadv.csv", "w", encoding="utf-8") as g:
         for core in range(num_cores):
             core_n = str(core + 1 + running_cores)
             with codecs.open(tens_path + "IFADVcorpus/syntax_s" + core_n + ".csv", "r", encoding="utf-8") as f:

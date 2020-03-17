@@ -23,7 +23,7 @@ del entitydefs["quot"]
 del entitydefs["lt"]
 del entitydefs["gt"]
 
-component = "d"
+component = "k"
 
 # input_file_path = tens_path + "cgn/test.tmp"
 input_file_path = tens_path + "cgn/comp-" + component + "_s_ndl_static_final.csv"
@@ -33,7 +33,7 @@ with codecs.open(input_file_path, "r", "utf-8") as f:
 running_cores = 0
 
 # Do not run with more than 5 cores.
-num_cores = 60
+num_cores = 30
 num_index_lines = len(input_file)
 # num_index_lines = 1465779
 core_dict = {}
@@ -187,18 +187,19 @@ def getPOS(rt, s_ind, w_ind, wrd, chunk_i, word_class, s_type, w_ph):
     # if list is empty --> cross-referencing mistake in CGN; e.g. fv701108.12.8 in .skp = fv701108.13.8 in .tag
     if len(pw_list) == 0:
         print("CROSS-REFERENCE DOES NOT EXIST IN .TAG")
-        return ["NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA"], "NA"
+        return ["NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA"], "NA", "NA"
     pw = pw_list[0]
     # we check for wordform, in case cross-reference does exist but is for another word due to CGN mistake
     if not h.unescape(pw.attrib["w"]) in wrd:
         print("WORDFORM MISMATCH IN CROSS-REFERENCE")
-        return ["NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA"], "NA"
+        return ["NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA"], "NA", "NA"
     # ignore words that are part of multi-word-units
     if pw.attrib["mwu"] == "1":
-        return ["NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA"], "NA"
+        return ["NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA"], "NA", "NA"
     # Get Voice feature
 #    w_pos = re.sub(",", ";", pw.attrib["pos"])
 #    word_class = re.search(r".+(?=\()", w_pos).group()
+    w_lem = unicode(pw.attrib["lem"])
     if s_type == "S":
         if wrd[-1] == "x" or wrd[-2:] in ["'s", "ch", "ts", "ks", "ps"]:
             voicing_feat = "voiceless"
@@ -206,7 +207,7 @@ def getPOS(rt, s_ind, w_ind, wrd, chunk_i, word_class, s_type, w_ph):
             voicing_feat = "voiced"
         else:
             if word_class == "WW":
-                w_lem = unicode(pw.attrib["lem"])
+#                w_lem = unicode(pw.attrib["lem"])
 #                print(w_lem, pw.attrib["pos"][0])
                 if pw.attrib["pos"][:2] == "WW":
                     if wrd in ["is", "was"]:
@@ -355,7 +356,7 @@ def getPOS(rt, s_ind, w_ind, wrd, chunk_i, word_class, s_type, w_ph):
         else:
             f7 = 1
             f8 = 0
-    return [str(feat) for feat in [f1, f2, f3, f4, f5, f6, f7, f8]], voicing_feat
+    return [str(feat) for feat in [f1, f2, f3, f4, f5, f6, f7, f8]], voicing_feat, w_lem
 
 
 def parseLine(f_path, from_time, to_time, tier, new_file, word, w_cl, type_of_s, word_phons):
@@ -392,8 +393,8 @@ def parseLine(f_path, from_time, to_time, tier, new_file, word, w_cl, type_of_s,
     rel_f2 = "1" if type_of_s == "S" else rel_f1
     rel_freq = [rel_f1, rel_f2]
     sent_i, word_sent_i = getSentenceInfo(skp_root, speaker, from_time, to_time, word)
-    syntax_feats, voice_feat = getPOS(tag_root, sent_i, word_sent_i, word, ",".join([f_path, tier, from_time, to_time]), w_cl, type_of_s, word_phons)
-    return syntax_feats, voice_feat, rel_freq
+    syntax_feats, voice_feat, lem = getPOS(tag_root, sent_i, word_sent_i, word, ",".join([f_path, tier, from_time, to_time]), w_cl, type_of_s, word_phons)
+    return syntax_feats, voice_feat, lem, rel_freq
 
 
 def readWriteMetaData(core_num="", start_line=1, end_line=num_index_lines):
@@ -405,7 +406,7 @@ def readWriteMetaData(core_num="", start_line=1, end_line=num_index_lines):
     print("Reading from file")
     f = codecs.open(input_file_path, "r", "utf-8")
     with codecs.open(tens_path + "cgn/syntax_s" + core_num + ".csv", "w", "utf-8") as g:
-        output_header = "wav,chan,chunk_start,chunk_end,tier,word_chunk_i,sent_i,word_sent_i,word_ort,word_phon,num_phon,phon_pron,prev_phon,prev_phon_pron,next_phon,next_phon_pron,word_pos,word_class,type_of_s,speaker,per_mil_wf,log_wf,lex_neb,lex_neb_freq,ptan,ptaf,cow_wf,next_word,next_wf,bigram_f,prev_word,prev_wf,prev_bigram_f,num_syl,word_stress,ndl_boundary_diph,other_ndl_cues,s_dur,kal_start,kal_end,s_cog_full,s_cog_window,proportion_voiced,proportion_voiced2,mean_hnr,speech_rate_pron,base_dur,num_syl_pron,num_cons_pron,speaker_sex,birth_year,next_phon_dur,prev_phon_dur,prev_mention,phrase_final,nn_start,nn_end,nn_start_score,nn_end_score,syntax_f1,syntax_f2,syntax_f3,syntax_f4,syntax_f5,syntax_f6,syntax_f7,syntax_f8,underlying_voice,rel_freq1,rel_freq2\n"
+        output_header = "wav,chan,chunk_start,chunk_end,tier,word_chunk_i,sent_i,word_sent_i,word_ort,word_phon,num_phon,phon_pron,prev_phon,prev_phon_pron,next_phon,next_phon_pron,word_pos,word_class,type_of_s,speaker,per_mil_wf,log_wf,lex_neb,lex_neb_freq,ptan,ptaf,cow_wf,next_word,next_wf,bigram_f,prev_word,prev_wf,prev_bigram_f,num_syl,word_stress,ndl_boundary_diph,other_ndl_cues,s_dur,kal_start,kal_end,s_cog_full,s_cog_window,proportion_voiced,proportion_voiced2,mean_hnr,speech_rate_pron,base_dur,num_syl_pron,num_cons_pron,speaker_sex,birth_year,next_phon_dur,prev_phon_dur,prev_mention,phrase_final,nn_start,nn_end,nn_start_score,nn_end_score,syntax_f1,syntax_f2,syntax_f3,syntax_f4,syntax_f5,syntax_f6,syntax_f7,syntax_f8,underlying_voice,lemma,rel_freq1,rel_freq2\n"
         g.write(output_header)
         old_f_path = ""
         for l_num, line in enumerate(f, 1):
@@ -423,8 +424,8 @@ def readWriteMetaData(core_num="", start_line=1, end_line=num_index_lines):
                 c_end = "{0:.3f}".format(float(c_end))
                 w = line_l[8]
                 new = True if old_f_path != file_path else False
-                syn_feats, voice, relfreq = parseLine(file_path, c_start, c_end, tg_tier, new, w, word_cl, type_s, w_phons)
-                g.write(",".join(line_l + syn_feats + [voice] + relfreq) + "\n")
+                syn_feats, voice, lemma, relfreq = parseLine(file_path, c_start, c_end, tg_tier, new, w, word_cl, type_s, w_phons)
+                g.write(",".join(line_l + syn_feats + [voice, lemma] + relfreq) + "\n")
                 old_f_path = file_path[:]
     f.close()
 

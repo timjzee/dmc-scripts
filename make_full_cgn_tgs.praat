@@ -1,6 +1,6 @@
 tens_path$ = "/vol/tensusers/timzee/cgn/"
-folder_in$ = "/vol/bigdata2/corpora2/CGN2/data/annot/text/ort/comp-a/nl/"
-folder_out$ = "Annotations/ort/comp-a/"
+folder_in$ = "/vol/bigdata2/corpora2/CGN2/data/annot/text/ort/comp-d/vl/"
+folder_out$ = "Annotations/ort/comp-d/"
 
 Create Strings as file list: "fileList", folder_in$ + "*.ort.gz"
 

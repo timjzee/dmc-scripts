@@ -19,12 +19,26 @@ if (Sys.info()[1] == "Darwin"){
   ecsd_path = "/vol/tensusers/timzee/ECSD/"
 }
 
-vowels = c("@", "A", "AU", "E", "E2", "EI", "EU", "I", "O", "U", "UI", "a", "e", "i", "o", "u", "y")
+short_vowels = c("A", "E", "I", "O", "U")
+long_vowels = c("AU", "E2", "EI", "EU", "UI", "a", "e", "i", "o", "u", "y")
+vowels = c("@", short_vowels, long_vowels)
 liquids = c("r", "l")
 approximants = c("j", "w")
 nasals = c("n", "m", "N")
 fricatives = c("G", "S", "Z", "f", "h", "s", "v", "x", "z")
 plosives = c("b", "d", "g", "k", "p", "t")
+
+obstruents = c(fricatives, plosives)
+sonorants = c(liquids, approximants, nasals)
+
+get_prev_prev_phon = function(x) {
+  phon_list = unlist(strsplit(as.character(x), " "))
+  if (length(phon_list) > 2) {
+    return(phon_list[length(phon_list) - 2])
+  } else {
+    return("")
+  }
+}
 
 get_phon_class = function(x) {
   if (x %in% vowels){
@@ -46,14 +60,23 @@ get_phon_class = function(x) {
   }
 }
 
-s_dur_a = read.csv(paste(cgn_path, "synvoirel_s_comb_comp-a2.csv", sep = ""))
+s_dur_a = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-a2.csv", sep = ""))
 s_dur_a$corpus = as.factor("cgn-a")
 s_dur_a$register = as.factor("conversation")
 s_dur_a$mean_hnr = as.factor(s_dur_a$mean_hnr)
 s_dur_a$nn_end_score = as.factor(s_dur_a$nn_end_score)
 s_dur_a = s_dur_a[s_dur_a$overlap == FALSE,]
 s_dur_a = s_dur_a[ , !(names(s_dur_a) %in% c("overlap"))]
-s_dur_c = read.csv(paste(cgn_path, "synvoirel_s_comb_comp-c2.csv", sep = ""))
+s_dur_a$language = as.factor("nl")
+s_dur_a_vl = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-a_vl.csv", sep = ""))
+s_dur_a_vl$corpus = as.factor("cgn-a")
+s_dur_a_vl$register = as.factor("conversation")
+s_dur_a_vl$mean_hnr = as.factor(s_dur_a_vl$mean_hnr)
+s_dur_a_vl$nn_end_score = as.factor(s_dur_a_vl$nn_end_score)
+s_dur_a_vl = s_dur_a_vl[s_dur_a_vl$overlap == FALSE,]
+s_dur_a_vl = s_dur_a_vl[ , !(names(s_dur_a_vl) %in% c("overlap"))]
+s_dur_a_vl$language = as.factor("vl")
+s_dur_c = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-c2.csv", sep = ""))
 s_dur_c$corpus = as.factor("cgn-c")
 s_dur_c$register = as.factor("conversation")
 s_dur_c$birth_year = as.integer(s_dur_c$birth_year)
@@ -61,65 +84,179 @@ s_dur_c$mean_hnr = as.factor(s_dur_c$mean_hnr)
 s_dur_c$nn_end_score = as.factor(s_dur_c$nn_end_score)
 s_dur_c = s_dur_c[s_dur_c$overlap == FALSE,]
 s_dur_c = s_dur_c[ , !(names(s_dur_c) %in% c("overlap"))]
-s_dur_d = read.csv(paste(cgn_path, "synvoirel_s_comb_comp-d2.csv", sep = ""))
+s_dur_c$language = as.factor("nl")
+s_dur_c_vl = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-c_vl.csv", sep = ""))
+s_dur_c_vl$corpus = as.factor("cgn-c")
+s_dur_c_vl$register = as.factor("conversation")
+s_dur_c_vl$mean_hnr = as.factor(s_dur_c_vl$mean_hnr)
+s_dur_c_vl$nn_end_score = as.factor(s_dur_c_vl$nn_end_score)
+s_dur_c_vl = s_dur_c_vl[s_dur_c_vl$overlap == FALSE,]
+s_dur_c_vl = s_dur_c_vl[ , !(names(s_dur_c_vl) %in% c("overlap"))]
+s_dur_c_vl$language = as.factor("vl")
+s_dur_d = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-d2.csv", sep = ""))
 s_dur_d$corpus = as.factor("cgn-d")
 s_dur_d$register = as.factor("conversation")
 s_dur_d$mean_hnr = as.factor(s_dur_d$mean_hnr)
 s_dur_d$nn_end_score = as.factor(s_dur_d$nn_end_score)
 s_dur_d = s_dur_d[s_dur_d$overlap == FALSE,]
 s_dur_d = s_dur_d[ , !(names(s_dur_d) %in% c("overlap"))]
-s_dur_ifadv = read.csv(paste(ifadv_path, "synvoirel_s_comb_ifadv.csv", sep = ""))
+s_dur_d$language = as.factor("nl")
+s_dur_d_vl = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-d_vl.csv", sep = ""))
+s_dur_d_vl$corpus = as.factor("cgn-d")
+s_dur_d_vl$register = as.factor("conversation")
+s_dur_d_vl$mean_hnr = as.factor(s_dur_d_vl$mean_hnr)
+s_dur_d_vl$nn_end_score = as.factor(s_dur_d_vl$nn_end_score)
+s_dur_d_vl = s_dur_d_vl[s_dur_d_vl$overlap == FALSE,]
+s_dur_d_vl = s_dur_d_vl[ , !(names(s_dur_d_vl) %in% c("overlap"))]
+s_dur_d_vl$language = as.factor("vl")
+s_dur_ifadv = read.csv(paste(ifadv_path, "synvoirelPL_s_comb_ifadv.csv", sep = ""))
 s_dur_ifadv$corpus = as.factor("ifadv")
 s_dur_ifadv$register = as.factor("conversation")
 s_dur_ifadv$mean_hnr = as.factor(s_dur_ifadv$mean_hnr)
 s_dur_ifadv$nn_end_score = as.factor(s_dur_ifadv$nn_end_score)
-s_dur_ifadv = s_dur_ifadv[ , !(names(s_dur_ifadv) %in% c("lemma"))]
 levels(s_dur_ifadv$speaker_sex) = c("sex2", "sex1")
-s_dur_ecsd = read.csv(paste(ecsd_path, "synvoirel_s_comb_ecsd.csv", sep = ""))
+s_dur_ifadv$language = as.factor("nl")
+s_dur_ecsd = read.csv(paste(ecsd_path, "synvoirelPL_s_comb_ecsd.csv", sep = ""))
 s_dur_ecsd$corpus = as.factor("ecsd")
 s_dur_ecsd$register = as.factor("conversation")
 s_dur_ecsd$mean_hnr = as.factor(s_dur_ecsd$mean_hnr)
 s_dur_ecsd$nn_end_score = as.factor(s_dur_ecsd$nn_end_score)
+s_dur_ecsd$language = as.factor("nl")
 
-s_dur_k = read.csv(paste(cgn_path, "synvoirel_s_comb_comp-k.csv", sep = ""))
+s_dur_k = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-k.csv", sep = ""))
 s_dur_k$corpus = as.factor("cgn-k")
 s_dur_k$register = as.factor("news")
 s_dur_k$mean_hnr = as.factor(s_dur_k$mean_hnr)
 s_dur_k$nn_end_score = as.factor(s_dur_k$nn_end_score)
-s_dur_k = s_dur_k[ , !(names(s_dur_k) %in% c("lemma"))]
-s_dur_o = read.csv(paste(cgn_path, "synvoirel_s_comb_comp-o.csv", sep = ""))
+s_dur_k$language = as.factor("nl")
+s_dur_k_vl = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-k_vl.csv", sep = ""))
+s_dur_k_vl$corpus = as.factor("cgn-k")
+s_dur_k_vl$register = as.factor("news")
+s_dur_k_vl$mean_hnr = as.factor(s_dur_k_vl$mean_hnr)
+s_dur_k_vl$nn_end_score = as.factor(s_dur_k_vl$nn_end_score)
+s_dur_k_vl$language = as.factor("vl")
+s_dur_k_vl = s_dur_k_vl[ , !(names(s_dur_k_vl) %in% c("overlap"))]
+s_dur_o = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-o.csv", sep = ""))
 s_dur_o$corpus = as.factor("cgn-o")
 s_dur_o$register = as.factor("stories")
 s_dur_o$mean_hnr = as.factor(s_dur_o$mean_hnr)
 s_dur_o$nn_end_score = as.factor(s_dur_o$nn_end_score)
+s_dur_o$language = as.factor("nl")
+s_dur_o_vl = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-o_vl.csv", sep = ""))
+s_dur_o_vl$corpus = as.factor("cgn-o")
+s_dur_o_vl$register = as.factor("stories")
+s_dur_o_vl$mean_hnr = as.factor(s_dur_o_vl$mean_hnr)
+s_dur_o_vl$nn_end_score = as.factor(s_dur_o_vl$nn_end_score)
+s_dur_o_vl$language = as.factor("vl")
+s_dur_o_vl = s_dur_o_vl[ , !(names(s_dur_o_vl) %in% c("overlap"))]
 
-s_dur = rbind(s_dur_a, s_dur_c, s_dur_d, s_dur_ifadv, s_dur_ecsd, s_dur_o, s_dur_k)
+# s_dur = rbind(s_dur_a, s_dur_c, s_dur_d, s_dur_ifadv, s_dur_ecsd, s_dur_o, s_dur_k)
+s_dur = rbind(s_dur_a, s_dur_a_vl, s_dur_c, s_dur_c_vl, s_dur_d, s_dur_d_vl, s_dur_ifadv, s_dur_ecsd, s_dur_k, s_dur_k_vl, s_dur_o, s_dur_o_vl)
+s_dur = s_dur[s_dur$type_of_s == "PL",]
 s_dur$prev_mention = as.factor(s_dur$prev_mention)
 s_dur$phrase_final = as.factor(s_dur$phrase_final)
 #s_dur = s_dur[!(s_dur$mean_hnr == "--undefined--"),]
 #s_dur$mean_hnr = as.numeric(s_dur$mean_hnr)
-s_dur = s_dur[!(s_dur$nn_end_score == "--undefined--"),]
+#s_dur = s_dur[!(s_dur$nn_end_score == "--undefined--"),]
+s_dur$nn_end_score = ifelse(s_dur$language == "nl", as.numeric(s_dur$nn_end_score) / 1000, NA)
 #s_dur$nn_end_score = as.numeric(s_dur$nn_end_score) / 1000
-s_dur$nn_end_score = as.numeric(as.character(s_dur$nn_end_score))
 s_dur = s_dur[rowSums(is.na(s_dur))<length(s_dur),]
 
 s_dur$s_dur_kal = s_dur$kal_end - s_dur$kal_start
-s_dur$s_dur_nn = s_dur$nn_end - s_dur$kal_start + 0.01
+s_dur$log_s_dur_kal = log(s_dur$s_dur_kal)
+s_dur$s_dur_nn = ifelse(s_dur$language == "nl", s_dur$nn_end - s_dur$kal_start + 0.01, NA)
+#s_dur$s_dur_nn = s_dur$nn_end - s_dur$kal_start + 0.01
 plot(density(s_dur$s_dur_kal), xlim = c(0, 0.5), lty = "dashed")
-lines(density(s_dur$s_dur_nn))
+#lines(density(s_dur$s_dur_nn))
+
+s_dur$stressed = s_dur$num_syl == s_dur$word_stress
+s_dur$stressed = as.factor(s_dur$stressed)
+s_dur$stress_dist = s_dur$num_syl - s_dur$word_stress
+
+# exclude manually identified mistakes (based on comp-a, comp-a_vl, comp-d, comp-c, comp-c_vl, comp-k, comp-k_vl, comp-o, comp-o_vl, ifadv, ecsd)
+uncertain_words = c("vingers", "tests", "films", "regels", "nagels", "films", "boetes", 
+                    "tips", "duivels", "vleugels", "heuvels", "tafels", "eikels", "clubs", 
+                    "wapens", "strips", "types", "speeches", "sprints", "hoorns", "palms",
+                    "adders",
+                    "motors",  # difference between 'engine' and 'motorcycle'?
+                    "kinders", # andere 'speelse' betekenis
+                    "ketens",
+                    "kentekens",
+                    "flirten",
+                    "tekens",
+                    "nevels",
+                    "shillings"
+                    )
+forbidden_words = c("bands",      # die muziek maken
+                    "stuks",      # 4 stuks
+                    "standaards", # voor kaarsen
+                    "jaars",      # 2e jaars
+                    "klasses",    # van de klasses Deventer der
+                    "stands",     # leenwoord 'stents'
+                    "hordes",     # hordes mensen vs. horden lopen
+                    "chatbox",    # nog niet goed verwerkt
+                    "experts",
+                    "computerexperts",
+                    "gangs",      # leenwoord 'gengs'
+                    "zones",      # zonen is meervoud van zoon
+                    "pools",      # leenwoord 'poel'
+                    "novices",    # leenwoord
+                    "sterns",     # ?
+                    "pence"       # leenwoord
+                    )
+s_dur = s_dur[!(s_dur$word_ort %in% forbidden_words),]
+s_dur = s_dur[!(s_dur$word_ort %in% uncertain_words),]
+
+s_dur[s_dur$word_ort == "hersens",]$rel_freq1 = s_dur[s_dur$word_ort == "hersens",]$pl_prop
+s_dur[s_dur$word_ort == "hersens",]$rel_freq2 = s_dur[s_dur$word_ort == "hersens",]$pl_prop
+
+s_dur$rem_prop = s_dur$en_freq / (s_dur$lem_freq - s_dur$s_freq)
+
+# either look exclusively at ambiguous plural
+#s_dur = s_dur[s_dur$pl_prop > 0 & s_dur$pl_prop < 1,]
+
+#s_dur$ambig_type = ifelse(s_dur$prev_phon == "@", "schwa", "other")                # ziektes / ziekten
+#s_dur[s_dur$stressed == T & s_dur$ambig_type == "other",]$ambig_type = "stress"    # balkons / balkonnen
+# detectors / detectoren
+
+#s_dur$ambig_type = as.factor(s_dur$ambig_type)
+
+# or compare them to unambiguous plurals
+s_dur$pl_ambig = s_dur$pl_prop < 1
+s_dur$pl_ambig = as.factor(s_dur$pl_ambig)
+
+s_dur = s_dur[!is.na(s_dur$pl_ambig),]
+
+s_dur$prev_prev_phon = sapply(s_dur$word_phon, get_prev_prev_phon)
+s_dur$prev_prev_phon = as.factor(s_dur$prev_prev_phon)
+s_dur$ambig_type = ifelse(s_dur$pl_ambig == "FALSE", "unamb", "other")
+s_dur[s_dur$prev_phon == "@" & s_dur$ambig_type == "other",]$ambig_type = "schwa"
+s_dur[s_dur$ambig_type == "other" & s_dur$prev_phon %in% sonorants & s_dur$prev_prev_phon == "@",]$ambig_type = "schwa_son"
+s_dur[s_dur$ambig_type == "other" & s_dur$prev_phon %in% sonorants & s_dur$prev_prev_phon %in% short_vowels & s_dur$stressed == T,]$ambig_type = "stress_short_son"
+s_dur[s_dur$ambig_type == "other" & s_dur$prev_phon %in% sonorants & s_dur$prev_prev_phon %in% short_vowels & s_dur$stressed == F,]$ambig_type = "nostress_short_son"
+s_dur[s_dur$ambig_type == "other" & s_dur$prev_phon %in% sonorants & s_dur$prev_prev_phon %in% long_vowels,]$ambig_type = "long_son"
+s_dur[s_dur$ambig_type == "other" & s_dur$prev_phon %in% obstruents,]$ambig_type = "obstruent"
+# mistake in word_phon, but prev_phon_pron shows @
+s_dur[s_dur$word_ort == "bijdrages",]$ambig_type = "schwa"
+
+s_dur$ambig_type = as.factor(s_dur$ambig_type)
+
+s_dur = s_dur[rowSums(is.na(s_dur))<length(s_dur),]
+
+boxplot(pl_prop ~ ambig_type, data = s_dur)
 
 # remove lines for which measurements cannot be trusted
-s_dur = s_dur[!(is.na(s_dur$s_dur_nn) | is.na(s_dur$s_cog_window)), ]
-s_dur = s_dur[!(s_dur$s_dur_nn < 0.005),]
+s_dur = s_dur[(!is.na(s_dur$s_dur_nn) | s_dur$language == "vl"), ]
+s_dur = s_dur[(!s_dur$s_dur_nn < 0.005 | s_dur$language == "vl"),]
 is.na(s_dur$num_syl_pron) = !s_dur$num_syl_pron
 # either limit based op preceding and following sounds
 s_dur = s_dur[!(s_dur$prev_phon_pron %in% c("t", "d") | s_dur$next_phon_pron %in% c("j", "t", "d")),]
 # or based on nn scores
-plot(density(s_dur$nn_end_score))
-s_dur = s_dur[
-  s_dur$nn_start_score > 1.2 & 
-    s_dur$nn_end_score > 1.2
-  ,]
+#plot(density(s_dur$nn_end_score))
+#s_dur = s_dur[(
+#  s_dur$nn_start_score > 1.2 & 
+#    s_dur$nn_end_score > 1.2
+#  ) | s_dur$language == "vl",]
 # remove underlyingly voiced final /s/ to check if it causes the effect
 #s_dur = s_dur[s_dur$underlying_voice == "voiceless",]
 s_dur = s_dur[s_dur$underlying_voice %in% c("voiced", "voiceless"),]
@@ -131,9 +268,7 @@ s_dur = s_dur[rowSums(is.na(s_dur))<length(s_dur),]
 # s_dur = s_dur[s_dur$s_dur_nn < 0.4,]
 
 # make new predictors and get rid of unnecessary NAs
-s_dur$stressed = s_dur$num_syl == s_dur$word_stress
-s_dur$stressed = as.factor(s_dur$stressed)
-s_dur$stress_dist = s_dur$num_syl - s_dur$word_stress
+
 
 s_dur$log_bigf = log(s_dur$bigram_f + 1)
 
@@ -150,7 +285,7 @@ s_dur[is.na(s_dur$lex_neb_freq),]$lex_neb_freq = 0
 
 # transform dependent variable
 s_dur$log_s_dur = log(s_dur$s_dur_nn)
-plot(density(s_dur$log_s_dur))
+#plot(density(s_dur$log_s_dur))
 
 # remove lines for which continuous predictors are NA
 nrow(s_dur)
@@ -199,16 +334,14 @@ s_dur$syntax_f7_cat = as.factor(s_dur$syntax_f7)
 s_dur$syntax_f8_cat = as.factor(s_dur$syntax_f8)
 
 
-s_dur = s_dur[s_dur$type_of_s %in% c("S", "PL"),]
 s_dur$type_of_s = as.factor(as.character(s_dur$type_of_s))
-s_dur$type_of_s = relevel(s_dur$type_of_s, ref="S")
+
 
 
 # remove lines for which categorical predictors are NA
 nrow(s_dur)
 s_dur = s_dur[!(is.na(s_dur$type_of_s) | is.na(s_dur$next_phon_class) 
-                | is.na(s_dur$prev_mention) | is.na(s_dur$register)
-                | is.na(s_dur$phrase_final)), ]
+                | is.na(s_dur$prev_mention) | is.na(s_dur$register)), ]
 nrow(s_dur)
 
 ### prepare dataset
@@ -216,26 +349,26 @@ nrow(s_dur)
 drop = c("ptan", "ptaf", "mean_hnr", "next_phon_dur", "prev_phon_dur", "birth_year", "speaker_sex", 
          "proportion_voiced2", "per_mil_wf", "prev_word",
          "word_class", "word_pos", "next_phon", "prev_phon", "sent_i", "word_sent_i", "word_chunk_i", 
+         "nn_start", "nn_end", "nn_start_score", "nn_end_score",
          "chan")
 s_dur = s_dur[ , !(names(s_dur) %in% drop)]
 
-s_dur = na.omit(s_dur)
+#s_dur = na.omit(s_dur)
 
 ### Inspect collinearity
 continuous = c("speech_rate_pron", "base_dur", "num_syl_pron", 
                "num_cons_pron", "log_wf", "lex_neb", "log_bigf",
                "syntax_f2", "syntax_f3", "syntax_f4", "syntax_f5",
-               "syntax_f6", "syntax_f7", "syntax_f8")
+               "syntax_f6", "syntax_f7", "syntax_f8", "pl_prop", "rel_freq1")
 
 corrplot(cor(s_dur[, continuous], use = "complete.obs"), method = "number")
 vif(lm(log_s_dur ~ speech_rate_pron + base_dur + num_syl_pron 
        + num_cons_pron + log_wf + lex_neb + log_bigf , data=s_dur))
 collin.fnc(na.omit(s_dur[, continuous]))$cnumber
 
-categorical = c("type_of_s", 
-                "register", 
+categorical = c("language", "register", 
                 "next_phon_class", 
-                "prev_mention", "phrase_final", "underlying_voice", "stressed")
+                "prev_mention", "phrase_final", "stressed")
 
 cat_ass = matrix(c(cramerV(table(s_dur[,c("type_of_s", "type_of_s")]), bias.correct = TRUE),
                    cramerV(table(s_dur[,c("type_of_s", "register")]), bias.correct = TRUE),
@@ -292,21 +425,23 @@ cat_ass = matrix(c(cramerV(table(s_dur[,c("type_of_s", "type_of_s")]), bias.corr
 
 corrplot(cat_ass, method = "number")
 
-cat_con = matrix(c(sqrt(summary(lm(speech_rate_pron ~ type_of_s, data = s_dur))$r.squared),
-                   sqrt(summary(lm(base_dur ~ type_of_s, data = s_dur))$r.squared),
-                   sqrt(summary(lm(num_syl_pron ~ type_of_s, data = s_dur))$r.squared),
-                   sqrt(summary(lm(num_cons_pron ~ type_of_s, data = s_dur))$r.squared),
-                   sqrt(summary(lm(log_wf ~ type_of_s, data = s_dur))$r.squared),
-                   sqrt(summary(lm(lex_neb ~ type_of_s, data = s_dur))$r.squared),
-                   sqrt(summary(lm(log_bigf ~ type_of_s, data = s_dur))$r.squared),
-                   sqrt(summary(lm(syntax_f2 ~ type_of_s, data = s_dur))$r.squared),
-                   sqrt(summary(lm(syntax_f3 ~ type_of_s, data = s_dur))$r.squared),
-                   sqrt(summary(lm(syntax_f4 ~ type_of_s, data = s_dur))$r.squared),
-                   sqrt(summary(lm(syntax_f5 ~ type_of_s, data = s_dur))$r.squared),
-                   sqrt(summary(lm(syntax_f6 ~ type_of_s, data = s_dur))$r.squared),
-                   sqrt(summary(lm(syntax_f7 ~ type_of_s, data = s_dur))$r.squared),
-                   sqrt(summary(lm(syntax_f8 ~ type_of_s, data = s_dur))$r.squared),
-                   #                   sqrt(summary(lm(rel_freq1 ~ type_of_s, data = s_dur))$r.squared),
+cat_con = matrix(c(
+                   sqrt(summary(lm(speech_rate_pron ~ language, data = s_dur))$r.squared),
+                   sqrt(summary(lm(base_dur ~ language, data = s_dur))$r.squared),
+                   sqrt(summary(lm(num_syl_pron ~ language, data = s_dur))$r.squared),
+                   sqrt(summary(lm(num_cons_pron ~ language, data = s_dur))$r.squared),
+                   sqrt(summary(lm(log_wf ~ language, data = s_dur))$r.squared),
+                   sqrt(summary(lm(lex_neb ~ language, data = s_dur))$r.squared),
+                   sqrt(summary(lm(log_bigf ~ language, data = s_dur))$r.squared),
+                   sqrt(summary(lm(syntax_f2 ~ language, data = s_dur))$r.squared),
+                   sqrt(summary(lm(syntax_f3 ~ language, data = s_dur))$r.squared),
+                   sqrt(summary(lm(syntax_f4 ~ language, data = s_dur))$r.squared),
+                   sqrt(summary(lm(syntax_f5 ~ language, data = s_dur))$r.squared),
+                   sqrt(summary(lm(syntax_f6 ~ language, data = s_dur))$r.squared),
+                   sqrt(summary(lm(syntax_f7 ~ language, data = s_dur))$r.squared),
+                   sqrt(summary(lm(syntax_f8 ~ language, data = s_dur))$r.squared),
+                   sqrt(summary(lm(pl_prop ~ language, data = s_dur))$r.squared),
+                   sqrt(summary(lm(rel_freq1 ~ language, data = s_dur))$r.squared),
                    sqrt(summary(lm(speech_rate_pron ~ register, data = s_dur))$r.squared),
                    sqrt(summary(lm(base_dur ~ register, data = s_dur))$r.squared),
                    sqrt(summary(lm(num_syl_pron ~ register, data = s_dur))$r.squared),
@@ -321,7 +456,8 @@ cat_con = matrix(c(sqrt(summary(lm(speech_rate_pron ~ type_of_s, data = s_dur))$
                    sqrt(summary(lm(syntax_f6 ~ register, data = s_dur))$r.squared),
                    sqrt(summary(lm(syntax_f7 ~ register, data = s_dur))$r.squared),
                    sqrt(summary(lm(syntax_f8 ~ register, data = s_dur))$r.squared),
-                   #                   sqrt(summary(lm(rel_freq1 ~ register, data = s_dur))$r.squared),
+                   sqrt(summary(lm(pl_prop ~ register, data = s_dur))$r.squared),
+                   sqrt(summary(lm(rel_freq1 ~ register, data = s_dur))$r.squared),
                    sqrt(summary(lm(speech_rate_pron ~ next_phon_class, data = s_dur))$r.squared),
                    sqrt(summary(lm(base_dur ~ next_phon_class, data = s_dur))$r.squared),
                    sqrt(summary(lm(num_syl_pron ~ next_phon_class, data = s_dur))$r.squared),
@@ -336,7 +472,8 @@ cat_con = matrix(c(sqrt(summary(lm(speech_rate_pron ~ type_of_s, data = s_dur))$
                    sqrt(summary(lm(syntax_f6 ~ next_phon_class, data = s_dur))$r.squared),
                    sqrt(summary(lm(syntax_f7 ~ next_phon_class, data = s_dur))$r.squared),
                    sqrt(summary(lm(syntax_f8 ~ next_phon_class, data = s_dur))$r.squared),
-                   #                   sqrt(summary(lm(rel_freq1 ~ next_phon_class, data = s_dur))$r.squared),
+                   sqrt(summary(lm(pl_prop ~ next_phon_class, data = s_dur))$r.squared),
+                   sqrt(summary(lm(rel_freq1 ~ next_phon_class, data = s_dur))$r.squared),
                    sqrt(summary(lm(speech_rate_pron ~ prev_mention, data = s_dur))$r.squared),
                    sqrt(summary(lm(base_dur ~ prev_mention, data = s_dur))$r.squared),
                    sqrt(summary(lm(num_syl_pron ~ prev_mention, data = s_dur))$r.squared),
@@ -351,7 +488,8 @@ cat_con = matrix(c(sqrt(summary(lm(speech_rate_pron ~ type_of_s, data = s_dur))$
                    sqrt(summary(lm(syntax_f6 ~ prev_mention, data = s_dur))$r.squared),
                    sqrt(summary(lm(syntax_f7 ~ prev_mention, data = s_dur))$r.squared),
                    sqrt(summary(lm(syntax_f8 ~ prev_mention, data = s_dur))$r.squared),
-                   #                   sqrt(summary(lm(rel_freq1 ~ prev_mention, data = s_dur))$r.squared),
+                   sqrt(summary(lm(pl_prop ~ prev_mention, data = s_dur))$r.squared),
+                   sqrt(summary(lm(rel_freq1 ~ prev_mention, data = s_dur))$r.squared),
                    sqrt(summary(lm(speech_rate_pron ~ phrase_final, data = s_dur))$r.squared),
                    sqrt(summary(lm(base_dur ~ phrase_final, data = s_dur))$r.squared),
                    sqrt(summary(lm(num_syl_pron ~ phrase_final, data = s_dur))$r.squared),
@@ -366,22 +504,23 @@ cat_con = matrix(c(sqrt(summary(lm(speech_rate_pron ~ type_of_s, data = s_dur))$
                    sqrt(summary(lm(syntax_f6 ~ phrase_final, data = s_dur))$r.squared),
                    sqrt(summary(lm(syntax_f7 ~ phrase_final, data = s_dur))$r.squared),
                    sqrt(summary(lm(syntax_f8 ~ phrase_final, data = s_dur))$r.squared),
-                   #                   sqrt(summary(lm(rel_freq1 ~ phrase_final, data = s_dur))$r.squared),
-                   sqrt(summary(lm(speech_rate_pron ~ underlying_voice, data = s_dur))$r.squared),
-                   sqrt(summary(lm(base_dur ~ underlying_voice, data = s_dur))$r.squared),
-                   sqrt(summary(lm(num_syl_pron ~ underlying_voice, data = s_dur))$r.squared),
-                   sqrt(summary(lm(num_cons_pron ~ underlying_voice, data = s_dur))$r.squared),
-                   sqrt(summary(lm(log_wf ~ underlying_voice, data = s_dur))$r.squared),
-                   sqrt(summary(lm(lex_neb ~ underlying_voice, data = s_dur))$r.squared),
-                   sqrt(summary(lm(log_bigf ~ underlying_voice, data = s_dur))$r.squared),
-                   sqrt(summary(lm(syntax_f2 ~ underlying_voice, data = s_dur))$r.squared),
-                   sqrt(summary(lm(syntax_f3 ~ underlying_voice, data = s_dur))$r.squared),
-                   sqrt(summary(lm(syntax_f4 ~ underlying_voice, data = s_dur))$r.squared),
-                   sqrt(summary(lm(syntax_f5 ~ underlying_voice, data = s_dur))$r.squared),
-                   sqrt(summary(lm(syntax_f6 ~ underlying_voice, data = s_dur))$r.squared),
-                   sqrt(summary(lm(syntax_f7 ~ underlying_voice, data = s_dur))$r.squared),
-                   sqrt(summary(lm(syntax_f8 ~ underlying_voice, data = s_dur))$r.squared),
-                   #                   sqrt(summary(lm(rel_freq1 ~ underlying_voice, data = s_dur))$r.squared)
+                   sqrt(summary(lm(pl_prop ~ phrase_final, data = s_dur))$r.squared),
+                   sqrt(summary(lm(rel_freq1 ~ phrase_final, data = s_dur))$r.squared),
+#                   sqrt(summary(lm(speech_rate_pron ~ underlying_voice, data = s_dur))$r.squared),
+#                   sqrt(summary(lm(base_dur ~ underlying_voice, data = s_dur))$r.squared),
+#                   sqrt(summary(lm(num_syl_pron ~ underlying_voice, data = s_dur))$r.squared),
+#                   sqrt(summary(lm(num_cons_pron ~ underlying_voice, data = s_dur))$r.squared),
+#                   sqrt(summary(lm(log_wf ~ underlying_voice, data = s_dur))$r.squared),
+#                   sqrt(summary(lm(lex_neb ~ underlying_voice, data = s_dur))$r.squared),
+#                   sqrt(summary(lm(log_bigf ~ underlying_voice, data = s_dur))$r.squared),
+#                   sqrt(summary(lm(syntax_f2 ~ underlying_voice, data = s_dur))$r.squared),
+#                   sqrt(summary(lm(syntax_f3 ~ underlying_voice, data = s_dur))$r.squared),
+#                   sqrt(summary(lm(syntax_f4 ~ underlying_voice, data = s_dur))$r.squared),
+#                   sqrt(summary(lm(syntax_f5 ~ underlying_voice, data = s_dur))$r.squared),
+#                   sqrt(summary(lm(syntax_f6 ~ underlying_voice, data = s_dur))$r.squared),
+#                   sqrt(summary(lm(syntax_f7 ~ underlying_voice, data = s_dur))$r.squared),
+#                   sqrt(summary(lm(syntax_f8 ~ underlying_voice, data = s_dur))$r.squared),
+#                   sqrt(summary(lm(pl_prop ~ underlying_voice, data = s_dur))$r.squared),
                    sqrt(summary(lm(speech_rate_pron ~ stressed, data = s_dur))$r.squared),
                    sqrt(summary(lm(base_dur ~ stressed, data = s_dur))$r.squared),
                    sqrt(summary(lm(num_syl_pron ~ stressed, data = s_dur))$r.squared),
@@ -395,9 +534,11 @@ cat_con = matrix(c(sqrt(summary(lm(speech_rate_pron ~ type_of_s, data = s_dur))$
                    sqrt(summary(lm(syntax_f5 ~ stressed, data = s_dur))$r.squared),
                    sqrt(summary(lm(syntax_f6 ~ stressed, data = s_dur))$r.squared),
                    sqrt(summary(lm(syntax_f7 ~ stressed, data = s_dur))$r.squared),
-                   sqrt(summary(lm(syntax_f8 ~ stressed, data = s_dur))$r.squared)
+                   sqrt(summary(lm(syntax_f8 ~ stressed, data = s_dur))$r.squared),
+                   sqrt(summary(lm(pl_prop ~ stressed, data = s_dur))$r.squared),
+                   sqrt(summary(lm(rel_freq1 ~ stressed, data = s_dur))$r.squared)
 ), 
-nrow = 7, ncol = 14, byrow = T, dimnames = list(
+nrow = 6, ncol = 16, byrow = T, dimnames = list(
   categorical,
   continuous))
 
@@ -462,34 +603,68 @@ nrow = 2, ncol = 20, byrow = T, dimnames = list(
 corrplot(int_ass, method = "number", cl.lim = c(0,1), cl.pos = "b", cl.ratio = 1)
 
 
+s_dur_ambig = s_dur[s_dur$pl_ambig == T,]
+s_dur_ambig = na.omit(s_dur_ambig)
+s_dur_ambig$ambig_type = as.factor(as.character(s_dur_ambig$ambig_type))
+
+s_dur_ambig$log_lem_freq = log(s_dur_ambig$lem_freq)
+
+### try single lmer (no correlation between pl_prop, rel_freq1 and covariates)
+control2 = lmer(log_s_dur ~ speech_rate_pron_sc + base_dur_sc + num_syl_pron_sc 
+                + num_cons_pron_sc 
+                + log_wf_sc 
+                + lex_neb_sc + log_bigf_sc 
+                + syntax_f2_sc + syntax_f3_sc + syntax_f4_sc 
+#                + syntax_f5_sc + syntax_f6_sc + syntax_f7_sc + syntax_f8_sc
+                + syntax_f5_cat + syntax_f6_cat + syntax_f7_cat + syntax_f8_cat 
+                + stressed
+                + next_phon_class + prev_mention 
+                + register
+                + rel_freq_pl*pl_prop
+                + (1 | speaker) 
+                + (1 | word_ort),
+                control = lmerControl(optCtrl = list(maxfun = 1e6, ftol_abs = 1e-8)),
+                data=s_dur_ambig[
+                  s_dur_ambig$language == "nl" #& s_dur_ambig$register == "conversation"
+                  ,])
+
+plot(effect("rel_freq_pl:pl_prop", control2, x.var = "pl_prop"))
+
+# a cleaner way of doing this would be to define rel_freq as the relative frequency
+# of ANY plural form compared to the lemma frequency
+# check how exactlt rel_freq1 is calculated and compare to pl_prop
+
 ### try Mirjam's residuals method
 ### Now try with scaled and centred predictors instead of PCs
 
-control2 = lmer(log_s_dur ~ speech_rate_pron_sc + base_dur_sc + num_syl_pron_sc 
+control2 = lmer(log_s_dur_kal ~ speech_rate_pron_sc + base_dur_sc + num_syl_pron_sc 
                + num_cons_pron_sc + log_wf_sc + lex_neb_sc + log_bigf_sc 
                + syntax_f2_sc + syntax_f3_sc + syntax_f4_sc 
 #               + syntax_f5_sc + syntax_f6_sc + syntax_f7_sc + syntax_f8_sc
                + syntax_f5_cat + syntax_f6_cat + syntax_f7_cat + syntax_f8_cat 
                + stressed
                + next_phon_class + prev_mention 
-               + underlying_voice
+#               + language
+#               + pl_prop
+#               + underlying_voice
 #               + type_of_s*register
                + (1 | speaker) 
                + (1 | word_ort),
                control = lmerControl(optCtrl = list(maxfun = 1e6, ftol_abs = 1e-8)),
-               data=s_dur)
+               data=s_dur_ambig)
 
-s_dur$dur_resid2 = resid(control2)
-s_dur_trim2 = s_dur[abs(scale(s_dur$dur_resid2)) < 2.5,]
+s_dur_ambig$dur_resid2 = resid(control2)
+s_dur_trim2 = s_dur_ambig[abs(scale(s_dur_ambig$dur_resid2)) < 2.5,]
 
-control_trim2 = lmer(log_s_dur ~ speech_rate_pron_sc + base_dur_sc + num_syl_pron_sc 
+control_trim2 = lmer(log_s_dur_kal ~ speech_rate_pron_sc + base_dur_sc + num_syl_pron_sc 
                      + num_cons_pron_sc + log_wf_sc + lex_neb_sc + log_bigf_sc 
                      + syntax_f2_sc + syntax_f3_sc + syntax_f4_sc 
 #                     + syntax_f5_sc + syntax_f6_sc + syntax_f7_sc + syntax_f8_sc
                      + syntax_f5_cat + syntax_f6_cat + syntax_f7_cat + syntax_f8_cat
                      + stressed
                      + next_phon_class + prev_mention 
-                     + underlying_voice
+#                     + language
+#                     + underlying_voice
 #                     + type_of_s*register
                      + (1 | speaker) 
                      + (1 | word_ort),
@@ -513,8 +688,11 @@ s_dur_trim2$dur_resid = resid(control_trim2)
 #interest2 = lm(dur_resid ~ type_of_s + type_of_s:register,
 #               data=s_dur_trim2)
 
-interest2 = lm(dur_resid ~ type_of_s*register,
+interest2 = lm(dur_resid ~ pl_prop*ambig_type,
               data=s_dur_trim2)
+
+interest2 = lm(dur_resid ~ ambig_type,
+               data=s_dur_trim2)
 
 anova(interest2)
 
