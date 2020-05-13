@@ -35,7 +35,7 @@ with codecs.open(input_file_path, "r", "utf-8") as f:
 running_cores = 0
 
 # Do not run with more than 5 cores.
-num_cores = 4
+num_cores = 7
 num_index_lines = len(input_file)
 # num_index_lines = 1465779
 core_dict = {}
@@ -414,6 +414,8 @@ def parseLine(f_path, chan, from_time, to_time, ort, tier, new_file):
     oov = False
     output_lines = []
     ndl_lines = []
+    found = None
+    parent = None
     for counter, word in enumerate(word_list, 1):
         # check for segment / oov
         chunk_id = ",".join([f_path, tier, from_time, to_time])
@@ -422,9 +424,11 @@ def parseLine(f_path, chan, from_time, to_time, ort, tier, new_file):
         sent_i, word_sent_i = getSentenceInfo(skp_root, speaker, from_time, to_time, word)
         if not sent_i:
             continue
+        old_found = found
+        old_parent = parent
         found = skp_root.findall(".//tw[@ref='{}']".format(".".join([f_path.split("/")[-1], str(sent_i), str(word_sent_i)])))[0]
         parent = skp_root.findall("./tau[@ref='{}']".format(".".join([f_path.split("/")[-1], str(sent_i)])))[0]
-        parent.remove(found)
+#        parent.remove(found)
         cue_lexomes, pre_diphones, boundary_diphones, post_diphones, lexome1, lexome2, lexome3 = getNDLinfo(tag_root, sent_i, word_sent_i, f_path, from_time, to_time, speaker, counter, seg_var[-1] if seg_var else None)
         if not seg_var:
             oov = True
@@ -497,6 +501,9 @@ def parseLine(f_path, chan, from_time, to_time, ort, tier, new_file):
             other_ndl_cues = "_".join(cue_lexomes + pre_diphones + post_diphones)
             output_lines.append([str(word_chunk_i), str(sent_i), str(word_sent_i), word, word_phon, num_phon, phon_pron, prev_phon, prev_phon_pron, next_phon, next_phon_pron, overlap, oov_meta, word_pos, word_class, type_of_s, speaker, subtlexwf, lg10wf, lex_neb_num, lex_neb_freq, ptan, ptaf, cow_wf, next_word, next_wf, bigram_f, prev_word, prev_wf, prev_bigram_f, num_syl, word_stress, boundary_diphones, other_ndl_cues])
             print(word, word_pos, type_of_s)
+        if counter > 1:
+            if old_found in old_parent:
+                old_parent.remove(old_found)
         if boundary_diphones != "":
             ndl_lines.append(["_".join(cue_lexomes + pre_diphones + [boundary_diphones] + post_diphones), "_".join([outcome for outcome in [lexome1, lexome2, lexome3] if outcome != ""])])
         else:
@@ -550,14 +557,14 @@ def multiProcess():
     for job in jobs:
         job.join()
     # combine separate files
-    with codecs.open(tens_path + "IFADVcorpus/all_s_comb_ifadv_ndl.csv", "w", encoding="utf-8") as g:
+    with codecs.open(tens_path + "IFADVcorpus/all_s_comb_ifadv_ndl2.csv", "w", encoding="utf-8") as g:
         for core in range(num_cores):
             core_n = str(core + 1 + running_cores)
             with codecs.open(tens_path + "IFADVcorpus/all_s" + core_n + ".csv", "r", encoding="utf-8") as f:
                 for fln, f_line in enumerate(f, 1):
                     if not (core > 0 and fln == 1):
                         g.write(f_line)
-    with codecs.open(tens_path + "IFADVcorpus/ndl_ifadv.csv", "w", encoding="utf-8") as g:
+    with codecs.open(tens_path + "IFADVcorpus/ndl_ifadv2.csv", "w", encoding="utf-8") as g:
         for core in range(num_cores):
             core_n = str(core + 1 + running_cores)
             with codecs.open(tens_path + "IFADVcorpus/ndl" + core_n + ".csv", "r", encoding="utf-8") as f:

@@ -75,6 +75,7 @@ s_dur_ifadv$register = as.factor("conversation")
 s_dur_ifadv$mean_hnr = as.factor(s_dur_ifadv$mean_hnr)
 s_dur_ifadv$nn_end_score = as.factor(s_dur_ifadv$nn_end_score)
 levels(s_dur_ifadv$speaker_sex) = c("sex2", "sex1")
+s_dur_ifadv = s_dur_ifadv[ , !(names(s_dur_ifadv) %in% c("lemma"))]
 s_dur_ecsd = read.csv(paste(ecsd_path, "synvoirel_s_comb_ecsd.csv", sep = ""))
 s_dur_ecsd$corpus = as.factor("ecsd")
 s_dur_ecsd$register = as.factor("conversation")
@@ -86,6 +87,7 @@ s_dur_k$corpus = as.factor("cgn-k")
 s_dur_k$register = as.factor("news")
 s_dur_k$mean_hnr = as.factor(s_dur_k$mean_hnr)
 s_dur_k$nn_end_score = as.factor(s_dur_k$nn_end_score)
+s_dur_k = s_dur_k[ , !(names(s_dur_k) %in% c("lemma"))]
 s_dur_o = read.csv(paste(cgn_path, "synvoirel_s_comb_comp-o.csv", sep = ""))
 s_dur_o$corpus = as.factor("cgn-o")
 s_dur_o$register = as.factor("stories")
@@ -98,7 +100,7 @@ s_dur$phrase_final = as.factor(s_dur$phrase_final)
 #s_dur = s_dur[!(s_dur$mean_hnr == "--undefined--"),]
 #s_dur$mean_hnr = as.numeric(s_dur$mean_hnr)
 s_dur = s_dur[!(s_dur$nn_end_score == "--undefined--"),]
-s_dur$nn_end_score = as.numeric(s_dur$nn_end_score) / 1000
+s_dur$nn_end_score = as.numeric(as.character(s_dur$nn_end_score))
 s_dur = s_dur[rowSums(is.na(s_dur))<length(s_dur),]
 
 s_dur$s_dur_kal = s_dur$kal_end - s_dur$kal_start
@@ -191,8 +193,8 @@ s_dur$syntax_f8_sc = scale(s_dur$syntax_f8)
 # Inspect collinearity
 continuous = c("speech_rate_pron", "base_dur", "num_syl_pron", 
                "num_cons_pron", "log_wf", "lex_neb", "log_bigf", "stress_dist",
-#               "rel_freq1", 
-#               "rel_freq2",
+               "rel_freq1", 
+               "rel_freq2",
                "syntax_f2", "syntax_f3", "syntax_f4", "syntax_f5",
                "syntax_f6", "syntax_f7", "syntax_f8")
 
@@ -205,7 +207,8 @@ collin.fnc(na.omit(s_dur[, continuous]))$cnumber
 nrow(s_dur)
 s_dur = s_dur[!(is.na(s_dur$type_of_s) | is.na(s_dur$next_phon_class) 
                 | is.na(s_dur$prev_mention) | is.na(s_dur$register)
-                | is.na(s_dur$phrase_final)), ]
+                | is.na(s_dur$stressed)
+                ), ]
 nrow(s_dur)
 
 s_dur = s_dur[s_dur$type_of_s %in% c("S", "PL"),]
@@ -227,44 +230,24 @@ table(s_dur$register)
 registers = s_dur[s_dur$register %in% c("stories", "news"),]
 conversation = s_dur[s_dur$register == "conversation",]
 ind = sample(c(TRUE, FALSE), nrow(conversation), replace=TRUE, prob=c(0.5, 0.5))
-#relfreq = conversation[ind,]
-relfreq = conversation[!ind,]
+relfreq = conversation[ind,]
+#relfreq = conversation[!ind,]
 #conv_registers = conversation[!ind,]
 conv_registers = conversation[ind,]
 registers = rbind(registers, conv_registers)
 
 # do relfreq
 # first see if effect is there without relfreq
-# principle components
-col_pred = relfreq[, c("speech_rate_pron", "base_dur", "num_syl_pron", "num_cons_pron", 
-                     "log_wf", "lex_neb", "log_bigf", "stress_dist", "syntax_f2",
-                     "syntax_f3", "syntax_f4", "syntax_f5", "syntax_f6", "syntax_f7",
-                     "syntax_f8")]
-col_pred_pca = prcomp(col_pred, center = T, scale. = T)
-summary(col_pred_pca)
-
-# keep pc1 - pc10, threshold of 0.9 cumulative proportion reached (0.9372)
-
-relfreq$PC1 = col_pred_pca$x[,1]
-relfreq$PC2 = col_pred_pca$x[,2]
-relfreq$PC3 = col_pred_pca$x[,3]
-relfreq$PC4 = col_pred_pca$x[,4]
-relfreq$PC5 = col_pred_pca$x[,5]
-relfreq$PC6 = col_pred_pca$x[,6]
-relfreq$PC7 = col_pred_pca$x[,7]
-relfreq$PC8 = col_pred_pca$x[,8]
-relfreq$PC9 = col_pred_pca$x[,9]
-relfreq$PC10 = col_pred_pca$x[,10]
-
 ### prepare dataset
 
 relfreq = na.omit(relfreq)
 
 ### models
-
-control = lmer(log_s_dur ~ PC1 + PC2 + PC3 + PC4 + PC5 + PC6 + PC7 + PC8 + PC9
-               + PC10
-               + next_phon_class + prev_mention + underlying_voice
+control = lmer(log_s_dur ~ speech_rate_pron_sc + base_dur_sc + num_syl_pron_sc 
+               + num_cons_pron_sc + log_wf_sc + lex_neb_sc + log_bigf_sc 
+               + syntax_f2_sc + syntax_f3_sc + syntax_f4_sc + syntax_f5_sc + syntax_f6_sc
+               + syntax_f7_sc + syntax_f8_sc
+               + stressed + next_phon_class + prev_mention + underlying_voice
                + (1 | speaker) + (1 | word_ort),
                control = lmerControl(optCtrl = list(maxfun = 1e6, ftol_abs = 1e-8)),
                data=relfreq)
@@ -272,12 +255,14 @@ control = lmer(log_s_dur ~ PC1 + PC2 + PC3 + PC4 + PC5 + PC6 + PC7 + PC8 + PC9
 relfreq$dur_resid = resid(control)
 relfreq_trim = relfreq[abs(scale(relfreq$dur_resid)) < 2.5,]
 
-control_trim = lmer(log_s_dur ~ PC1 + PC2 + PC3 + PC4 + PC5 + PC6 + PC7 + PC8 + PC9
-                    + PC10
-                    + next_phon_class + prev_mention + underlying_voice
-                    + (1 | speaker) + (1 | word_ort),
-                    control = lmerControl(optCtrl = list(maxfun = 1e6, ftol_abs = 1e-8)),
-                    data=relfreq_trim)
+control_trim = lmer(log_s_dur ~ speech_rate_pron_sc + base_dur_sc + num_syl_pron_sc 
+               + num_cons_pron_sc + log_wf_sc + lex_neb_sc + log_bigf_sc 
+               + syntax_f2_sc + syntax_f3_sc + syntax_f4_sc + syntax_f5_sc + syntax_f6_sc
+               + syntax_f7_sc + syntax_f8_sc
+               + stressed + next_phon_class + prev_mention + underlying_voice
+               + (1 | speaker) + (1 | word_ort),
+               control = lmerControl(optCtrl = list(maxfun = 1e6, ftol_abs = 1e-8)),
+               data=relfreq_trim)
 
 par(mfrow=c(2,2))
 plot(predict(control), resid(control))

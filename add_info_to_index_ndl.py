@@ -28,15 +28,15 @@ del entitydefs["quot"]
 del entitydefs["lt"]
 del entitydefs["gt"]
 
-component = "d"
-input_file_path = tens_path + "cgn/cgn_index_d_mono_vl.txt"
+component = "k"
+input_file_path = tens_path + "cgn/cgn_index_k_test.txt"
 with codecs.open(input_file_path, "r", "utf-8") as f:
     input_file = f.readlines()
 
 running_cores = 0
 
 # Do not run with more than 5 cores.
-num_cores = 8
+num_cores = 1
 num_index_lines = len(input_file)
 # num_index_lines = 1465779
 core_dict = {}
@@ -350,7 +350,8 @@ def getNDLinfo(rt, s_index, w_in_sent, orig_path, c_start, c_end, spkr, w_in_chu
 
 def findWord(rt, s_index, w_index, shift):
     file_name = rt.attrib["ref"]
-    matches = rt.findall(".//tw[@ref='{}']".format(file_name + "." + str(s_index) + "." + str(w_index + shift)))  # i suspect this never finds a match if shift == -1
+    w_id = file_name + "." + str(s_index) + "." + str(w_index + shift)
+    matches = rt.findall(".//tw[@ref='{}']".format(w_id))  # i suspect this never finds a match if shift == -1
     if len(matches) == 0:
         if shift > 0:
             matches = rt.findall(".//tw[@ref='{}']".format(file_name + "." + str(s_index + 1) + "." + str(shift)))
@@ -413,6 +414,8 @@ def parseLine(f_path, chan, from_time, to_time, ort, tier, new_file):
     oov = False
     output_lines = []
     ndl_lines = []
+    found = None
+    parent = None
     for counter, word in enumerate(word_list, 1):
         # check for segment / oov
         chunk_id = ",".join([f_path, tier, from_time, to_time])
@@ -421,9 +424,10 @@ def parseLine(f_path, chan, from_time, to_time, ort, tier, new_file):
         sent_i, word_sent_i = getSentenceInfo(skp_root, speaker, from_time, to_time, word)
         if not sent_i:
             continue
+        old_found = found
+        old_parent = parent
         found = skp_root.findall(".//tw[@ref='{}']".format(".".join([f_path.split("/")[-1], str(sent_i), str(word_sent_i)])))[0]
         parent = skp_root.findall("./tau[@ref='{}']".format(".".join([f_path.split("/")[-1], str(sent_i)])))[0]
-        parent.remove(found)
         cue_lexomes, pre_diphones, boundary_diphones, post_diphones, lexome1, lexome2, lexome3 = getNDLinfo(tag_root, sent_i, word_sent_i, f_path, from_time, to_time, speaker, counter, seg_var[-1] if seg_var else None)
         if not seg_var:
             oov = True
@@ -496,6 +500,9 @@ def parseLine(f_path, chan, from_time, to_time, ort, tier, new_file):
             other_ndl_cues = "_".join(cue_lexomes + pre_diphones + post_diphones)
             output_lines.append([str(word_chunk_i), str(sent_i), str(word_sent_i), word, word_phon, num_phon, phon_pron, prev_phon, prev_phon_pron, next_phon, next_phon_pron, overlap, oov_meta, word_pos, word_class, type_of_s, speaker, subtlexwf, lg10wf, lex_neb_num, lex_neb_freq, ptan, ptaf, cow_wf, next_word, next_wf, bigram_f, prev_word, prev_wf, prev_bigram_f, num_syl, word_stress, boundary_diphones, other_ndl_cues])
             print(word, word_pos, type_of_s)
+        if counter > 1:
+            if old_found in old_parent:
+                old_parent.remove(old_found)
         if boundary_diphones != "":
             ndl_lines.append(["_".join(cue_lexomes + pre_diphones + [boundary_diphones] + post_diphones), "_".join([outcome for outcome in [lexome1, lexome2, lexome3] if outcome != ""])])
         else:
@@ -549,14 +556,14 @@ def multiProcess():
     for job in jobs:
         job.join()
     # combine separate files
-    with codecs.open(tens_path + "cgn/all_s_comb_" + component + "_vl_ndl.csv", "w", encoding="utf-8") as g:
+    with codecs.open(tens_path + "cgn/all_s_comb_" + component + "_test_ndl.csv", "w", encoding="utf-8") as g:
         for core in range(num_cores):
             core_n = str(core + 1 + running_cores)
             with codecs.open(tens_path + "cgn/all_s" + core_n + ".csv", "r", encoding="utf-8") as f:
                 for fln, f_line in enumerate(f, 1):
                     if not (core > 0 and fln == 1):
                         g.write(f_line)
-    with codecs.open(tens_path + "cgn/ndl_comp-" + component + "_vl.csv", "w", encoding="utf-8") as g:
+    with codecs.open(tens_path + "cgn/ndl_comp-" + component + "_test.csv", "w", encoding="utf-8") as g:
         for core in range(num_cores):
             core_n = str(core + 1 + running_cores)
             with codecs.open(tens_path + "cgn/ndl" + core_n + ".csv", "r", encoding="utf-8") as f:

@@ -445,6 +445,8 @@ def parseLine(f_path, chan, from_time, to_time, ort, tier, new_file):
     oov = False
     output_lines = []
     ndl_lines = []
+    found = None
+    parent = None
     for counter, word in enumerate(word_list, 1):
         # check for segment / oov
         chunk_id = ",".join([f_path, tier, from_time, to_time])
@@ -453,9 +455,11 @@ def parseLine(f_path, chan, from_time, to_time, ort, tier, new_file):
         sent_i, word_sent_i = getSentenceInfo(skp_root, speaker, from_time, to_time, word)
         if not sent_i:
             continue
+        old_found = found
+        old_parent = parent
         found = skp_root.findall(".//tw[@ref='{}']".format(".".join([f_path.split("/")[-1], str(sent_i), str(word_sent_i)])))[0]
         parent = skp_root.findall("./tau[@ref='{}']".format(".".join([f_path.split("/")[-1], str(sent_i)])))[0]
-        parent.remove(found)
+#        parent.remove(found)
         cue_lexomes, pre_diphones, boundary_diphones, post_diphones, lexome1, lexome2, lexome3 = getNDLinfo(tag_root, sent_i, word_sent_i, f_path, from_time, to_time, speaker, counter, seg_var[-1] if seg_var else None)
         if not seg_var:
             oov = True
@@ -528,6 +532,9 @@ def parseLine(f_path, chan, from_time, to_time, ort, tier, new_file):
                 other_ndl_cues = "_".join(cue_lexomes + pre_diphones + post_diphones)
                 output_lines.append([str(word_chunk_i), str(sent_i), str(word_sent_i), word, word_phon, num_phon, phon_pron, prev_phon, prev_phon_pron, next_phon, next_phon_pron, overlap, oov_meta, word_pos, word_class, type_of_en, speaker, subtlexwf, lg10wf, lex_neb_num, lex_neb_freq, ptan, ptaf, cow_wf, next_word, next_wf, bigram_f, prev_word, prev_wf, prev_bigram_f, num_syl, word_stress, boundary_diphones, other_ndl_cues])
                 print(word, word_pos, type_of_en)
+        if counter > 1:
+            if old_found in old_parent:
+                old_parent.remove(old_found)
         if boundary_diphones != "":
             ndl_lines.append(["_".join(cue_lexomes + pre_diphones + [boundary_diphones] + post_diphones), "_".join([outcome for outcome in [lexome1, lexome2, lexome3] if outcome != ""])])
         else:

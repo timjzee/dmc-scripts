@@ -120,6 +120,8 @@ s_dur = s_dur[
   s_dur$nn_start_score > 1.2 & 
     s_dur$nn_end_score > 1.2
   ,]
+# remove words transcribed as only /s/
+#s_dur = s_dur[s_dur$word_phon != "s",]
 # remove underlyingly voiced final /s/ to check if it causes the effect
 #s_dur = s_dur[s_dur$underlying_voice == "voiceless",]
 s_dur = s_dur[s_dur$underlying_voice %in% c("voiced", "voiceless"),]
@@ -128,7 +130,7 @@ s_dur$underlying_voice = as.factor(as.character(s_dur$underlying_voice))
 s_dur = s_dur[rowSums(is.na(s_dur))<length(s_dur),]
 
 # remove unrepresentative outliers (Baayen, 2008, p. 243)
-# s_dur = s_dur[s_dur$s_dur_nn < 0.4,]
+s_dur = s_dur[s_dur$s_dur_nn < 0.4,]
 
 # make new predictors and get rid of unnecessary NAs
 s_dur$stressed = s_dur$num_syl == s_dur$word_stress
@@ -182,9 +184,9 @@ s_dur$num_cons_pron_sc = scale(s_dur$num_cons_pron)
 s_dur$log_wf_sc = scale(s_dur$log_wf)
 s_dur$lex_neb_sc = scale(s_dur$lex_neb)
 s_dur$log_bigf_sc = scale(s_dur$log_bigf)
-s_dur$rel_freq1_sc = scale(s_dur$rel_freq1)
-s_dur$rel_freq2_sc = scale(s_dur$rel_freq2)
-s_dur$stress_dist_sc = scale(s_dur$stress_dist)
+#s_dur$rel_freq1_sc = scale(s_dur$rel_freq1)
+#s_dur$rel_freq2_sc = scale(s_dur$rel_freq2)
+#s_dur$stress_dist_sc = scale(s_dur$stress_dist)
 s_dur$syntax_f2_sc = scale(s_dur$syntax_f2)
 s_dur$syntax_f3_sc = scale(s_dur$syntax_f3)
 s_dur$syntax_f4_sc = scale(s_dur$syntax_f4)
@@ -207,14 +209,18 @@ s_dur$type_of_s = relevel(s_dur$type_of_s, ref="S")
 # remove lines for which categorical predictors are NA
 nrow(s_dur)
 s_dur = s_dur[!(is.na(s_dur$type_of_s) | is.na(s_dur$next_phon_class) 
-                | is.na(s_dur$prev_mention) | is.na(s_dur$register)
-                | is.na(s_dur$phrase_final)), ]
+                | is.na(s_dur$prev_mention) | is.na(s_dur$register) 
+                | is.na(s_dur$stressed) | is.na(s_dur$underlying_voice)
+), ]
 nrow(s_dur)
 
 ### prepare dataset
 # get rid of unnecessary columns
 drop = c("ptan", "ptaf", "mean_hnr", "next_phon_dur", "prev_phon_dur", "birth_year", "speaker_sex", 
          "proportion_voiced2", "per_mil_wf", "prev_word",
+#         "rel_freq1", "rel_freq2", 
+         "stress_dist",
+         "ndl_boundary_diph", "other_ndl_cues",
          "word_class", "word_pos", "next_phon", "prev_phon", "sent_i", "word_sent_i", "word_chunk_i", 
          "chan")
 s_dur = s_dur[ , !(names(s_dur) %in% drop)]
@@ -422,10 +428,10 @@ int_ass = matrix(c(cramerV(table(s_dur[,c("type_of_s", "type_of_s")]), bias.corr
                    sqrt(summary(lm(syntax_f2 ~ type_of_s, data = s_dur))$r.squared),
                    sqrt(summary(lm(syntax_f3 ~ type_of_s, data = s_dur))$r.squared),
                    sqrt(summary(lm(syntax_f4 ~ type_of_s, data = s_dur))$r.squared),
-                   sqrt(summary(lm(syntax_f5 ~ type_of_s, data = s_dur))$r.squared),
-                   sqrt(summary(lm(syntax_f6 ~ type_of_s, data = s_dur))$r.squared),
-                   sqrt(summary(lm(syntax_f7 ~ type_of_s, data = s_dur))$r.squared),
-                   sqrt(summary(lm(syntax_f8 ~ type_of_s, data = s_dur))$r.squared),
+                   cramerV(table(s_dur[,c("type_of_s", "syntax_f5_cat")]), bias.correct = TRUE),
+                   cramerV(table(s_dur[,c("type_of_s", "syntax_f6_cat")]), bias.correct = TRUE),
+                   cramerV(table(s_dur[,c("type_of_s", "syntax_f7_cat")]), bias.correct = TRUE),
+                   cramerV(table(s_dur[,c("type_of_s", "syntax_f8_cat")]), bias.correct = TRUE),
                    cramerV(table(s_dur[,c("register", "type_of_s")]), bias.correct = TRUE),
                    cramerV(table(s_dur[,c("register", "register")]), bias.correct = TRUE),
                    cramerV(table(s_dur[,c("register", "next_phon_class")]), bias.correct = TRUE),
@@ -443,24 +449,25 @@ int_ass = matrix(c(cramerV(table(s_dur[,c("type_of_s", "type_of_s")]), bias.corr
                    sqrt(summary(lm(syntax_f2 ~ register, data = s_dur))$r.squared),
                    sqrt(summary(lm(syntax_f3 ~ register, data = s_dur))$r.squared),
                    sqrt(summary(lm(syntax_f4 ~ register, data = s_dur))$r.squared),
-                   sqrt(summary(lm(syntax_f5 ~ register, data = s_dur))$r.squared),
-                   sqrt(summary(lm(syntax_f6 ~ register, data = s_dur))$r.squared),
-                   sqrt(summary(lm(syntax_f7 ~ register, data = s_dur))$r.squared),
-                   sqrt(summary(lm(syntax_f8 ~ register, data = s_dur))$r.squared)
+                   cramerV(table(s_dur[,c("register", "syntax_f5_cat")]), bias.correct = TRUE),
+                   cramerV(table(s_dur[,c("register", "syntax_f6_cat")]), bias.correct = TRUE),
+                   cramerV(table(s_dur[,c("register", "syntax_f7_cat")]), bias.correct = TRUE),
+                   cramerV(table(s_dur[,c("register", "syntax_f8_cat")]), bias.correct = TRUE)
 ), 
 nrow = 2, ncol = 20, byrow = T, dimnames = list(
-  c("type_of_s", "register"),
-  c("type_of_s", "register", "next_phon_class", 
-    "prev_mention", 
+  c("Type of S", "Register"),
+  c("Type of S", "Register", "Phonetic class of next phone", 
+    "Previous mention of word", 
 #    "phrase_final", 
-    "underlying_voice", "stressed", 
-    "speech_rate_pron", "base_dur", "num_syl_pron", 
-    "num_cons_pron", "log_wf", "lex_neb", "log_bigf",
-    "syntax_f2", "syntax_f3", "syntax_f4", "syntax_f5",
-    "syntax_f6", "syntax_f7", "syntax_f8")))
+    "Underlying voice of S", "Word stress on final syllable", 
+    "Speech rate", "Duration of word base", "Number of syllables", 
+    "Number of consonants in coda", "Word frequency", "Phonological neighbourhood density", "Bigram frequency",
+    "Syntax feature 1", "Syntax feature 2", "Syntax feature 3", "Syntax feature 4",
+    "Syntax feature 5", "Syntax feature 6", "Syntax feature 7")))
 
-corrplot(int_ass, method = "number", cl.lim = c(0,1), cl.pos = "b", cl.ratio = 1)
-
+par(oma=c(3,3,3,3))
+corrplot(int_ass, method = "number", mar = c(0,0,0,0), tl.srt = 45, cl.lim = c(0,1), cl.pos = "b", cl.ratio = 1)
+par(oma=c(0,0,0,0))
 
 ### try Mirjam's residuals method
 ### Now try with scaled and centred predictors instead of PCs
@@ -468,7 +475,6 @@ corrplot(int_ass, method = "number", cl.lim = c(0,1), cl.pos = "b", cl.ratio = 1
 control2 = lmer(log_s_dur ~ speech_rate_pron_sc + base_dur_sc + num_syl_pron_sc 
                + num_cons_pron_sc + log_wf_sc + lex_neb_sc + log_bigf_sc 
                + syntax_f2_sc + syntax_f3_sc + syntax_f4_sc 
-#               + syntax_f5_sc + syntax_f6_sc + syntax_f7_sc + syntax_f8_sc
                + syntax_f5_cat + syntax_f6_cat + syntax_f7_cat + syntax_f8_cat 
                + stressed
                + next_phon_class + prev_mention 
@@ -485,7 +491,6 @@ s_dur_trim2 = s_dur[abs(scale(s_dur$dur_resid2)) < 2.5,]
 control_trim2 = lmer(log_s_dur ~ speech_rate_pron_sc + base_dur_sc + num_syl_pron_sc 
                      + num_cons_pron_sc + log_wf_sc + lex_neb_sc + log_bigf_sc 
                      + syntax_f2_sc + syntax_f3_sc + syntax_f4_sc 
-#                     + syntax_f5_sc + syntax_f6_sc + syntax_f7_sc + syntax_f8_sc
                      + syntax_f5_cat + syntax_f6_cat + syntax_f7_cat + syntax_f8_cat
                      + stressed
                      + next_phon_class + prev_mention 
@@ -518,7 +523,7 @@ interest2 = lm(dur_resid ~ type_of_s*register,
 
 anova(interest2)
 
-plot(effect("type_of_s:register", interest2, x.var = "type_of_s"), multiline = T, 
+p1 = plot(effect("type_of_s:register", interest2, x.var = "type_of_s"), multiline = T, 
      ci.style = "bars",
      main = "", 
      xlab = "Morphological status", ylab = "Residuals in log(seconds)")
@@ -561,6 +566,43 @@ mean_news_pl = mean(s_dur_trim2[s_dur_trim2$register == "news" & s_dur_trim2$typ
 mean_conv_s - mean_conv_pl
 mean_stor_s - mean_stor_pl
 mean_news_s - mean_news_pl
+
+#
+# s_dur_conv = s_dur[s_dur$register == "conversation",]
+# control_conv = lmer(log_s_dur ~ speech_rate_pron_sc + base_dur_sc + num_syl_pron_sc 
+#                 + num_cons_pron_sc + log_wf_sc + lex_neb_sc + log_bigf_sc 
+#                 + syntax_f2_sc + syntax_f3_sc + syntax_f4_sc 
+#                 + syntax_f5_cat + syntax_f6_cat + syntax_f7_cat + syntax_f8_cat 
+#                 + stressed
+#                 + next_phon_class + prev_mention 
+#                 + underlying_voice
+# #                + rel_freq1
+#                 + (1 | speaker) 
+#                 + (1 | word_ort),
+#                 control = lmerControl(optCtrl = list(maxfun = 1e6, ftol_abs = 1e-8)),
+#                 data=s_dur_conv)
+# 
+# s_dur_conv$dur_resid = resid(control_conv)
+# s_dur_conv_trim = s_dur_conv[abs(scale(s_dur_conv$dur_resid)) < 2.5,]
+# 
+# control_conv_trim = lmer(log_s_dur ~ speech_rate_pron_sc + base_dur_sc + num_syl_pron_sc 
+#                     + num_cons_pron_sc + log_wf_sc + lex_neb_sc + log_bigf_sc 
+#                     + syntax_f2_sc + syntax_f3_sc + syntax_f4_sc 
+#                     + syntax_f5_cat + syntax_f6_cat + syntax_f7_cat + syntax_f8_cat 
+#                     + stressed
+#                     + next_phon_class + prev_mention 
+#                     + underlying_voice
+# #                    + type_of_s
+#                     + (1 | speaker) 
+#                     + (1 | word_ort),
+#                     control = lmerControl(optCtrl = list(maxfun = 1e6, ftol_abs = 1e-8)),
+#                     data=s_dur_conv_trim)
+# 
+# s_dur_conv_trim$dur_resid2 = resid(control_conv_trim)
+# 
+# interest_conv = lm(dur_resid2 ~ type_of_s,
+#                data=s_dur_conv_trim)
+
 #
 # Centre of Gravity
 
@@ -573,7 +615,7 @@ control_cog2 = lmer(s_cog_window ~ speech_rate_pron_sc + base_dur_sc + num_syl_p
                     + next_phon_class + prev_mention + underlying_voice
 #                    + type_of_s*register
                    + (1 | speaker) 
-                   + (1 + register | word_ort),
+                   + (1 | word_ort),
                    control = lmerControl(optCtrl = list(maxfun = 1e6, ftol_abs = 1e-8)),
                    data=s_dur)
 
@@ -623,12 +665,15 @@ interest_cog2 = lm(cog_resid ~ type_of_s*register,
 
 anova(interest_cog2)
 
-plot(effect("type_of_s:register", interest_cog2, x.var = "type_of_s"), multiline = T, 
+p2 = plot(effect("type_of_s:register", interest_cog2, x.var = "type_of_s"), multiline = T, 
      ci.style = "bars",
      main = "", 
      xlab = "Morphological status", ylab = "Residuals in Hz")
 
 ##
+
+grid.arrange(p1, p2, ncol = 2)
+
 interest_cog_conv = lm(cog_resid ~ type_of_s,
                        data=s_cog_trim2[s_cog_trim2$register == "conversation",])
 summary(interest_cog_conv)
@@ -640,3 +685,16 @@ summary(interest_cog_stor)
 interest_cog_news = lm(cog_resid ~ type_of_s,
                        data=s_cog_trim2[s_cog_trim2$register == "news",])
 summary(interest_cog_news)
+
+# again differences are small (~25Hz), but two staged approach, and only 0-4000Hz range
+cog_pred = effect("type_of_s:register", interest_cog2, x.var = "type_of_s")$fit
+
+# conversation
+cog_pred[1] - cog_pred[2]
+
+# stories
+cog_pred[3] - cog_pred[4]
+
+# news
+cog_pred[5] - cog_pred[6]
+

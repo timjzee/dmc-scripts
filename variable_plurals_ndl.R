@@ -10,11 +10,13 @@ library(gridExtra)
 if (Sys.info()[1] == "Darwin"){
   f_path = "/Volumes/tensusers/timzee/s_dur_models/"
   cgn_path = "/Volumes/tensusers/timzee/cgn/"
+  ndl_path = "/Users/tim/Documents/"
   ifadv_path = "/Volumes/tensusers/timzee/IFADVcorpus/"
   ecsd_path = "/Volumes/tensusers/timzee/ECSD/"
 } else {
   f_path = "/vol/tensusers/timzee/s_dur_models/"
   cgn_path = "/vol/tensusers/timzee/cgn/"
+  ndl_path = "/vol/tensusers/timzee/IFADVcorpus/"
   ifadv_path = "/vol/tensusers/timzee/IFADVcorpus/"
   ecsd_path = "/vol/tensusers/timzee/ECSD/"
 }
@@ -60,8 +62,7 @@ get_phon_class = function(x) {
   }
 }
 
-#s_dur_a = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-a2.csv", sep = ""))
-s_dur_a = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-a_timbl.csv", sep = ""))
+s_dur_a = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-a_tri.csv", sep = ""))
 s_dur_a$corpus = as.factor("cgn-a")
 s_dur_a$register = as.factor("conversation")
 s_dur_a$mean_hnr = as.factor(s_dur_a$mean_hnr)
@@ -77,8 +78,7 @@ s_dur_a$language = as.factor("nl")
 #s_dur_a_vl = s_dur_a_vl[s_dur_a_vl$overlap == FALSE,]
 #s_dur_a_vl = s_dur_a_vl[ , !(names(s_dur_a_vl) %in% c("overlap"))]
 #s_dur_a_vl$language = as.factor("vl")
-#s_dur_c = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-c2.csv", sep = ""))
-s_dur_c = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-c_timbl.csv", sep = ""))
+s_dur_c = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-c_tri.csv", sep = ""))
 s_dur_c$corpus = as.factor("cgn-c")
 s_dur_c$register = as.factor("conversation")
 s_dur_c$birth_year = as.integer(s_dur_c$birth_year)
@@ -95,8 +95,7 @@ s_dur_c$language = as.factor("nl")
 #s_dur_c_vl = s_dur_c_vl[s_dur_c_vl$overlap == FALSE,]
 #s_dur_c_vl = s_dur_c_vl[ , !(names(s_dur_c_vl) %in% c("overlap"))]
 #s_dur_c_vl$language = as.factor("vl")
-#s_dur_d = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-d2.csv", sep = ""))
-s_dur_d = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-d_timbl.csv", sep = ""))
+s_dur_d = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-d_tri.csv", sep = ""))
 s_dur_d$corpus = as.factor("cgn-d")
 s_dur_d$register = as.factor("conversation")
 s_dur_d$mean_hnr = as.factor(s_dur_d$mean_hnr)
@@ -112,24 +111,21 @@ s_dur_d$language = as.factor("nl")
 #s_dur_d_vl = s_dur_d_vl[s_dur_d_vl$overlap == FALSE,]
 #s_dur_d_vl = s_dur_d_vl[ , !(names(s_dur_d_vl) %in% c("overlap"))]
 #s_dur_d_vl$language = as.factor("vl")
-#s_dur_ifadv = read.csv(paste(ifadv_path, "synvoirelPL_s_comb_ifadv.csv", sep = ""))
-s_dur_ifadv = read.csv(paste(ifadv_path, "synvoirelPL_s_comb_ifadv_timbl.csv", sep = ""))
+s_dur_ifadv = read.csv(paste(ifadv_path, "synvoirelPL_s_comb_ifadv_tri.csv", sep = ""))
 s_dur_ifadv$corpus = as.factor("ifadv")
 s_dur_ifadv$register = as.factor("conversation")
 s_dur_ifadv$mean_hnr = as.factor(s_dur_ifadv$mean_hnr)
 s_dur_ifadv$nn_end_score = as.factor(s_dur_ifadv$nn_end_score)
 levels(s_dur_ifadv$speaker_sex) = c("sex2", "sex1")
 s_dur_ifadv$language = as.factor("nl")
-#s_dur_ecsd = read.csv(paste(ecsd_path, "synvoirelPL_s_comb_ecsd.csv", sep = ""))
-s_dur_ecsd = read.csv(paste(ecsd_path, "synvoirelPL_s_comb_ecsd_timbl.csv", sep = ""))
+s_dur_ecsd = read.csv(paste(ecsd_path, "synvoirelPL_s_comb_ecsd_tri.csv", sep = ""))
 s_dur_ecsd$corpus = as.factor("ecsd")
 s_dur_ecsd$register = as.factor("conversation")
 s_dur_ecsd$mean_hnr = as.factor(s_dur_ecsd$mean_hnr)
 s_dur_ecsd$nn_end_score = as.factor(s_dur_ecsd$nn_end_score)
 s_dur_ecsd$language = as.factor("nl")
 
-#s_dur_k = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-k.csv", sep = ""))
-s_dur_k = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-k_timbl.csv", sep = ""))
+s_dur_k = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-k_tri.csv", sep = ""))
 s_dur_k$corpus = as.factor("cgn-k")
 s_dur_k$register = as.factor("news")
 s_dur_k$mean_hnr = as.factor(s_dur_k$mean_hnr)
@@ -142,8 +138,7 @@ s_dur_k$language = as.factor("nl")
 #s_dur_k_vl$nn_end_score = as.factor(s_dur_k_vl$nn_end_score)
 #s_dur_k_vl$language = as.factor("vl")
 #s_dur_k_vl = s_dur_k_vl[ , !(names(s_dur_k_vl) %in% c("overlap"))]
-#s_dur_o = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-o.csv", sep = ""))
-s_dur_o = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-o_timbl.csv", sep = ""))
+s_dur_o = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-o_tri.csv", sep = ""))
 s_dur_o$corpus = as.factor("cgn-o")
 s_dur_o$register = as.factor("stories")
 s_dur_o$mean_hnr = as.factor(s_dur_o$mean_hnr)
@@ -363,6 +358,47 @@ drop = c("ptan", "ptaf", "mean_hnr", "next_phon_dur", "prev_phon_dur", "birth_ye
          "chan")
 s_dur = s_dur[ , !(names(s_dur) %in% drop)]
 
+### get NDL weights
+#pyndl.w = t(as.matrix(read.csv(paste(ndl_path, "ifadv_pyndl_weights_pl.csv", sep = ""), row.names = 1)))
+# something is not working, wrong labels
+pyndl.w = t(read.csv(paste(ndl_path, "comp-a_pyndl_weights_pl.csv", sep = ""), row.names = 1, check.names = F))
+
+get_NDLOutcome = function(x) {
+  if (x == "S") {
+    return("NONMORPH")
+  } else if (x == "PL") {
+    return("PL")
+  } else if (x == "GEN-POSS") {
+    return("GENPOSS")
+  } else {
+    return("PART")
+  }
+}
+
+s_dur$ndl_boundary_diph_var = sapply(as.character(s_dur$ndl_boundary_diph), 
+                                     function(x) ifelse(substr(x, nchar(x) - 1, nchar(x)) == "@s", paste(unlist(strsplit(x, "@s")), "@n", sep = ""), paste(substr(x, 1, nchar(x)-1), "@", sep = "")))
+s_dur$ndl_boundary_diph_var = as.factor(s_dur$ndl_boundary_diph_var)
+s_dur$ndl_outcome = sapply(as.character(s_dur$type_of_s), get_NDLOutcome)
+s_dur$ActFromBoundaryDiphone = mapply(function(x, y) ifelse(x %in% row.names(pyndl.w) & y %in% colnames(pyndl.w)
+                                                            , pyndl.w[x, y], NA),
+                                      as.character(s_dur$ndl_boundary_diph),
+                                      s_dur$ndl_outcome)
+s_dur$ActFromBoundaryDiphoneVar = mapply(function(x, y) ifelse(x %in% row.names(pyndl.w) & y %in% colnames(pyndl.w)
+                                                            , pyndl.w[x, y], NA),
+                                      as.character(s_dur$ndl_boundary_diph_var),
+                                      s_dur$ndl_outcome)
+
+s_dur$ActFromBoundaryDiphoneDif = s_dur$ActFromBoundaryDiphone - s_dur$ActFromBoundaryDiphoneVar
+
+# try getting variant activation
+# but first create variant triphone
+# if final two phones "@s" --> "@n" else replace final "s" with "@"
+
+
+# only works if full weights file is imported
+#s_dur$ActDivFromBoundaryDiphone = sapply(as.character(s_dur$ndl_boundary_diph),
+#                                         function(x) ifelse(x %in% row.names(pyndl.w), sum(pyndl.w[x,]), NA))
+
 #s_dur = na.omit(s_dur)
 
 s_dur_ambig = s_dur[s_dur$pl_ambig == T,]
@@ -383,6 +419,7 @@ s_dur_unambig$log_lem_freq = log(s_dur_unambig$lem_freq)
 ### Inspect collinearity
 continuous = c("speech_rate_pron", "base_dur", "num_syl_pron", 
                "num_cons_pron", "log_lem_freq", "lex_neb", "log_bigf",
+               "ActFromBoundaryDiphoneDif",
                "syntax_f2", "syntax_f3", "syntax_f4", "pl_prop", "rel_freq_pl")
 
 corrplot(cor(s_dur_ambig[, continuous], use = "complete.obs"), method = "number")
@@ -581,7 +618,8 @@ control2 = lmer(log_s_dur ~ speech_rate_pron_sc + base_dur_sc + num_syl_pron_sc
                 + stressed
                 + next_phon_class + prev_mention 
                 + register
-#                + rel_freq_s
+                + ActFromBoundaryDiphoneDif
+#                + ActDivFromBoundaryDiphone
                 + rel_freq_pl*pl_prop
                 + (1 | speaker) 
                 + (1 | word_ort),
@@ -601,7 +639,8 @@ control_trim2 = lmer(log_s_dur ~ speech_rate_pron_sc + base_dur_sc + num_syl_pro
                      + stressed
                      + next_phon_class + prev_mention 
                      + register
-#                     + rel_freq_s
+                     + ActFromBoundaryDiphoneDif
+#                     + ActDivFromBoundaryDiphone
                      + rel_freq_pl*pl_prop
                      + (1 | speaker) 
                      + (1 | word_ort),
