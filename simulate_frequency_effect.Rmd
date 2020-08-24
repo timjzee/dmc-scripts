@@ -1,0 +1,224 @@
+---
+title: "Simulating the effect of sampling error in a model of variable plurals"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+setDownloadURI = function(list, filename = stop("'filename' must be specified"), textHTML = "Click here to download the data.", fileext = "RData", envir = parent.frame()){
+  require(base64enc,quietly = TRUE)
+  divname = paste(sample(LETTERS),collapse="")
+  tf = tempfile(pattern=filename, fileext = fileext)
+  save(list = list, file = tf, envir = envir)
+  filenameWithExt = paste(filename,fileext,sep=".")
+  
+  uri = dataURI(file = tf, mime = "application/octet-stream", encoding = "base64")
+  cat("<a style='text-decoration: none' id='",divname,"'></a>
+    <script>
+    var a = document.createElement('a');
+    var div = document.getElementById('",divname,"');
+    div.appendChild(a);
+    a.setAttribute('href', '",uri,"');
+    a.innerHTML = '",textHTML,"' + ' (",filenameWithExt,")';
+    if (typeof a.download != 'undefined') {
+      a.setAttribute('download', '",filenameWithExt,"');
+    }else{
+      a.setAttribute('onclick', 'confirm(\"Your browser does not support the download HTML5 attribute. You must rename the file to ",filenameWithExt," after downloading it (or use Chrome/Firefox/Opera). \")');
+    }
+    </script>",
+    sep="")
+}
+
+if (Sys.info()[1] == "Darwin"){
+  f_path = "/Volumes/tensusers/timzee/timbl_files/"
+  f_path2 = "/Volumes/tensusers/timzee/other/"
+} else {
+  f_path = "/vol/tensusers/timzee/timbl_files/"
+  f_path2 = "/vol/tensusers/timzee/other/"
+}
+
+var = read.csv(paste(f_path, "p_f_type_O_2syl_k3_ID_invar.csv", sep = ""))
+invar = read.csv(paste(f_path2, "invar_freqs.csv", sep = ""))
+```
+
+## Data
+
+This document uses frequency data from the SUBTLEX corpus, and probability data from a Timbl classifier.
+
+```{r results='asis',echo=FALSE,message=FALSE}
+
+setDownloadURI(c("var", "invar"), filename = "pluralData")
+
+```
+
+Let's load the data and take a look at it.
+
+```{r}
+set.seed(123)
+load("pluralData.RData")
+library(knitr)
+kable(var[1:5,1:7], caption = "Part of the `var` dataset")
+```
+
+The **p_s** and **p_en** columns contain the probabilities from a Timbl model that predicts whether a noun takes an *-s* or *-en* plural suffix based on its similarity to other nouns.
+
+The **f_s** and **f_en** columns contain the frequencies with which these nouns occur with an *-s* or *-en* suffix in the SUBTLEX corpus. As you can see, these nouns belong to the minority of Dutch plurals that occur with both suffixes.
+
+Now let's take a look at the other dataset we'll be using.
+
+```{r}
+kable(invar[1:5,], caption = "Part of the `invar` dataset")
+```
+
+The **f_mv** column contains the SUBTLEX frequency of the plural for the nouns in the **word** column. The **s_prop** column reflects the proportion of plurals that are realized with an -s suffix. As this column only contains 1s and 0s you might have guessed that these plurals only occur with a single suffix.
+
+## Description of the effect
+
+Let's say we're interested in how well the probabilities from a Timbl model predict the actual proportion of *-s* and *-en* variants for the nouns in the `var` data set. We could create a regression model with **p_s** as a predictor. But are there any mediating variables we should take into account? We might expect the predictive quality of **p_s** to be dependent on the accuracy of the proportion of *-s* and *-en* variants. After all, if this proportion is based on only 3 tokens, it is probably less accurate than if it were based on 300 tokens. Not only should this result in more extreme residuals for inaccurate proportions, it should also result in a diminished relationship between **p_s** and *-s* proportion based on lower frequencies compared to a stronger relationship between **p_s** and *-s* proportion based on higher frequencies.
+
+Let's see if the data back this up.
+
+```{r message=FALSE, warning=FALSE}
+var = var[var$f_s != 0,]
+var$f_nons = var$f_en + var$f_other
+var$f_mv = var$f_s + var$f_nons
+var$log_f_mv = log(var$f_mv)
+var$s_prop = var$f_s/(var$f_s + var$f_nons)
+
+library(aods3)
+var.mod = aodml(cbind(f_s, f_nons) ~ p_s * log_f_mv, family = "bb", data = var)
+kable(as.matrix(summary(var.mod)$BCoef), caption = "Coefficients")
+```
+
+The **p_s:log_f_mv** interaction is significant. Let's visualize to help us interpret it. Unfortunately, the effects in `aodml` models cannot be plotted using packages such as `effects` of `ggeffects`. We'll have construct these plots using the `predict` method. Let's write a function that does this.
+```{r}
+plot_aodml_effect = function(var_data, var_mod){
+  var2 = var_data
+  var2$log_f_mv = max(var_data$log_f_mv)
+  betabin_pred = predict(var_mod, se.fit = T, newdata = var2)
+  s_prop_pred_max = plogis(betabin_pred$fit)
+  s_prop_lo_max = plogis(betabin_pred$fit - qnorm(.975) * betabin_pred$se.fit)
+  s_prop_hi_max = plogis(betabin_pred$fit + qnorm(.975) * betabin_pred$se.fit)
+
+  var2$log_f_mv = median(var_data$log_f_mv)
+
+  betabin_pred = predict(var_mod, se.fit = T, newdata = var2)
+  s_prop_pred_med = plogis(betabin_pred$fit)
+  s_prop_lo_med = plogis(betabin_pred$fit - qnorm(.975) * betabin_pred$se.fit)
+  s_prop_hi_med = plogis(betabin_pred$fit + qnorm(.975) * betabin_pred$se.fit)
+
+  var2$log_f_mv = min(var_data$log_f_mv)
+
+  betabin_pred = predict(var_mod, se.fit = T, newdata = var2)
+  s_prop_pred_min = plogis(betabin_pred$fit)
+  s_prop_lo_min = plogis(betabin_pred$fit - qnorm(.975) * betabin_pred$se.fit)
+  s_prop_hi_min = plogis(betabin_pred$fit + qnorm(.975) * betabin_pred$se.fit)
+
+  library(ggplot2)
+  var_plot = cbind(var_data, s_prop_pred_max, s_prop_lo_max, s_prop_hi_max, 
+                   s_prop_pred_med, s_prop_lo_med, s_prop_hi_med, 
+                   s_prop_pred_min, s_prop_lo_min, s_prop_hi_min)
+  ggplot(var_plot, aes(x = p_s, y = s_prop)) +
+         geom_point(color = "grey", alpha = .7) +
+         geom_line(aes(y=s_prop_pred_max, linetype = "Max")) +
+         geom_ribbon( aes(ymin = s_prop_lo_max, ymax = s_prop_hi_max), alpha = .15) +
+         geom_line(aes(y=s_prop_pred_med, linetype = "Median")) +
+         geom_ribbon( aes(ymin = s_prop_lo_med, ymax = s_prop_hi_med), alpha = .15) +
+         geom_line(aes(y=s_prop_pred_min, linetype = "Min")) +
+         geom_ribbon( aes(ymin = s_prop_lo_min, ymax = s_prop_hi_min), alpha = .15) +
+         labs(linetype='log_f_mv')
+}
+
+plot_aodml_effect(var, var.mod)
+```
+
+As this plot indicates the effect of **p_s** on **s_prop** decreases as **log_f_mv** gets smaller. However, if this effect is truly the result of higher sampling error for words with fewer tokens, we should be able to replicate it in a simulation.
+
+## Simulation
+In order to simulate a somewhat realistic noun frequency distribution, we'll use as much data as possible by combining the `var` and `invar` datasets. Word frequencies generally follow *lnre* (large number of rare events) distributions, which have been implemented in the `zipfR` package.
+
+```{r}
+nouns = rbind(invar, var[,c("word","f_mv", "s_prop")])
+nouns.tab = table(nouns$f_mv)
+library(zipfR)
+nouns.spc = spc(m = as.numeric(names(nouns.tab)), Vm = as.numeric(nouns.tab))
+nouns.lnre.fzm = lnre("fzm", nouns.spc)
+plot(nouns.spc, lnre.spc(nouns.lnre.fzm, sum(nouns$f_mv)))
+```
+
+We'll also simulate an appropriate beta distribution of `s_prop` using the `betareg` package.
+
+```{r warning=FALSE}
+library(betareg)
+s_prop.beta = betareg(s_prop ~ 1, data = var)
+mu = plogis(s_prop.beta$coefficients$mean)
+phi = s_prop.beta$coefficients$precision
+alph = mu * phi
+bet = (1 - mu) * phi
+
+hist(var$s_prop, freq = F)
+p = seq(0, 1, length=nrow(var))
+lines(p, dbeta(p, alph, bet), type = "l")
+```
+
+Now we can use these distributions to create the simulated population data from which we'll sample.
+
+```{r}
+lnre.sample = rlnre(nouns.lnre.fzm,n=1000)
+lnre.sample.num = as.numeric(as.character(lnre.sample))
+beta.sample = rbeta(1000, alph, bet)
+
+sim_data = data.frame(plural = 1:1000, frequency = lnre.sample.num, s_prop = beta.sample)
+kable(head(sim_data), caption = "Simulated population data")
+```
+
+Now let's take a sample.
+
+```{r}
+sim_plur.list = mapply(function(x,y) sample(c("s", "nons"), x, TRUE, c(y, 1 - y)), 
+                       sim_data$frequency, sim_data$s_prop)
+sim_plur_i.list = mapply(function(x,y) rep(x,y), sim_data$plural, sim_data$frequency)
+sim_data_long = unlist(sim_plur.list)
+names(sim_data_long) = as.character(unlist(sim_plur_i.list))
+
+sim_data_sample = sample(sim_data_long, 10000, replace = FALSE)
+sim_data_sample.df = data.frame(plural = names(sim_data_sample), suffix = sim_data_sample)
+sim_data_sample.tab.wide = table(sim_data_sample.df$plural, sim_data_sample.df$suffix)
+sim_data_sample.df.wide = data.frame(plural = as.integer(row.names(sim_data_sample.tab.wide)), 
+                                     nons = sim_data_sample.tab.wide[,1],
+                                     s = sim_data_sample.tab.wide[,2])
+sim_data_sample_var.df.wide = sim_data_sample.df.wide[!(sim_data_sample.df.wide$nons == 0 | 
+                                                          sim_data_sample.df.wide$s == 0),]
+sim_data_sample_var.df.wide$true_s_prop = sapply(sim_data_sample_var.df.wide$plural, 
+                                                 function(x) sim_data[sim_data$plural == x,]$s_prop)
+sim_data_sample_var.df.wide$mv_freq = sim_data_sample_var.df.wide$s + sim_data_sample_var.df.wide$nons
+sim_data_sample_var.df.wide$log_f_mv = log(sim_data_sample_var.df.wide$mv_freq)
+sim_data_sample_var.df.wide$s_prop = sim_data_sample_var.df.wide$s / sim_data_sample_var.df.wide$mv_freq
+kable(head(sim_data_sample_var.df.wide), caption = "Simulated sample data")
+```
+
+Let's check the effect of sampling on the distribution of *-s* proportion by plotting **true_s_prop** (population proportions) and **s_prop** (sample proportions) against the the number of plural tokens, **log_f_mv**.
+
+```{r}
+par(mfrow=c(1,2))
+plot(sim_data_sample_var.df.wide$log_f_mv, sim_data_sample_var.df.wide$true_s_prop, xlab = "log(freq(PL))", ylab = "Proportion(-s)", main="Population")
+plot(sim_data_sample_var.df.wide$log_f_mv, sim_data_sample_var.df.wide$s_prop, xlab = "log(freq(PL))", ylab = "Proportion(-s)", main="Sample")
+par(mfrow=c(1,1))
+```
+
+We're now ready to model the simulated data, by using **true_s_prop** as an analogue of **p_s** in the real data.
+
+```{r warning=FALSE}
+sim_data_sample_var.df.wide$p_s = sim_data_sample_var.df.wide$true_s_prop
+sim_data.mod = aodml(cbind(s, nons) ~ p_s * log_f_mv, family = "bb", data = sim_data_sample_var.df.wide)
+kable(as.matrix(summary(sim_data.mod)$BCoef), caption = "Coefficients")
+```
+
+Again we find a significant interaction. Let's check the plot:
+
+```{r}
+plot_aodml_effect(sim_data_sample_var.df.wide, sim_data.mod)
+```
+
+Given this very similar effect in simulated data, it seems likely that the interaction between **p_s** and **log_f_mv** reflects differences in sampling error rather than some kind of linguistic effect.
