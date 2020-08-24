@@ -1,4 +1,5 @@
 library(sjPlot)
+library(cocor)
 
 if (Sys.info()[1] == "Darwin"){
   f_path = "/Volumes/tensusers/timzee/other/"
@@ -32,7 +33,7 @@ medeklinkers = c(occlusieven, fricatieven, nasalen, liquidae, halfvocalen)
 get_phon_template = function(wrd, ns, n1, o2, n2, c2, fin_phon, s2) {
   if (fin_phon %in% obstruenten) {
     return("obstruent")
-  } else if (o2 == "j" & n2 == "@" & c2 == "=" & substr(wrd, nchar(wrd) - 1, nchar(wrd)) == "je" & !(substr(wrd, nchar(wrd) - 2, nchar(wrd) - 2) %in% c("j", "n"))) {
+  } else if (o2 %in% c("j", "tj", "pj", "kj") & n2 == "@" & c2 == "=" & substr(wrd, nchar(wrd) - 1, nchar(wrd)) == "je" & !(substr(wrd, nchar(wrd) - 2, nchar(wrd) - 2) %in% c("j", "n"))) {
     return("tje")
   } else if ((n2 %in% diftongen & c2 == "=") | (n2 %in% c(lange_vocalen, diftongen) & c2 %in% halfvocalen)) {
     return("diph")
@@ -148,7 +149,8 @@ var$s_prop = var$f_s/(var$f_s + var$f_en)
 
 plot(var$p_s, var$s_prop, type = "n")
 text(var$p_s, var$s_prop, var$word)
-cor(var$p_s, var$s_prop)
+c_k5 = cor(var$p_s, var$s_prop)
+c_k5
 
 ## check correlation when trained on tokens
 var_token = read.csv(paste(f_path, "compare_p_f_tokens.csv", sep = ""))
@@ -159,7 +161,8 @@ var_token$template = as.factor(var_token$template)
 var_token$default = sapply(var_token$template, get_default_suffix)
 
 var_token$s_prop = var_token$f_s/(var_token$f_s + var_token$f_en)
-cor(var_token$p_s, var_token$s_prop)
+c_k5_tok = cor(var_token$p_s, var_token$s_prop)
+c_k5_tok
 
 # also train on other variable plurals
 var_var = read.csv(paste(f_path, "compare_p_f_var.csv", sep = ""))
@@ -170,7 +173,8 @@ var_var$template = as.factor(var_var$template)
 var_var$default = sapply(var_var$template, get_default_suffix)
 
 var_var$s_prop = var_var$f_s/(var_var$f_s + var_var$f_en)
-cor(var_var$p_s, var_var$s_prop)
+c_k5_var = cor(var_var$p_s, var_var$s_prop)
+c_k5_var
 
 # not better, but all numbers might be different at a smaller k
 # k2 without other variable plurals
@@ -185,7 +189,53 @@ var_k2$s_prop = var_k2$f_s/(var_k2$f_s + var_k2$f_en)
 
 plot(var_k2$p_s, var_k2$s_prop, type = "n")
 text(var_k2$p_s, var_k2$s_prop, var_k2$word)
-cor(var_k2$p_s, var_k2$s_prop)
+c_k2 = cor(var_k2$p_s, var_k2$s_prop)
+c_k2
+
+# k1 without other variable plurals
+var_k1 = read.csv(paste(f_path, "compare_p_f_k1.csv", sep = ""))
+
+var_k1$final_coda = as.character(var_k1$final_coda)
+var_k1$template = mapply(get_phon_template, as.character(var_k1$word), var_k1$right_compound_syls, var_k1$penult_nucleus, var_k1$final_onset, var_k1$final_nucleus, var_k1$final_coda, substr(var_k1$final_coda, nchar(var_k1$final_coda), nchar(var_k1$final_coda)), var_k1$final_stress)
+var_k1$template = as.factor(var_k1$template)
+var_k1$default = sapply(var_k1$template, get_default_suffix)
+
+var_k1$s_prop = var_k1$f_s/(var_k1$f_s + var_k1$f_en)
+
+plot(var_k1$p_s, var_k1$s_prop, type = "n")
+text(var_k1$p_s, var_k1$s_prop, var_k1$word)
+c_k1 = cor(var_k1$p_s, var_k1$s_prop)
+c_k1
+
+# k3 without other variable plurals
+var_k3 = read.csv(paste(f_path, "compare_p_f_k3.csv", sep = ""))
+
+var_k3$final_coda = as.character(var_k3$final_coda)
+var_k3$template = mapply(get_phon_template, as.character(var_k3$word), var_k3$right_compound_syls, var_k3$penult_nucleus, var_k3$final_onset, var_k3$final_nucleus, var_k3$final_coda, substr(var_k3$final_coda, nchar(var_k3$final_coda), nchar(var_k3$final_coda)), var_k3$final_stress)
+var_k3$template = as.factor(var_k3$template)
+var_k3$default = sapply(var_k3$template, get_default_suffix)
+
+var_k3$s_prop = var_k3$f_s/(var_k3$f_s + var_k3$f_en)
+
+plot(var_k3$p_s, var_k3$s_prop, type = "n")
+text(var_k3$p_s, var_k3$s_prop, var_k3$word)
+c_k3 = cor(var_k3$p_s, var_k3$s_prop)
+c_k3
+
+# k4 without other variable plurals
+var_k4 = read.csv(paste(f_path, "compare_p_f_k4.csv", sep = ""))
+
+var_k4$final_coda = as.character(var_k4$final_coda)
+var_k4$template = mapply(get_phon_template, as.character(var_k4$word), var_k4$right_compound_syls, var_k4$penult_nucleus, var_k4$final_onset, var_k4$final_nucleus, var_k4$final_coda, substr(var_k4$final_coda, nchar(var_k4$final_coda), nchar(var_k4$final_coda)), var_k4$final_stress)
+var_k4$template = as.factor(var_k4$template)
+var_k4$default = sapply(var_k4$template, get_default_suffix)
+
+var_k4$s_prop = var_k4$f_s/(var_k4$f_s + var_k4$f_en)
+
+plot(var_k4$p_s, var_k4$s_prop, type = "n")
+text(var_k4$p_s, var_k4$s_prop, var_k4$word)
+c_k4 = cor(var_k4$p_s, var_k4$s_prop)
+c_k4
 
 # k2 with other variable plurals
 var_var_k2 = read.csv(paste(f_path, "compare_p_f_var_k2.csv", sep = ""))
@@ -199,7 +249,8 @@ var_var_k2$s_prop = var_var_k2$f_s/(var_var_k2$f_s + var_var_k2$f_en)
 
 plot(var_var_k2$p_s, var_var_k2$s_prop, type = "n")
 text(var_var_k2$p_s, var_var_k2$s_prop, var_var_k2$word)
-cor(var_var_k2$p_s, var_var_k2$s_prop)
+c_k2_var = cor(var_var_k2$p_s, var_var_k2$s_prop)
+c_k2_var
 
 ## Distance weighting
 # Inv. Distance Decay
@@ -214,7 +265,8 @@ var_k2_ID$s_prop = var_k2_ID$f_s/(var_k2_ID$f_s + var_k2_ID$f_en)
 
 plot(var_k2_ID$p_s, var_k2_ID$s_prop, type = "n")
 text(var_k2_ID$p_s, var_k2_ID$s_prop, var_k2_ID$word)
-cor(var_k2_ID$p_s, var_k2_ID$s_prop)
+c_k2_ID = cor(var_k2_ID$p_s, var_k2_ID$s_prop)
+c_k2_ID
 
 # with ID and variables
 var_k2_ID_var = read.csv(paste(f_path, "compare_p_f_k2_ID_var.csv", sep = ""))
@@ -227,7 +279,8 @@ var_k2_ID_var$s_prop = var_k2_ID_var$f_s/(var_k2_ID_var$f_s + var_k2_ID_var$f_en
 
 plot(var_k2_ID_var$p_s, var_k2_ID_var$s_prop, type = "n")
 text(var_k2_ID_var$p_s, var_k2_ID_var$s_prop, var_k2_ID_var$word)
-cor(var_k2_ID_var$p_s, var_k2_ID_var$s_prop)
+c_k2_ID_var = cor(var_k2_ID_var$p_s, var_k2_ID_var$s_prop)
+c_k2_ID_var
 
 # with ID and type merge
 var_k2_ID_merge = read.csv(paste(f_path, "compare_p_f_k2_ID_merge.csv", sep = ""))
@@ -240,7 +293,8 @@ var_k2_ID_merge$s_prop = var_k2_ID_merge$f_s/(var_k2_ID_merge$f_s + var_k2_ID_me
 
 plot(var_k2_ID_merge$p_s, var_k2_ID_merge$s_prop, type = "n")
 text(var_k2_ID_merge$p_s, var_k2_ID_merge$s_prop, var_k2_ID_merge$word)
-cor(var_k2_ID_merge$p_s, var_k2_ID_merge$s_prop)
+c_k2_ID_merge = cor(var_k2_ID_merge$p_s, var_k2_ID_merge$s_prop)
+c_k2_ID_merge
 
 # with ID and tokens
 var_k2_ID_tokens = read.csv(paste(f_path, "compare_p_f_k2_ID_tokens.csv", sep = ""))
@@ -254,7 +308,24 @@ var_k2_ID_tokens$s_prop = var_k2_ID_tokens$f_s/(var_k2_ID_tokens$f_s + var_k2_ID
 
 plot(var_k2_ID_tokens$p_s, var_k2_ID_tokens$s_prop, type = "n")
 text(var_k2_ID_tokens$p_s, var_k2_ID_tokens$s_prop, var_k2_ID_tokens$word)
-cor(var_k2_ID_tokens$p_s, var_k2_ID_tokens$s_prop)
+c_k2_ID_tok = cor(var_k2_ID_tokens$p_s, var_k2_ID_tokens$s_prop)
+c_k2_ID_tok
+
+# grid search
+# maak een tabel met k1-5, correlaties met prop, significantie van verschil, accuracy van 10-fold crossvalidation op trainingset
+par_names = c("k1", "k2", "k3", "k4", "k5")
+correlations = c(c_k1, c_k2, c_k3, c_k4, c_k5)
+difference_significance = c(
+  NA, 
+  cocor.dep.groups.overlap(c_k1, c_k2, cor(var_k1$p_s, var_k2$p_s), nrow(var_k1), test = c("hittner2003"))@hittner2003$p.value,
+  cocor.dep.groups.overlap(c_k2, c_k3, cor(var_k2$p_s, var_k3$p_s), nrow(var_k1), test = c("hittner2003"))@hittner2003$p.value,
+  cocor.dep.groups.overlap(c_k3, c_k4, cor(var_k3$p_s, var_k4$p_s), nrow(var_k1), test = c("hittner2003"))@hittner2003$p.value,
+  cocor.dep.groups.overlap(c_k4, c_k5, cor(var_k4$p_s, var$p_s), nrow(var_k1), test = c("hittner2003"))@hittner2003$p.value
+)
+leave_one_out_accuracy = c(0.943743, 0.939386, 0.931907, 0.926054, 0.920721)
+gs1 = data.frame(par_names, round(correlations, 3), round(difference_significance, 3), round(leave_one_out_accuracy, 3))
+names(gs1) = c("Parameters", "Correlations", "Difference significance", "Leave 1 out accuracy")
+tab_df(gs1)
 
 # It's not the learning parameters, let's investigate:
 var_k2_ID_sub = var_k2_ID[var_k2_ID$s_prop < 0.8 & var_k2_ID$s_prop > 0.2,]
@@ -297,3 +368,34 @@ plot(var_k2_ID_verbsVERB$p_s, var_k2_ID_verbsVERB$s_prop, type = "n")
 text(var_k2_ID_verbsVERB$p_s, var_k2_ID_verbsVERB$s_prop, var_k2_ID_verbsVERB$word)
 cor(var_k2_ID_verbsVERB$p_s, var_k2_ID_verbsVERB$s_prop)
 
+# determine significance of differences in correlation
+c = cor(var_k2_ID$p_s, var_k2_ID$s_prop)
+c_EN = cor(var_k2_ID_verbsEN$p_s, var_k2_ID_verbsEN$s_prop)
+c_VERB = cor(var_k2_ID_verbsVERB$p_s, var_k2_ID_verbsVERB$s_prop)
+
+c_prob1 = cor(var_k2_ID$p_s, var_k2_ID_verbsEN$p_s)
+c_prob2 = cor(var_k2_ID$p_s, var_k2_ID_verbsVERB$p_s)
+
+cocor.dep.groups.overlap(c, c_EN, c_prob1, nrow(var_k2_ID), test = c("hittner2003"))
+cocor.dep.groups.overlap(c, c_VERB, c_prob2, nrow(var_k2_ID))
+
+# Mirjam: what is the order of correlations if we take out top and bottom 5%
+hist(var_k2_ID$s_prop)
+var_k2_ID_sub = var_k2_ID[var_k2_ID$s_prop <= 0.95 & var_k2_ID$s_prop >= 0.05,]
+hist(var_k2_ID_sub$s_prop)
+c = cor(var_k2_ID_sub$p_s, var_k2_ID_sub$s_prop)
+
+var_k2_ID_verbsEN_sub = var_k2_ID_verbsEN[var_k2_ID_verbsEN$s_prop <= 0.95 & var_k2_ID_verbsEN$s_prop >= 0.05,]
+c_EN = cor(var_k2_ID_verbsEN_sub$p_s, var_k2_ID_verbsEN_sub$s_prop)
+
+var_k2_ID_verbsVERB_sub = var_k2_ID_verbsVERB[var_k2_ID_verbsVERB$s_prop <= 0.95 & var_k2_ID_verbsVERB$s_prop >= 0.05,]
+c_VERB = cor(var_k2_ID_verbsVERB_sub$p_s, var_k2_ID_verbsVERB_sub$s_prop)
+
+# determine significance of differences in correlation
+c_prob1 = cor(var_k2_ID_sub$p_s, var_k2_ID_verbsEN_sub$p_s)
+c_prob2 = cor(var_k2_ID_sub$p_s, var_k2_ID_verbsVERB_sub$p_s)
+
+cocor.dep.groups.overlap(c, c_EN, c_prob1, nrow(var_k2_ID_sub))
+cocor.dep.groups.overlap(c, c_VERB, c_prob2, nrow(var_k2_ID_sub))
+
+# Mirjam: what is the order if we take var_k2, var_k2_verbsEN, var_k2_verbsVERB

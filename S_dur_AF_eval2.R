@@ -348,5 +348,187 @@ legend("left", legend = c("FA", "NN"),
 mtext("End boundary difference to reference", side = 3, outer = TRUE)
 
 
+## check new data
+par(mfrow = c(2,3), mar=c(2,2,2,1), oma=c(0,0,2,0))
+## check a
+bounds = read.csv(paste(cgn_path, "eval_boundaries_a_v2b.csv", sep = ""))
+
+bounds$tim_min_nn_end = bounds$tim_end - bounds$nn_end
+bounds$tim_min_kal_end = bounds$tim_end - bounds$kal_end
+mean(abs(bounds$tim_min_nn_end), na.rm = TRUE)
+nrow(bounds[abs(bounds$tim_min_nn_end) < 0.02,]) / nrow(bounds)
+mean(abs(bounds$tim_min_kal_end), na.rm = TRUE)
+nrow(bounds[abs(bounds$tim_min_kal_end) < 0.02,]) / nrow(bounds)
+plot(density(bounds$tim_min_nn_end, na.rm = TRUE), xlim = c(-0.1, 0.1), main = "CGN-A")
+lines(density(bounds$tim_min_kal_end), lty = "dashed")
+abline(v = 0)
+
+## check c
+bounds = read.csv(paste(cgn_path, "eval_boundaries_c_v2b.csv", sep = ""))
+
+bounds$tim_min_nn_end = bounds$tim_end - bounds$nn_end
+bounds$tim_min_kal_end = bounds$tim_end - bounds$kal_end
+mean(abs(bounds$tim_min_nn_end), na.rm = TRUE)
+nrow(bounds[abs(bounds$tim_min_nn_end) < 0.02,]) / nrow(bounds)
+mean(abs(bounds$tim_min_kal_end), na.rm = TRUE)
+nrow(bounds[abs(bounds$tim_min_kal_end) < 0.02,]) / nrow(bounds)
+plot(density(bounds$tim_min_nn_end, na.rm = TRUE), xlim = c(-0.1, 0.1), main = "CGN-C")
+lines(density(bounds$tim_min_kal_end), lty = "dashed")
+abline(v = 0)
+
+## check k
+bounds = read.csv(paste(cgn_path, "eval_boundaries_k_v2b.csv", sep = ""))
+
+bounds$tim_min_nn_end = bounds$tim_end - bounds$nn_end
+bounds$tim_min_kal_end = bounds$tim_end - bounds$kal_end
+mean(abs(bounds$tim_min_nn_end), na.rm = TRUE)
+nrow(bounds[abs(bounds$tim_min_nn_end) < 0.02,]) / nrow(bounds)
+mean(abs(bounds$tim_min_kal_end), na.rm = TRUE)
+nrow(bounds[abs(bounds$tim_min_kal_end) < 0.02,]) / nrow(bounds)
+plot(density(bounds$tim_min_nn_end, na.rm = TRUE), xlim = c(-0.1, 0.1), main = "CGN-K")
+lines(density(bounds$tim_min_kal_end), lty = "dashed")
+abline(v = 0)
+
+## check o
+bounds = read.csv(paste(cgn_path, "eval_boundaries_o_v2b.csv", sep = ""))
+
+bounds$tim_min_nn_end = bounds$tim_end - bounds$nn_end
+bounds$tim_min_kal_end = bounds$tim_end - bounds$kal_end
+mean(abs(bounds$tim_min_nn_end), na.rm = TRUE)
+nrow(bounds[abs(bounds$tim_min_nn_end) < 0.02,]) / nrow(bounds)
+mean(abs(bounds$tim_min_kal_end), na.rm = TRUE)
+nrow(bounds[abs(bounds$tim_min_kal_end) < 0.02,]) / nrow(bounds)
+plot(density(bounds$tim_min_nn_end, na.rm = TRUE), xlim = c(-0.1, 0.1), main = "CGN-O")
+lines(density(bounds$tim_min_kal_end), lty = "dashed")
+abline(v = 0)
+
+plot(NULL,xaxt='n',yaxt='n',bty='n',ylab='',xlab='', xlim=0:1, ylim=0:1)
+legend("left", legend = c("FA", "NN"),
+       col = c("black", "black"),
+       lty = c("dashed", "solid"), cex=1, box.lwd = 0)
+
+mtext("End boundary difference to reference", side = 3, outer = TRUE)
+
+## starts
+par(mfrow = c(2,3), mar=c(2,2,2,1), oma=c(0,0,2,0))
+## check a
+bounds = read.csv(paste(cgn_path, "eval_boundaries_a_v2b.csv", sep = ""))
+
+bounds$tim_min_nn_start = bounds$tim_start - bounds$nn_start
+bounds$tim_min_kal_start = bounds$tim_start - bounds$kal_start
+mean(abs(bounds$tim_min_nn_start), na.rm = TRUE)
+nrow(bounds[abs(bounds$tim_min_nn_start) < 0.02,]) / nrow(bounds)
+mean(abs(bounds$tim_min_kal_start), na.rm = TRUE)
+nrow(bounds[abs(bounds$tim_min_kal_start) < 0.02,]) / nrow(bounds)
+plot(density(bounds$tim_min_nn_start, na.rm = TRUE), xlim = c(-0.1, 0.1), main = "CGN-A")
+lines(density(bounds$tim_min_kal_start), lty = "dashed")
+abline(v = 0)
+
+## check c
+bounds = read.csv(paste(cgn_path, "eval_boundaries_c_v2b.csv", sep = ""))
+
+bounds$tim_min_nn_start = bounds$tim_start - bounds$nn_start
+bounds$tim_min_kal_start = bounds$tim_start - bounds$kal_start
+mean(abs(bounds$tim_min_nn_start), na.rm = TRUE)
+nrow(bounds[abs(bounds$tim_min_nn_start) < 0.02,]) / nrow(bounds)
+mean(abs(bounds$tim_min_kal_start), na.rm = TRUE)
+nrow(bounds[abs(bounds$tim_min_kal_start) < 0.02,]) / nrow(bounds)
+plot(density(bounds$tim_min_nn_start, na.rm = TRUE), xlim = c(-0.1, 0.1), main = "CGN-C")
+lines(density(bounds$tim_min_kal_start), lty = "dashed")
+abline(v = 0)
+
+## check k
+bounds = read.csv(paste(cgn_path, "eval_boundaries_k_v2b.csv", sep = ""))
+
+bounds$tim_min_nn_start = bounds$tim_start - bounds$nn_start
+bounds$tim_min_kal_start = bounds$tim_start - bounds$kal_start
+mean(abs(bounds$tim_min_nn_start), na.rm = TRUE)
+nrow(bounds[abs(bounds$tim_min_nn_start) < 0.02,]) / nrow(bounds)
+mean(abs(bounds$tim_min_kal_start), na.rm = TRUE)
+nrow(bounds[abs(bounds$tim_min_kal_start) < 0.02,]) / nrow(bounds)
+plot(density(bounds$tim_min_nn_start, na.rm = TRUE), xlim = c(-0.1, 0.1), main = "CGN-K")
+lines(density(bounds$tim_min_kal_start), lty = "dashed")
+abline(v = 0)
+
+## check o
+bounds = read.csv(paste(cgn_path, "eval_boundaries_o_v2b.csv", sep = ""))
+
+bounds$tim_min_nn_start = bounds$tim_start - bounds$nn_start
+bounds$tim_min_kal_start = bounds$tim_start - bounds$kal_start
+mean(abs(bounds$tim_min_nn_start), na.rm = TRUE)
+nrow(bounds[abs(bounds$tim_min_nn_start) < 0.02,]) / nrow(bounds)
+mean(abs(bounds$tim_min_kal_start), na.rm = TRUE)
+nrow(bounds[abs(bounds$tim_min_kal_start) < 0.02,]) / nrow(bounds)
+plot(density(bounds$tim_min_nn_start, na.rm = TRUE), xlim = c(-0.1, 0.1), main = "CGN-O")
+lines(density(bounds$tim_min_kal_start), lty = "dashed")
+abline(v = 0)
+
+plot(NULL,xaxt='n',yaxt='n',bty='n',ylab='',xlab='', xlim=0:1, ylim=0:1)
+legend("left", legend = c("FA", "NN"),
+       col = c("black", "black"),
+       lty = c("dashed", "solid"), cex=1, box.lwd = 0)
+
+mtext("End boundary difference to reference", side = 3, outer = TRUE)
 
 
+
+###
+par(mfrow = c(2,3), mar=c(2,2,2,1), oma=c(0,0,2,0))
+## check a
+bounds = read.csv(paste(cgn_path, "eval_boundaries_a_v2b.csv", sep = ""))
+
+bounds$man_min_nn_end = bounds$man_end - bounds$nn_end
+bounds$man_min_kal_end = bounds$man_end - bounds$kal_end
+mean(abs(bounds$man_min_nn_end), na.rm = TRUE)
+nrow(bounds[abs(bounds$man_min_nn_end) < 0.02,]) / nrow(bounds)
+mean(abs(bounds$man_min_kal_end), na.rm = TRUE)
+nrow(bounds[abs(bounds$man_min_kal_end) < 0.02,]) / nrow(bounds)
+plot(density(bounds$man_min_nn_end, na.rm = TRUE), xlim = c(-0.1, 0.1), main = "CGN-A")
+lines(density(bounds$man_min_kal_end), lty = "dashed")
+abline(v = 0)
+
+## check c
+bounds = read.csv(paste(cgn_path, "eval_boundaries_c_v2b.csv", sep = ""))
+
+bounds$man_min_nn_end = bounds$man_end - bounds$nn_end
+bounds$man_min_kal_end = bounds$man_end - bounds$kal_end
+mean(abs(bounds$man_min_nn_end), na.rm = TRUE)
+nrow(bounds[abs(bounds$man_min_nn_end) < 0.02,]) / nrow(bounds)
+mean(abs(bounds$man_min_kal_end), na.rm = TRUE)
+nrow(bounds[abs(bounds$man_min_kal_end) < 0.02,]) / nrow(bounds)
+plot(density(bounds$man_min_nn_end, na.rm = TRUE), xlim = c(-0.1, 0.1), main = "CGN-C")
+lines(density(bounds$man_min_kal_end), lty = "dashed")
+abline(v = 0)
+
+## check k
+bounds = read.csv(paste(cgn_path, "eval_boundaries_k_v2b.csv", sep = ""))
+
+bounds$man_min_nn_end = bounds$man_end - bounds$nn_end
+bounds$man_min_kal_end = bounds$man_end - bounds$kal_end
+mean(abs(bounds$man_min_nn_end), na.rm = TRUE)
+nrow(bounds[abs(bounds$man_min_nn_end) < 0.02,]) / nrow(bounds)
+mean(abs(bounds$man_min_kal_end), na.rm = TRUE)
+nrow(bounds[abs(bounds$man_min_kal_end) < 0.02,]) / nrow(bounds)
+plot(density(bounds$man_min_nn_end, na.rm = TRUE), xlim = c(-0.1, 0.1), main = "CGN-K")
+lines(density(bounds$man_min_kal_end), lty = "dashed")
+abline(v = 0)
+
+## check o
+bounds = read.csv(paste(cgn_path, "eval_boundaries_o_v2b.csv", sep = ""))
+
+bounds$man_min_nn_end = bounds$man_end - bounds$nn_end
+bounds$man_min_kal_end = bounds$man_end - bounds$kal_end
+mean(abs(bounds$man_min_nn_end), na.rm = TRUE)
+nrow(bounds[abs(bounds$man_min_nn_end) < 0.02,]) / nrow(bounds)
+mean(abs(bounds$man_min_kal_end), na.rm = TRUE)
+nrow(bounds[abs(bounds$man_min_kal_end) < 0.02,]) / nrow(bounds)
+plot(density(bounds$man_min_nn_end, na.rm = TRUE), xlim = c(-0.1, 0.1), main = "CGN-O")
+lines(density(bounds$man_min_kal_end), lty = "dashed")
+abline(v = 0)
+
+plot(NULL,xaxt='n',yaxt='n',bty='n',ylab='',xlab='', xlim=0:1, ylim=0:1)
+legend("left", legend = c("FA", "NN"),
+       col = c("black", "black"),
+       lty = c("dashed", "solid"), cex=1, box.lwd = 0)
+
+mtext("End boundary difference to reference", side = 3, outer = TRUE)

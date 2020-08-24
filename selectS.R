@@ -6,7 +6,7 @@ if (Sys.info()[1] == "Darwin"){
 
 set.seed(42)
 
-s_df = read.csv(paste(f_path, "all_s_comb_c_ndl.csv", sep = ""))
+s_df = read.csv(paste(f_path, "all_s_comb_a_ndl.csv", sep = ""))
 # if non cgn corpus
 s_df$language = "nl"
 s_df$language = as.factor(s_df$language)

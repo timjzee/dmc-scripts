@@ -8,12 +8,12 @@ library(effects)
 library(gridExtra)
 
 if (Sys.info()[1] == "Darwin"){
-  f_path = "/Volumes/tensusers/timzee/s_dur_models/"
+  f_path = "/Volumes/tensusers/timzee/timbl_files/"
   cgn_path = "/Volumes/tensusers/timzee/cgn/"
   ifadv_path = "/Volumes/tensusers/timzee/IFADVcorpus/"
   ecsd_path = "/Volumes/tensusers/timzee/ECSD/"
 } else {
-  f_path = "/vol/tensusers/timzee/s_dur_models/"
+  f_path = "/vol/tensusers/timzee/timbl_files/"
   cgn_path = "/vol/tensusers/timzee/cgn/"
   ifadv_path = "/vol/tensusers/timzee/IFADVcorpus/"
   ecsd_path = "/vol/tensusers/timzee/ECSD/"
@@ -184,7 +184,7 @@ s_dur$stress_dist = s_dur$num_syl - s_dur$word_stress
 # exclude manually identified mistakes (based on comp-a, comp-a_vl, comp-d, comp-c, comp-c_vl, comp-k, comp-k_vl, comp-o, comp-o_vl, ifadv, ecsd)
 possible_verbs = c("vingers", "tests", "films", "regels", "nagels", "boetes", "tips", "trips", 
                    "clubs", "types", "sprints", "flirts", "tekens", "ketens", "tafels",
-                   "lades")
+                   "lades", "speeches")
 uncertain_words = c(
                     "duivels", "vleugels", "heuvels", "eikels", 
                     "wapens", "hoorns", 
@@ -196,24 +196,25 @@ uncertain_words = c(
                     )
 forbidden_words = c("bands",      # die muziek maken
                     "stuks",      # 4 stuks
-                    "standaards", # voor kaarsen
+#                    "standaards", # voor kaarsen
                     "jaars",      # 2e jaars
                     "klasses",    # van de klasses Deventer der
                     "stands",     # leenwoord 'stents'
-                    "hordes",     # hordes mensen vs. horden lopen
+#                    "hordes",     # hordes mensen vs. horden lopen
                     "chatbox",    # nog niet goed verwerkt
 #                    "experts",
 #                    "computerexperts",
                     "gangs",      # leenwoord 'gengs'
                     "zones",      # zonen is meervoud van zoon
                     "pools",      # leenwoord 'poel'
-                    "novices",    # leenwoord
-                    "speeches",   # leenwoord
-                    "sterns",     # ?
-                    "pence",      # leenwoord
-                    "palms",      # palmbomen vs. handpalmen
-                    "strips",     # meerdere betekenissen
-                    "kinders"     # andere 'speelse' betekenis, bovendien is het meervoud hier ers vs. eren
+#                    "novices",    # leenwoord
+#                    "speeches",   # leenwoord
+#                    "sterns",     # ?
+#                    "pence",      # leenwoord
+#                    "palms",      # palmbomen vs. handpalmen
+                    "strips",     # boekjes vs. strippenkaart (en ww)
+                    "kinders",    # andere 'speelse' betekenis, bovendien is het meervoud hier ers vs. eren
+                    "echtgenotes" # ambigue enkelvoud
                     )
 s_dur = s_dur[!(s_dur$word_ort %in% forbidden_words),]
 s_dur = s_dur[!(s_dur$word_ort %in% possible_verbs),]
@@ -369,7 +370,53 @@ s_dur_ambig = s_dur[s_dur$pl_ambig == T,]
 s_dur_ambig = na.omit(s_dur_ambig)
 s_dur_ambig$ambig_type = as.factor(as.character(s_dur_ambig$ambig_type))
 
-s_dur_ambig$log_lem_freq = log(s_dur_ambig$lem_freq)
+# get correct frequencies/proportions
+
+var = read.csv(paste(f_path, "p_f_type_O_merge_2syl_k4_ID_invar.csv", sep = ""))
+
+get_f_s = function(lem) {
+  if (lem %in% levels(var$word)){
+    return(var[var$word == lem,]$f_s)
+  } else {
+    return(NA)
+  }
+}
+
+get_f_en = function(lem) {
+  if (lem %in% levels(var$word)){
+    return(var[var$word == lem,]$f_en)
+  } else {
+    return(NA)
+  }
+}
+
+get_f_oth = function(lem) {
+  if (lem %in% levels(var$word)){
+    return(var[var$word == lem,]$f_other)
+  } else {
+    return(NA)
+  }
+}
+
+get_f_lem = function(lem) {
+  if (lem %in% levels(var$word)){
+    return(var[var$word == lem,]$f_s + var[var$word == lem,]$f_en + var[var$word == lem,]$f_other + var[var$word == lem,]$f_ev)
+  } else {
+    print("bla")
+    return(NA)
+  }
+}
+
+s_dur_ambig$f_s = sapply(as.character(s_dur_ambig$lemma), get_f_s)
+s_dur_ambig$f_en = sapply(as.character(s_dur_ambig$lemma), get_f_en)
+s_dur_ambig$f_other = sapply(as.character(s_dur_ambig$lemma), get_f_oth)
+s_dur_ambig$f_lem = sapply(as.character(s_dur_ambig$lemma), get_f_lem)
+
+s_dur_ambig$pl_prop = s_dur_ambig$f_s / (s_dur_ambig$f_s + s_dur_ambig$f_en + s_dur_ambig$f_other)
+s_dur_ambig$log_lem_freq = log(s_dur_ambig$f_lem)
+s_dur_ambig$rel_freq_pl = (s_dur_ambig$f_s + s_dur_ambig$f_en + s_dur_ambig$f_other) / s_dur_ambig$f_lem
+
+#s_dur_ambig$log_lem_freq = log(s_dur_ambig$lem_freq)
 s_dur_ambig$log_freq_pl = log(s_dur_ambig$s_freq + s_dur_ambig$en_freq)
 s_dur_ambig$rel_freq_s = s_dur_ambig$s_freq / s_dur_ambig$lem_freq
 s_dur_ambig$rel_freq_en = s_dur_ambig$en_freq / s_dur_ambig$lem_freq
@@ -377,6 +424,7 @@ s_dur_ambig$rel_freq_diff = s_dur_ambig$rel_freq_s - s_dur_ambig$rel_freq_en
 s_dur_ambig$log_freq_s = log(s_dur_ambig$s_freq)
 
 s_dur_unambig = s_dur[s_dur$pl_ambig == F,]
+s_dur_unambig = s_dur_unambig[,!(names(s_dur_unambig) %in% c("timbl_s_prob"))]
 s_dur_unambig = na.omit(s_dur_unambig)
 s_dur_unambig$log_lem_freq = log(s_dur_unambig$lem_freq)
 
@@ -569,6 +617,7 @@ nrow = 8, ncol = 12, byrow = T, dimnames = list(
 
 corrplot(cat_con, method = "number")
 
+s_dur_ambig = na.omit(s_dur_ambig)
 
 ### try single lmer (no correlation between pl_prop, rel_freq1 and covariates)
 control2 = lmer(log_s_dur ~ speech_rate_pron_sc + base_dur_sc + num_syl_pron_sc 
@@ -610,11 +659,53 @@ control_trim2 = lmer(log_s_dur ~ speech_rate_pron_sc + base_dur_sc + num_syl_pro
 
 summary(control_trim2)
 #par(mar=c(2,2,2,2))
-plot(effect("rel_freq_pl:pl_prop", control_trim2, x.var = "pl_prop")
+plot(effect("rel_freq_pl:pl_prop", control_trim2, x.var = "rel_freq_pl")
      , multiline=T, rug = F, main = "", ylab = "log(seconds)", ci.style = "bands", 
-     xlab = "Proportion plural / lemma", 
+     xlab = "Proportion plural / number", 
      key.args = list(space="right", columns=1, title = "Proportion -s / plural", cex.title = 0.9)
      )
+
+pm = plot_model(control_trim2, type = "eff", terms = c("pl_prop", "rel_freq_pl [0.0318888, 0.4165103, 1]"), colors = "bw", legend.title = "Proportion(PL)", title = "")
+pm + labs(y = "log(seconds)", x="Proportion(-s)") # + geom_point(data = s_dur_trim2, mapping = aes(x = pl_prop, y = log_s_dur), inherit.aes = FALSE)
+
+pm = plot_model(control_trim2, type = "eff", terms = c("rel_freq_pl", "pl_prop [0.00227199, 0.8092689, 0.9985915]"), colors = "bw", legend.title = "Proportion(-s)", title = "")
+pm + labs(y = "log(seconds)", x="Proportion(PL)") # + geom_point(data = s_dur_trim2, mapping = aes(x = pl_prop, y = log_s_dur), inherit.aes = FALSE)
+
+
+# only significant predictors:
+control2b = lmer(log_s_dur ~ speech_rate_pron_sc +
+                   + syntax_f7_cat + syntax_f8_cat 
+                 + next_phon_class 
+                 + register
+                 + rel_freq_pl*pl_prop
+                 + (1 | speaker) 
+                 + (1 | word_ort),
+                 control = lmerControl(optCtrl = list(maxfun = 1e6, ftol_abs = 1e-8)),
+                 data=s_dur_ambig)
+
+s_dur_ambig$dur_resid2 = resid(control2b)
+s_dur_trim2 = s_dur_ambig[abs(scale(s_dur_ambig$dur_resid2)) < 2.5,]
+
+control2b_trim = lmer(log_s_dur ~ speech_rate_pron_sc +
+                        + syntax_f7_cat + syntax_f8_cat 
+                      + next_phon_class 
+                      + register
+                      + rel_freq_pl*pl_prop
+                      + (1 | speaker) 
+                      + (1 | word_ort),
+                      control = lmerControl(optCtrl = list(maxfun = 1e6, ftol_abs = 1e-8)),
+                      data=s_dur_trim2)
+
+summary(control2b_trim)
+
+plot(effect("rel_freq_pl:pl_prop", control2b_trim, x.var = "rel_freq_pl")
+     , multiline=T, rug = F, main = "", ylab = "log(seconds)", ci.style = "bands", 
+     xlab = "Proportion plural / number", 
+     key.args = list(space="right", columns=1, title = "Proportion -s / plural", cex.title = 0.9)
+)
+
+pm = plot_model(control2b_trim, type = "eff", terms = c("rel_freq_pl", "pl_prop [0, 0.5, 1]"), colors = "bw", legend.title = "Proportion(-s)", title = "")
+pm + labs(y = "log(seconds)", x="Proportion(PL)") # + geom_point(data = s_dur_trim2, mapping = aes(x = pl_prop, y = log_s_dur), inherit.aes = FALSE)
 
 # a cleaner way of doing this would be to define rel_freq as the relative frequency
 # of ANY plural form compared to the lemma frequency
@@ -680,10 +771,12 @@ interact_plot(control_trim2, pred = rel_freq_pl, modx = pl_prop,
               plot.points = T, colors = c("red", "blue", "green")
               )
 
-sim_slopes(control_trim2, pred = rel_freq_pl, modx = pl_prop
-           , modx.values = c(0.5, 0.76, 0.99)
+ssl = sim_slopes(control_trim2, pred = rel_freq_pl, modx = pl_prop
+           , modx.values = c(0.01, 0.5, 0.99)
            , johnson_neyman = T, control.fdr = TRUE
            )
+
+ssl$slopes
 
 probe_interaction(control_trim2, pred = rel_freq_pl, modx = pl_prop, cond.int = TRUE,
                   interval = TRUE,  jnplot = TRUE)
@@ -836,6 +929,10 @@ control_trim3 = lmer(log_s_dur ~ speech_rate_pron_sc + base_dur_sc + num_syl_pro
 
 anova(control_trim3)
 plot(effect("rel_freq_pl", control_trim3), rug = F, main = "", ylab = "log(seconds)", xlab = "Proportion plural / lemma", colors = c("orange"))
+
+pm = plot_model(control_trim3, type = "eff", terms = c("rel_freq_pl"), colors = "bw", title = "Invariable -s Plurals")
+pm + labs(y = "log(seconds)", x="Proportion(PL)") # + geom_point(data = s_dur_trim3, mapping = aes(x = rel_freq_pl, y = log_s_dur), inherit.aes = FALSE)
+
 
 #grid.arrange(p2, p1, ncol = 2)
 

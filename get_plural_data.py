@@ -5,7 +5,135 @@ import unicodedata
 
 tens_path = "/Volumes/tensusers/timzee/" if sys.platform == "darwin" else "/vol/tensusers/timzee/"
 
-instances = "token"
+instances = "type"
+num_syl = 3
+
+mistakes = {
+    "S": [
+        "agressiviteit",
+        "hij",
+        "rijkelui",
+        "mån",
+        "voortgang",
+        "wéé",
+        "àl",
+        "ál",
+        "afstandsbepaling",
+        "banning",
+        "bescherming",
+        "bestrijding",
+        "bewapening",
+        "beëindiging",
+        "conservering",
+        "doorzetting",
+        "functionering",
+        "geheimhouding",
+        "herkenning",
+        "invoeging",
+        "kalmering",
+        "massavernietiging",
+        "ontspanning",
+        "opvoeding",
+        "paring",
+        "reclassering",
+        "ringeling",
+        "tekstverwerking",
+        "uithouding",
+        "uitlevering",
+        "vermeerdering",
+        "vernietiging",
+        "veroudering",
+        "verspreiding",
+        "verwarming",
+        "verwerking",
+        "voedselvergiftiging",
+        "voortplanting",
+        "watervoorziening",
+        "zelfbediening",
+        "zelfverdediging",
+        "zelfvernietiging",
+        "aanmelding",
+        "aanmoediging",
+        "aantrekking",
+        "achtervolging",
+        "ademhaling",
+        "afleiding",
+        "aflevering",
+        "afpersing",
+        "afstoting",
+        "bediening",
+        "belegering",
+        "beroving",
+        "besturing",
+        "betaling",
+        "beveiliging",
+        "bevolking",
+        "bevoorrading",
+        "beweging",
+        "dreiging",
+        "echtscheiding",
+        "geleiding",
+        "genezing",
+        "herhaling",
+        "investering",
+        "inwijding",
+        "lening",
+        "mening",
+        "misleiding",
+        "omgeving",
+        "ontmoeting",
+        "ontsnapping",
+        "ontsteking",
+        "ontvoering",
+        "ontwijking",
+        "opsporing",
+        "overleving",
+        "programmering",
+        "regering",
+        "riolering",
+        "samenzwering",
+        "scheiding",
+        "scheuring",
+        "sluiting",
+        "spanning",
+        "straling",
+        "toelating",
+        "toewijding",
+        "uitbetaling",
+        "uitvoering",
+        "verdediging",
+        "verdoving",
+        "vergelding",
+        "verkenning",
+        "verkiezing",
+        "verkrachting",
+        "verleiding",
+        "verrassing",
+        "verscheping",
+        "verzekering",
+        "waarneming",
+        "waarschuwing",
+        "zuivering",
+        "zo"
+    ],
+    "EN": [
+        "sportster",
+        "drinken",
+        "zo"
+    ],
+    "OTHER": [
+        "room",
+        "zijn",
+        "bankman",
+        "bootsman",
+        "buitenman",
+        "jus",
+        "man",
+        "persman",
+        "koren",
+        "gebeuren"
+    ]
+}
 
 frivative_voicing = {
     "f": "v",
@@ -168,27 +296,44 @@ with codecs.open(tens_path + "other/SUBTLEX-NL.master.txt", "r", "utf-8") as f:
                     else:
                         noun_dict[Wordform[:-1]] = {"S": int(FREQcount)}
                 elif 'basis' in SubPOS and Lemma != Wordform:
-                    if Wordform[-2:] in ["en", "ën"] and (len(Wordform) - len(Lemma)) < 4:  # exclude kinderen and koeien but not bessen
+                    if Wordform[-2:] in ["en", "ën"] and (len(Wordform) - len(Lemma)) < 4:  # exclude kinderen and koeien but not bessen or assurantiën
                         if len(Wordform) > 3:
 #                            if Wordform[-3:] == "ien":
 #                                pl_type = "OTHER"
 #                            else:
 #                                pl_type = "EN"
-                            if Wordform[-3] == "i" and Lemma[-1] != "i":
+                            if Wordform[-3] == "i" and Lemma[-1] != "i" and Wordform[-2] != "ë":
+                                pl_type = "OTHER"
+                            elif Wordform[-3] == "d" and Lemma[-1] != "d":      # exclude lijkwa - lijkwaden
                                 pl_type = "OTHER"
                             else:
                                 pl_type = "EN"
                         else:
                             pl_type = "EN"
-                    elif Wordform[-1] == "s" and (len(Wordform) - len(Lemma)) < 3:  # exclude bosjes that has been tagged as mv,basis
-                        pl_type = "S"
+                    elif Wordform[-1] == "s":  # exclude bosjes that has been tagged as mv,basis; and crisis that is pluralized as crises
+                        if (len(Wordform) - len(Lemma)) == 1:
+                            pl_type = "S"
+                        elif (len(Wordform) - len(Lemma)) == 2 and Wordform[-2] == "'":
+                            if Wordform[-3] not in ["s", "x"]:                             # excludes zus's
+                                pl_type = "S"
+                            else:
+                                pl_type = "OTHER"
+                        else:
+                            if len(Wordform) > 3:
+                                if Wordform[-3:] == "jes":
+                                    pl_type = ""
+                                else:
+                                    pl_type = "OTHER"                                     # exclude mislabeled diminuatives as plurals
+                            else:
+                                pl_type = "OTHER"
                     else:                                                       # add re restriction so that strategi n isn't a plural
                         if re.search(r'[a-z][a-z]', Wordform[-2:]):
                             pl_type = "OTHER"
                     if pl_type in noun_dict[Lemma]:                             # Wordform later vervangen door pl_type: 'en', 's', 'other'
                         noun_dict[Lemma][pl_type] += int(FREQcount)
                     else:
-                        noun_dict[Lemma][pl_type] = int(FREQcount)
+                        if pl_type != "":
+                            noun_dict[Lemma][pl_type] = int(FREQcount)
             if count_freq == cum_freq:
                 read_mode = False
         else:
@@ -210,6 +355,11 @@ with codecs.open(tens_path + "other/SUBTLEX-NL.master.txt", "r", "utf-8") as f:
                 count_freq = 0
             else:
                 continue
+
+# remove mistakes
+for lab in mistakes:
+    for w in mistakes[lab]:
+        del noun_dict[w][lab]
 
 noun_dict = {k: noun_dict[k] for k in noun_dict if len(noun_dict[k]) > 1}
 
@@ -312,6 +462,11 @@ for k in remove_keys:
 
 celex["hersen"] = {'phones': "'hEr-s@n", 'compound': False}
 
+# add 'n' to words like heiden
+for i in celex:
+    if celex[i]["phones"][-1] == "@" and i[-1] == "n":
+        celex[i]["phones"] += "n"
+
 dataset_invar = {}
 dataset_var = {}
 for lemma in noun_dict:
@@ -348,7 +503,9 @@ medeklinkers = occlusieven + fricatieven + nasalen + liquidae + halfvocalen
 with codecs.open(tens_path + "other/pl_" + instances + ".master", "w", "utf-8") as f:
     for word in dataset_invar:
         syllables = dataset_invar[word]['features'].split("-")
-        syllables = syllables[-2:] if len(syllables) > 1 else ["="] + syllables
+        extra_syls = len(syllables) - num_syl
+        syllables = syllables[-num_syl:] if extra_syls >= 0 else abs(extra_syls) * ["="] + syllables
+#        syllables = syllables[-2:] if len(syllables) > 1 else ["="] + syllables
         features = []
         stress = []
         for syl in syllables:
@@ -384,7 +541,9 @@ with codecs.open(tens_path + "other/pl_type_rel_freqs.csv", "w", "utf-8") as g:
     with codecs.open(tens_path + "other/pl_type.var", "w", "utf-8") as f:
         for word in dataset_var:
             syllables = dataset_var[word]['features'].split("-")
-            syllables = syllables[-2:] if len(syllables) > 1 else ["="] + syllables
+            extra_syls = len(syllables) - num_syl
+            syllables = syllables[-num_syl:] if extra_syls >= 0 else abs(extra_syls) * ["="] + syllables
+#            syllables = syllables[-2:] if len(syllables) > 1 else ["="] + syllables
             features = []
             stress = []
             for syl in syllables:
@@ -406,8 +565,9 @@ with codecs.open(tens_path + "other/pl_type_rel_freqs.csv", "w", "utf-8") as g:
                     coda = re.search(r'[{}]+$'.format("".join(medeklinkers)), syl)
                     coda = coda.group() if coda else "="
                     features.extend([onset, nucleus, coda])
-            pl_class = [dataset_var[word]['class'][0]]
             compound_word_syls = len(re.findall(r'[euoa]+(?=[^euioa]*)|(?<!e)i(?=[^euioa])', celex[strip_accents(word)]["compound"])) if celex[strip_accents(word)]["compound"] else 0
+            pl_class = [max([(dataset_var[word]["freq"][lab_i], lab) for lab_i, lab in enumerate(dataset_var[word]["class"])])[1]]
+#            pl_class = [dataset_var[word]['class'][0]]                          # kies meest frequente variant
             line = [word] + [str(compound_word_syls)] + features + stress + [word[-1]] + pl_class
             f.write(",".join(line) + "\n")
             # file for analysis

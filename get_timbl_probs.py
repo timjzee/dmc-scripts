@@ -6,7 +6,7 @@ tens_path = "/Volumes/tensusers/timzee/" if sys.platform == "darwin" else "/vol/
 
 print("Loading Timbl probabilities")
 timbl = {}
-with codecs.open(tens_path + "other/pl_token_timbl_k2_ID.csv", "r", "utf-8") as f:
+with codecs.open(tens_path + "other/pl_type_timbl_k4.csv", "r", "utf-8") as f:
     for line in f:
         word = line[:-1].split(",")[0]
         prob_strings = re.search(r'(?<={ ).*(?= }$)', line[:-1]).group().split(", ")
@@ -15,7 +15,7 @@ with codecs.open(tens_path + "other/pl_token_timbl_k2_ID.csv", "r", "utf-8") as 
             plural, prob = plural_prob.split(" ")
             timbl[word][plural] = prob
 
-with codecs.open(tens_path + "other/pl_token_probs_k2_ID.csv", "w", "utf-8") as f:
+with codecs.open(tens_path + "other/pl_type_probs_k4.csv", "w", "utf-8") as f:
     for word in timbl:
         s = timbl[word]["S"] if "S" in timbl[word] else "0"
         en = timbl[word]["EN"] if "EN" in timbl[word] else "0"
