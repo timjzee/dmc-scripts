@@ -88,7 +88,7 @@ prop_used = 0.4     # proportion of each interval, centered around the middle of
 # this creates a buffer at the start and end of the recording for which we have no training sample
 # if frame_window = 5, and step = .005, we have a buffer of .025 ms
 # we need to take this into account when we predict new data and construct the tg
-frame_window = 5
+frame_window = 15
 
 
 def makeTempFile(fp):
@@ -121,9 +121,9 @@ for fp in glob.glob(af_path + chunk_folder + "*.wav"):
 
 # wavpaths = ['/vol/tensusers/timzee/af_classification/training_chunks/a_nl_fn007837_324.909_325.376.wav', '/vol/tensusers/timzee/af_classification/training_chunks/o_nl_fn001154_225.772_226.646.wav']
 
-running_cores = 39
+running_cores = 126
 
-num_cores = 30
+num_cores = 39
 num_lex_lines = len(wavpaths)
 # num_lex_lines = 1000
 core_dict = {}
@@ -267,7 +267,7 @@ for job in jobs:
 
 print("Merging files...")
 
-with open(af_path + "Bootstrap_s_large_d.csv", "w") as f:
+with open(af_path + "Bootstrap_s_15c_d.csv", "w") as f:
 #with open(scratch + "Bootstrap_s_large_a.csv", "w") as f:
     all_samples = np.zeros((0, num_cols))
 #    print(all_samples.shape)

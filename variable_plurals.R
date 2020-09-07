@@ -6,14 +6,18 @@ library(rcompanion)
 library(lmerTest)
 library(effects)
 library(gridExtra)
+library(sjPlot)
+library(ggplot2)
 
 if (Sys.info()[1] == "Darwin"){
   f_path = "/Volumes/tensusers/timzee/timbl_files/"
+  other_path = "/Volumes/tensusers/timzee/other/"
   cgn_path = "/Volumes/tensusers/timzee/cgn/"
   ifadv_path = "/Volumes/tensusers/timzee/IFADVcorpus/"
   ecsd_path = "/Volumes/tensusers/timzee/ECSD/"
 } else {
   f_path = "/vol/tensusers/timzee/timbl_files/"
+  other_path = "/vol/tensusers/timzee/other/"
   cgn_path = "/vol/tensusers/timzee/cgn/"
   ifadv_path = "/vol/tensusers/timzee/IFADVcorpus/"
   ecsd_path = "/vol/tensusers/timzee/ECSD/"
@@ -61,7 +65,7 @@ get_phon_class = function(x) {
 }
 
 #s_dur_a = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-a2.csv", sep = ""))
-s_dur_a = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-a_timbl.csv", sep = ""))
+s_dur_a = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-a_timbl2.csv", sep = ""))
 s_dur_a$corpus = as.factor("cgn-a")
 s_dur_a$register = as.factor("conversation")
 s_dur_a$mean_hnr = as.factor(s_dur_a$mean_hnr)
@@ -78,7 +82,7 @@ s_dur_a$language = as.factor("nl")
 #s_dur_a_vl = s_dur_a_vl[ , !(names(s_dur_a_vl) %in% c("overlap"))]
 #s_dur_a_vl$language = as.factor("vl")
 #s_dur_c = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-c2.csv", sep = ""))
-s_dur_c = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-c_timbl.csv", sep = ""))
+s_dur_c = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-c_timbl2.csv", sep = ""))
 s_dur_c$corpus = as.factor("cgn-c")
 s_dur_c$register = as.factor("conversation")
 s_dur_c$birth_year = as.integer(s_dur_c$birth_year)
@@ -96,7 +100,7 @@ s_dur_c$language = as.factor("nl")
 #s_dur_c_vl = s_dur_c_vl[ , !(names(s_dur_c_vl) %in% c("overlap"))]
 #s_dur_c_vl$language = as.factor("vl")
 #s_dur_d = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-d2.csv", sep = ""))
-s_dur_d = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-d_timbl.csv", sep = ""))
+s_dur_d = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-d_timbl2.csv", sep = ""))
 s_dur_d$corpus = as.factor("cgn-d")
 s_dur_d$register = as.factor("conversation")
 s_dur_d$mean_hnr = as.factor(s_dur_d$mean_hnr)
@@ -113,7 +117,7 @@ s_dur_d$language = as.factor("nl")
 #s_dur_d_vl = s_dur_d_vl[ , !(names(s_dur_d_vl) %in% c("overlap"))]
 #s_dur_d_vl$language = as.factor("vl")
 #s_dur_ifadv = read.csv(paste(ifadv_path, "synvoirelPL_s_comb_ifadv.csv", sep = ""))
-s_dur_ifadv = read.csv(paste(ifadv_path, "synvoirelPL_s_comb_ifadv_timbl.csv", sep = ""))
+s_dur_ifadv = read.csv(paste(ifadv_path, "synvoirelPL_s_comb_ifadv_timbl2.csv", sep = ""))
 s_dur_ifadv$corpus = as.factor("ifadv")
 s_dur_ifadv$register = as.factor("conversation")
 s_dur_ifadv$mean_hnr = as.factor(s_dur_ifadv$mean_hnr)
@@ -121,7 +125,7 @@ s_dur_ifadv$nn_end_score = as.factor(s_dur_ifadv$nn_end_score)
 levels(s_dur_ifadv$speaker_sex) = c("sex2", "sex1")
 s_dur_ifadv$language = as.factor("nl")
 #s_dur_ecsd = read.csv(paste(ecsd_path, "synvoirelPL_s_comb_ecsd.csv", sep = ""))
-s_dur_ecsd = read.csv(paste(ecsd_path, "synvoirelPL_s_comb_ecsd_timbl.csv", sep = ""))
+s_dur_ecsd = read.csv(paste(ecsd_path, "synvoirelPL_s_comb_ecsd_timbl2.csv", sep = ""))
 s_dur_ecsd$corpus = as.factor("ecsd")
 s_dur_ecsd$register = as.factor("conversation")
 s_dur_ecsd$mean_hnr = as.factor(s_dur_ecsd$mean_hnr)
@@ -129,7 +133,7 @@ s_dur_ecsd$nn_end_score = as.factor(s_dur_ecsd$nn_end_score)
 s_dur_ecsd$language = as.factor("nl")
 
 #s_dur_k = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-k.csv", sep = ""))
-s_dur_k = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-k_timbl.csv", sep = ""))
+s_dur_k = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-k_timbl2.csv", sep = ""))
 s_dur_k$corpus = as.factor("cgn-k")
 s_dur_k$register = as.factor("news")
 s_dur_k$mean_hnr = as.factor(s_dur_k$mean_hnr)
@@ -143,7 +147,7 @@ s_dur_k$language = as.factor("nl")
 #s_dur_k_vl$language = as.factor("vl")
 #s_dur_k_vl = s_dur_k_vl[ , !(names(s_dur_k_vl) %in% c("overlap"))]
 #s_dur_o = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-o.csv", sep = ""))
-s_dur_o = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-o_timbl.csv", sep = ""))
+s_dur_o = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-o_timbl2.csv", sep = ""))
 s_dur_o$corpus = as.factor("cgn-o")
 s_dur_o$register = as.factor("stories")
 s_dur_o$mean_hnr = as.factor(s_dur_o$mean_hnr)
@@ -284,6 +288,7 @@ s_dur = s_dur[rowSums(is.na(s_dur))<length(s_dur),]
 
 
 s_dur$log_bigf = log(s_dur$bigram_f + 1)
+s_dur$log_bigf_prev = log(s_dur$prev_bigram_f + 1)
 
 s_dur$next_phon_class = as.factor(sapply(s_dur$next_phon_pron, get_phon_class))
 s_dur$prev_phon_class = as.factor(sapply(s_dur$prev_phon_pron, get_phon_class))
@@ -307,6 +312,7 @@ s_dur = s_dur[!(is.na(s_dur$speech_rate_pron) | is.na(s_dur$base_dur)
 #                | is.na(s_dur$rel_freq2)
                 | is.na(s_dur$num_syl_pron) | is.na(s_dur$num_cons_pron)
                 | is.na(s_dur$log_wf) | is.na(s_dur$lex_neb) | is.na(s_dur$log_bigf)
+                | is.na(s_dur$log_bigf_prev)
                 | is.na(s_dur$stress_dist) | is.na(s_dur$syntax_f2)
                 | is.na(s_dur$syntax_f3) | is.na(s_dur$syntax_f4)
                 | is.na(s_dur$syntax_f5) | is.na(s_dur$syntax_f6)
@@ -330,6 +336,7 @@ s_dur$num_cons_pron_sc = scale(s_dur$num_cons_pron)
 s_dur$log_wf_sc = scale(s_dur$log_wf)
 s_dur$lex_neb_sc = scale(s_dur$lex_neb)
 s_dur$log_bigf_sc = scale(s_dur$log_bigf)
+s_dur$log_bigf_prev_sc = scale(s_dur$log_bigf_prev)
 s_dur$rel_freq1_sc = scale(s_dur$rel_freq1)
 s_dur$rel_freq2_sc = scale(s_dur$rel_freq2)
 s_dur$stress_dist_sc = scale(s_dur$stress_dist)
@@ -374,6 +381,14 @@ s_dur_ambig$ambig_type = as.factor(as.character(s_dur_ambig$ambig_type))
 
 var = read.csv(paste(f_path, "p_f_type_O_merge_2syl_k4_ID_invar.csv", sep = ""))
 
+get_p_s_var = function(lem) {
+  if (lem %in% levels(var$word)){
+    return(var[var$word == lem,]$p_s)
+  } else {
+    return(NA)
+  }
+}
+
 get_f_s = function(lem) {
   if (lem %in% levels(var$word)){
     return(var[var$word == lem,]$f_s)
@@ -407,6 +422,7 @@ get_f_lem = function(lem) {
   }
 }
 
+s_dur_ambig$p_s = sapply(as.character(s_dur_ambig$lemma), get_p_s_var)
 s_dur_ambig$f_s = sapply(as.character(s_dur_ambig$lemma), get_f_s)
 s_dur_ambig$f_en = sapply(as.character(s_dur_ambig$lemma), get_f_en)
 s_dur_ambig$f_other = sapply(as.character(s_dur_ambig$lemma), get_f_oth)
@@ -427,6 +443,22 @@ s_dur_unambig = s_dur[s_dur$pl_ambig == F,]
 s_dur_unambig = s_dur_unambig[,!(names(s_dur_unambig) %in% c("timbl_s_prob"))]
 s_dur_unambig = na.omit(s_dur_unambig)
 s_dur_unambig$log_lem_freq = log(s_dur_unambig$lem_freq)
+
+# get correct invar probabilities
+
+invar = read.csv(paste(other_path, "invar_probs.csv", sep = ""))
+
+get_p_s = function(wrd) {
+  lem = sub("[']*s$", "", wrd)
+  if (lem %in% levels(invar$word)){
+    return(invar[invar$word == lem,]$p_s)
+  } else {
+    return(NA)
+  }
+}
+
+s_dur_unambig$p_s = sapply(as.character(s_dur_unambig$word_ort), get_p_s)
+s_dur_unambig = na.omit(s_dur_unambig)
 
 ### Inspect collinearity
 continuous = c("speech_rate_pron", "base_dur", "num_syl_pron", 
@@ -625,6 +657,7 @@ control2 = lmer(log_s_dur ~ speech_rate_pron_sc + base_dur_sc + num_syl_pron_sc
 #                + log_wf_sc 
                 + log_lem_freq
                 + lex_neb_sc + log_bigf_sc 
+                + log_bigf_prev_sc
                 + syntax_f2_sc + syntax_f3_sc + syntax_f4_sc 
                 + syntax_f5_cat + syntax_f6_cat + syntax_f7_cat + syntax_f8_cat 
                 + stressed
@@ -645,6 +678,7 @@ control_trim2 = lmer(log_s_dur ~ speech_rate_pron_sc + base_dur_sc + num_syl_pro
 #                     + log_wf_sc 
                      + log_lem_freq
                      + lex_neb_sc + log_bigf_sc 
+                     + log_bigf_prev_sc
                      + syntax_f2_sc + syntax_f3_sc + syntax_f4_sc 
                      + syntax_f5_cat + syntax_f6_cat + syntax_f7_cat + syntax_f8_cat
                      + stressed
@@ -902,7 +936,7 @@ control3 = lmer(log_s_dur ~ speech_rate_pron_sc + base_dur_sc + num_syl_pron_sc
                 + stressed
                 + next_phon_class + prev_mention 
                 + register
-                + rel_freq_pl
+                + rel_freq_pl#*p_s
                 + (1 | speaker) 
                 + (1 | word_ort),
                 control = lmerControl(optCtrl = list(maxfun = 1e6, ftol_abs = 1e-8)),
@@ -921,7 +955,7 @@ control_trim3 = lmer(log_s_dur ~ speech_rate_pron_sc + base_dur_sc + num_syl_pro
                      + stressed
                      + next_phon_class + prev_mention 
                      + register
-                     + rel_freq_pl
+                     + rel_freq_pl#*p_s
                      + (1 | speaker) 
                      + (1 | word_ort),
                      control = lmerControl(optCtrl = list(maxfun = 1e6, ftol_abs = 1e-8)),

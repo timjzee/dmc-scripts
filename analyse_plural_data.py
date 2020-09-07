@@ -674,6 +674,9 @@ for v in possible_verbs:
     if v in invar_compounds:
         del invar_compounds[v]
 
+# import json
+# with codecs.open(tens_path + "other/dataset_invar.json", "w") as h:
+#     json.dump(dataset_invar, h)
 
 dataset_var["client"]["ev"] = 115
 dataset_var["big"]["ev"] = 801
@@ -753,17 +756,17 @@ def runTimbl(instances, metric, shared_lemmas, type_merge, num_syl, nn_k, dist_w
         del_nouns = []
         for w in dataset_var:
             if w in invar_compounds:            # e.g. infectieziekte in invar; ziekte in var
-                for l in invar_compounds[w]:
-                    if l in dataset_invar2:
-                        del_nouns.append(l)
-                        del dataset_invar2[l]
+                for n in invar_compounds[w]:
+                    if n in dataset_invar2:
+                        del_nouns.append(n)
+                        del dataset_invar2[n]
             w_str = strip_accents(w)
             if "compound" in celex[w_str]:
                 if celex[w_str]["compound"] in invar_compounds:     # e.g. infectieziekte in invar; huidziekte in var
-                    for l in invar_compounds[celex[w_str]["compound"]]:
-                        if l in dataset_invar2:
-                            del_nouns.append(l)
-                            del dataset_invar2[l]
+                    for m in invar_compounds[celex[w_str]["compound"]]:
+                        if m in dataset_invar2:
+                            del_nouns.append(m)
+                            del dataset_invar2[m]
                 if celex[w_str]["compound"] in dataset_invar2:       # e.g. juf in invar; schooljuf in var
                     del_nouns.append(celex[w_str]["compound"])
                     del dataset_invar2[celex[w_str]["compound"]]
@@ -963,8 +966,8 @@ def runTimbl(instances, metric, shared_lemmas, type_merge, num_syl, nn_k, dist_w
 
     with codecs.open(tens_path + "timbl_files/p_f_{}_{}{}_{}syl_k{}_{}{}{}{}.csv".format(instances, metric, type_merge_lab, str(num_syl), str(nn_k), dist_weight, add_var_lab, shrd_lab, add_verb_lab), "w", "utf-8") as f:        # save in subfolder for grid_search
         f.write("word,p_s,p_en,p_other,f_s,f_en,f_other,f_ev,right_compound_syls,penult_onset,penult_nucleus,penult_coda,final_onset,final_nucleus,final_coda,penult_stress,final_stress,accuracy\n")
-        for l in compare_p_f:
-            f.write(",".join(l + [acc]) + "\n")
+        for ll in compare_p_f:
+            f.write(",".join(ll + [acc]) + "\n")
 
 
 def gridSearch(instncs=["type", "token"], mtrc=["O", "M"], shrd_lems=[False, True], merge=[True, False], n_syll=[1, 2, 3, 4], nneigh_k=[1, 2, 3, 4, 5, 6, 7], d_weight=["Z", "ID"], ad_var=[False, True], ad_invar=[False, True], ad_verb=[False, True], verb_cl=["VERB", "EN"]):
