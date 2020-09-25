@@ -439,6 +439,9 @@ s_dur_ambig$rel_freq_en = s_dur_ambig$en_freq / s_dur_ambig$lem_freq
 s_dur_ambig$rel_freq_diff = s_dur_ambig$rel_freq_s - s_dur_ambig$rel_freq_en
 s_dur_ambig$log_freq_s = log(s_dur_ambig$s_freq)
 
+
+# hersnes/hersenen zit er hier niet meer in!
+
 s_dur_unambig = s_dur[s_dur$pl_ambig == F,]
 s_dur_unambig = s_dur_unambig[,!(names(s_dur_unambig) %in% c("timbl_s_prob"))]
 s_dur_unambig = na.omit(s_dur_unambig)
@@ -711,6 +714,7 @@ control2b = lmer(log_s_dur ~ speech_rate_pron_sc +
                    + syntax_f7_cat + syntax_f8_cat 
                  + next_phon_class 
                  + register
+#                 + rel_freq_pl*p_s
                  + rel_freq_pl*pl_prop
                  + (1 | speaker) 
                  + (1 | word_ort),
@@ -724,6 +728,7 @@ control2b_trim = lmer(log_s_dur ~ speech_rate_pron_sc +
                         + syntax_f7_cat + syntax_f8_cat 
                       + next_phon_class 
                       + register
+#                      + rel_freq_pl*p_s
                       + rel_freq_pl*pl_prop
                       + (1 | speaker) 
                       + (1 | word_ort),
@@ -936,7 +941,7 @@ control3 = lmer(log_s_dur ~ speech_rate_pron_sc + base_dur_sc + num_syl_pron_sc
                 + stressed
                 + next_phon_class + prev_mention 
                 + register
-                + rel_freq_pl#*p_s
+                + rel_freq_pl*p_s
                 + (1 | speaker) 
                 + (1 | word_ort),
                 control = lmerControl(optCtrl = list(maxfun = 1e6, ftol_abs = 1e-8)),
@@ -955,13 +960,13 @@ control_trim3 = lmer(log_s_dur ~ speech_rate_pron_sc + base_dur_sc + num_syl_pro
                      + stressed
                      + next_phon_class + prev_mention 
                      + register
-                     + rel_freq_pl#*p_s
+                     + rel_freq_pl*p_s
                      + (1 | speaker) 
                      + (1 | word_ort),
                      control = lmerControl(optCtrl = list(maxfun = 1e6, ftol_abs = 1e-8)),
                      data=s_dur_trim3)
 
-anova(control_trim3)
+summary(control_trim3)
 plot(effect("rel_freq_pl", control_trim3), rug = F, main = "", ylab = "log(seconds)", xlab = "Proportion plural / lemma", colors = c("orange"))
 
 pm = plot_model(control_trim3, type = "eff", terms = c("rel_freq_pl"), colors = "bw", title = "Invariable -s Plurals")

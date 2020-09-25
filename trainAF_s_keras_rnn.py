@@ -17,18 +17,18 @@ os.nice(19)
 tens_path = "/Volumes/tensusers/timzee/af_classification/" if sys.platform == "darwin" else "/vol/tensusers/timzee/af_classification/"
 log_dir = tens_path + "tb_log/"
 save_dir = tens_path + "keras_models/"
-session_name = "s_5c_16k"
-training_file = "Bootstrap_s_large_16k_train.csv"      # toy_s_train.csv
-validation_file = "Bootstrap_s_large_16k_valid.csv"    # toy_s_valid.csv
-test_file = "Bootstrap_s_large_16k_test.csv"
+session_name = "s_15c_16k"
+training_file = "Bootstrap_s_15c_16k_train.csv"      # toy_s_train.csv Bootstrap_s_large_16k_train.csv
+validation_file = "Bootstrap_s_15c_16k_valid.csv"    # toy_s_valid.csv Bootstrap_s_large_16k_valid.csv
+test_file = "Bootstrap_s_15c_16k_test.csv"           # Bootstrap_s_large_16k_test.csv
 
-context_size = 5
+context_size = 15
 # mfcc_length = 429
 mfcc_length = 13 * 3 * (context_size * 2 + 1)
 corpora = ["cgn-a", "cgn-c", "cgn-d", "cgn-k", "cgn-o", "ifadv", "ecsd", "ifa"]
-train_rows = 29453278      # 5c-16k: 29453278; 5c-8k: 18318497 ; 15c-16k: 27597573; 15c-8k: 17083197; toy: 10000
-valid_rows = 3681659      # 5c-16k: 3681659; 5c-8k: 2289811; 15c-16k: 3449696; 15c-8k: 2135399; toy: 10000
-test_rows = 3681659      # 5c-16k: 3681659; 5c-8k: 2289811; 15c-16k: 3449696; 15c-8k: 2135399
+train_rows = 27597573      # 5c-16k: 29453278; 5c-8k: 18318497 ; 15c-16k: 27597573; 15c-8k: 17083197; toy: 10000
+valid_rows = 3449696      # 5c-16k: 3681659; 5c-8k: 2289811; 15c-16k: 3449696; 15c-8k: 2135399; toy: 10000
+test_rows = 3449696      # 5c-16k: 3681659; 5c-8k: 2289811; 15c-16k: 3449696; 15c-8k: 2135399
 # batch_size = 1000
 # learning_rate = 0.005
 n_epochs = 5
@@ -41,13 +41,13 @@ classification_threshold = 0.5
 #     tf.keras.metrics.Recall(name='recall', thresholds=classification_threshold)
 # ]
 
-HP_L_RATE = hp.HParam('learning_rate', hp.Discrete([0.001, 0.005]))         # [0.001, 0.005, 0.01]
+HP_L_RATE = hp.HParam('learning_rate', hp.Discrete([0.001, 0.005]))         # [0.001, 0.005]
 HP_NUM_UNITS = hp.HParam('num_units', hp.Discrete([500]))                         # [500]
-HP_I_W_DECAY = hp.HParam('i_weight_decay', hp.Discrete([0.0, 0.001]))    # input/kernel weight decay   [0.0, 0.000001, 0.01]
-HP_R_W_DECAY = hp.HParam('r_weight_decay', hp.Discrete([0.0, 0.001]))    # recurrent weight decay      [0.0, 0.000001, 0.01]
-HP_B_W_DECAY = hp.HParam('b_weight_decay', hp.Discrete([0.0, 0.001]))    # bias weight decay           [0.0, 0.000001, 0.01]
-HP_DROPOUT = hp.HParam('dropout', hp.Discrete([0.0, 0.1]))
-HP_BATCH_SIZE = hp.HParam('batch_size', hp.Discrete([1000]))                 # [500, 1000]
+HP_I_W_DECAY = hp.HParam('i_weight_decay', hp.Discrete([0.0, 0.001]))    # input/kernel weight decay   [0.0, 0.001]
+HP_R_W_DECAY = hp.HParam('r_weight_decay', hp.Discrete([0.0, 0.001]))    # recurrent weight decay      [0.0, 0.001]
+HP_B_W_DECAY = hp.HParam('b_weight_decay', hp.Discrete([0.0, 0.001]))    # bias weight decay           [0.0, 0.001]
+HP_DROPOUT = hp.HParam('dropout', hp.Discrete([0.0, 0.1]))                  # [0.0, 0.1]
+HP_BATCH_SIZE = hp.HParam('batch_size', hp.Discrete([1000]))                 # [1000]
 
 
 def generate_arrays_from_file(path, batchsize):
@@ -156,15 +156,16 @@ def train_model(r_name, hparams, model):
     model.save(save_dir + session_name + "/" + r_name)
     test_results = model.evaluate(
         generate_arrays_from_file(tens_path + test_file, hparams[HP_BATCH_SIZE]),
-        steps=test_rows // hparams[HP_BATCH_SIZE]
+        steps=test_rows // hparams[HP_BATCH_SIZE])
     return epochs, hist, test_results
 
 
 if not os.path.exists(save_dir + session_name):
     os.mkdir(save_dir + session_name)
 
-with open(save_dir + session_name + "/model_parameters.csv", "w") as f:
-    f.write("run_name,learning_rate,num_units,i_weight_decay,r_weight_decay,b_weight_decay,dropout,batch_size,test_loss,test_accuracy,test_precision,test_recall\n")
+if not os.path.exists(save_dir + session_name + "/model_parameters.csv"):
+    with open(save_dir + session_name + "/model_parameters.csv", "w") as f:
+        f.write("run_name,learning_rate,num_units,i_weight_decay,r_weight_decay,b_weight_decay,dropout,batch_size,test_loss,test_accuracy,test_precision,test_recall\n")
 
 # if multi gpu machine:
 mirrored_strategy = tf.distribute.MirroredStrategy()

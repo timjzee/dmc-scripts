@@ -47,7 +47,7 @@ def generate_arrays_from_file(path, batchsize):
 with open(save_dir + session_name + "/test_accuracies.csv", "a") as g:
     with open(save_dir + session_name + "/model_parameters.csv", "r") as f:
         for line_n, line in enumerate(f, 1):
-            if line_n > 14:
+            if line_n > 16:
                 run_name = line[:-1].split(",")[0]
                 batch_size = int(line[:-1].split(",")[-1])
                 print(run_name)
