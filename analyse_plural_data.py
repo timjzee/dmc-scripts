@@ -649,7 +649,7 @@ for lemma in noun_dict:
         if len(noun_dict[lemma]) == 2:                                          # only invariable plurals
             lem_l = list(noun_dict[lemma].keys())
             lem_l.remove('ev')
-            dataset_invar[lemma] = {"features": celex[lemma_str]["phones"], "class": lem_l[0], "freq": noun_dict[lemma][lem_l[0]]}
+            dataset_invar[lemma] = {"features": celex[lemma_str]["phones"], "class": lem_l[0], "freq": noun_dict[lemma][lem_l[0]], "ev": noun_dict[lemma]["ev"]}
             if "compound" in celex[lemma_str]:
                 if celex[lemma_str]["compound"] in noun_dict and celex[lemma_str]["compound"] in celex:
                     if "'" in celex[celex[lemma_str]["compound"]]["phones"] and celex[lemma_str]["compound"] not in compound_exceptions:

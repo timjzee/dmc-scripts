@@ -1055,6 +1055,34 @@ var_plot %>% ggplot() +
   labs(linetype='Proportion(PL)', x="Probability(-s)", y="Proportion(-s)") 
 
 
+# for presentation
+var_plot %>% ggplot() + 
+  aes(x = p_s, y = s_prop) + 
+  geom_point(color = "grey", alpha = .7) +
+  geom_line(aes(y=s_prop_pred_min, linetype = "Min"), alpha=0) +
+  labs(linetype="Proportion(PL)", x="Probability(-s)", y="Proportion(-s)")
+
+var_plot %>% ggplot() + 
+  aes(x = p_s, y = s_prop) + 
+  geom_point(color = "grey", alpha = .7) + 
+  geom_line(aes(y=s_prop_pred_min, linetype = "Min")) +
+  geom_ribbon( aes(ymin = s_prop_lo_min, ymax = s_prop_hi_min), alpha = .15) +
+  geom_line(aes(y=s_prop_pred_max, linetype = "Max"), alpha=0) +
+  scale_linetype_manual(values=c("solid", "dashed")) +
+  labs(linetype="Proportion(PL)", x="Probability(-s)", y="Proportion(-s)")
+
+var_plot %>% ggplot() + 
+  aes(x = p_s, y = s_prop) + 
+  geom_point(color = "grey", alpha = .7) + 
+  geom_line(aes(y=s_prop_pred_min, linetype = "Min")) +
+  geom_ribbon( aes(ymin = s_prop_lo_min, ymax = s_prop_hi_min), alpha = .15) +
+  geom_line(aes(y=s_prop_pred_max, linetype = "Max")) +
+  geom_ribbon( aes(ymin = s_prop_lo_max, ymax = s_prop_hi_max), alpha = .15) +
+  scale_linetype_manual(values=c("solid", "dashed")) +
+  labs(linetype="Proportion(PL)", x="Probability(-s)", y="Proportion(-s)")
+##
+
+
 var2 = var
 var2$mv_relfreq = median(var$mv_relfreq)
 var2$log_f_mv = max(var$log_f_mv)

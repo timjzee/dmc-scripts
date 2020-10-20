@@ -374,6 +374,7 @@ s_dur = s_dur[ , !(names(s_dur) %in% drop)]
 #s_dur = na.omit(s_dur)
 
 s_dur_ambig = s_dur[s_dur$pl_ambig == T,]
+s_dur_ambig = s_dur_ambig[ , !(names(s_dur_ambig) %in% c("timbl_s_prob"))]
 s_dur_ambig = na.omit(s_dur_ambig)
 s_dur_ambig$ambig_type = as.factor(as.character(s_dur_ambig$ambig_type))
 
@@ -382,6 +383,9 @@ s_dur_ambig$ambig_type = as.factor(as.character(s_dur_ambig$ambig_type))
 var = read.csv(paste(f_path, "p_f_type_O_merge_2syl_k4_ID_invar.csv", sep = ""))
 
 get_p_s_var = function(lem) {
+  if (lem == "hersens"){
+    lem = "hersen"
+  }
   if (lem %in% levels(var$word)){
     return(var[var$word == lem,]$p_s)
   } else {
@@ -390,6 +394,9 @@ get_p_s_var = function(lem) {
 }
 
 get_f_s = function(lem) {
+  if (lem == "hersens"){
+    lem = "hersen"
+  }
   if (lem %in% levels(var$word)){
     return(var[var$word == lem,]$f_s)
   } else {
@@ -398,6 +405,9 @@ get_f_s = function(lem) {
 }
 
 get_f_en = function(lem) {
+  if (lem == "hersens"){
+    lem = "hersen"
+  }
   if (lem %in% levels(var$word)){
     return(var[var$word == lem,]$f_en)
   } else {
@@ -406,6 +416,9 @@ get_f_en = function(lem) {
 }
 
 get_f_oth = function(lem) {
+  if (lem == "hersens"){
+    lem = "hersen"
+  }
   if (lem %in% levels(var$word)){
     return(var[var$word == lem,]$f_other)
   } else {
@@ -414,6 +427,9 @@ get_f_oth = function(lem) {
 }
 
 get_f_lem = function(lem) {
+  if (lem == "hersens"){
+    lem = "hersen"
+  }
   if (lem %in% levels(var$word)){
     return(var[var$word == lem,]$f_s + var[var$word == lem,]$f_en + var[var$word == lem,]$f_other + var[var$word == lem,]$f_ev)
   } else {
@@ -460,7 +476,35 @@ get_p_s = function(wrd) {
   }
 }
 
-s_dur_unambig$p_s = sapply(as.character(s_dur_unambig$word_ort), get_p_s)
+# s_dur_unambig$p_s = sapply(as.character(s_dur_unambig$word_ort), get_p_s)
+# exclude diminuatives?
+# s_dur_unambig = s_dur_unambig[substr(as.character(s_dur_unambig$word_ort), nchar(as.character(s_dur_unambig$word_ort)) - 2, nchar(as.character(s_dur_unambig$word_ort))) != "jes",]
+# s_dur_unambig = na.omit(s_dur_unambig)
+
+invar_freqs = read.csv(paste(other_path, "invar_freqs3.csv", sep = ""))
+
+get_f_ev = function(wrd) {
+  lem = sub("[']*s$", "", wrd)
+  if (lem %in% levels(invar_freqs$word)){
+    return(invar_freqs[invar_freqs$word == lem,]$f_ev)
+  } else {
+    return(NA)
+  }
+}
+
+get_f_mv = function(wrd) {
+  lem = sub("[']*s$", "", wrd)
+  if (lem %in% levels(invar_freqs$word)){
+    return(invar_freqs[invar_freqs$word == lem,]$f_mv)
+  } else {
+    return(NA)
+  }
+}
+
+s_dur_unambig$f_ev = sapply(as.character(s_dur_unambig$word_ort), get_f_ev)
+s_dur_unambig$f_mv = sapply(as.character(s_dur_unambig$word_ort), get_f_mv)
+s_dur_unambig$rel_freq_pl = s_dur_unambig$f_mv / (s_dur_unambig$f_mv + s_dur_unambig$f_ev)
+s_dur_unambig$log_lem_freq = log(s_dur_unambig$f_ev + s_dur_unambig$f_mv)
 s_dur_unambig = na.omit(s_dur_unambig)
 
 ### Inspect collinearity
@@ -743,8 +787,74 @@ plot(effect("rel_freq_pl:pl_prop", control2b_trim, x.var = "rel_freq_pl")
      key.args = list(space="right", columns=1, title = "Proportion -s / plural", cex.title = 0.9)
 )
 
-pm = plot_model(control2b_trim, type = "eff", terms = c("rel_freq_pl", "pl_prop [0, 0.5, 1]"), colors = "bw", legend.title = "Proportion(-s)", title = "")
-pm + labs(y = "log(seconds)", x="Proportion(PL)") # + geom_point(data = s_dur_trim2, mapping = aes(x = pl_prop, y = log_s_dur), inherit.aes = FALSE)
+ggplot(data = s_dur_trim2) + aes(x = pl_prop, y = log_s_dur) + ylim(-3.04, -1.9) + xlim(0, 1) + labs(y = "log(seconds)", x="Proportion(PL)") + ggtitle("Variable Plurals") # + geom_line(aes(linetype = "0"), alpha=0) + geom_line(aes(linetype = "0.5"), alpha=0) + geom_line(aes(linetype = "1"), alpha=0) + labs(linetype='Proportion(-s)')
+
+pm = plot_model(control2b_trim, type = "pred", terms = c("rel_freq_pl", "pl_prop [0.9985915]"), colors = "bw", legend.title = "Proportion(-s)", title = "", show.legend = F)
+pm + ylim(-3.04, -1.9) + xlim(0, 1) + labs(y = "log(seconds)", x="Proportion(PL)") + ggtitle("Variable Plurals") # + geom_point(data = s_dur_trim2, mapping = aes(x = pl_prop, y = log_s_dur), inherit.aes = FALSE)
+
+pm = plot_model(control2b_trim, type = "pred", terms = c("rel_freq_pl", "pl_prop [0.00227199, 0.9985915]"), colors = "bw", legend.title = "Proportion(-s)", title = "", show.legend = F)
+pm + ylim(-3.04, -1.9) + xlim(0, 1) + labs(y = "log(seconds)", x="Proportion(PL)") + ggtitle("Variable Plurals") + scale_linetype_manual(values=c("dashed", "solid")) # + geom_point(data = s_dur_trim2, mapping = aes(x = pl_prop, y = log_s_dur), inherit.aes = FALSE)
+
+pm = plot_model(control2b_trim, type = "pred", terms = c("rel_freq_pl", "pl_prop [0.9985915, 0.00227199]"), colors = "bw", legend.title = "Proportion(-s)", title = "")
+pm + ylim(-3.04, -1.9) + xlim(0, 1) + labs(y = "log(seconds)", x="Proportion(PL)") + ggtitle("Variable Plurals") + scale_linetype_manual(values=c("dashed", "solid")) # + geom_point(data = s_dur_trim2, mapping = aes(x = pl_prop, y = log_s_dur), inherit.aes = FALSE)
+
+# only conversation
+s_dur_ambig_conv = s_dur_ambig[s_dur_ambig$register == "conversation",]
+s_dur_ambig_conv$corpus = as.factor(as.character(s_dur_ambig_conv$corpus))
+
+conv = lmer(log_s_dur ~ speech_rate_pron_sc 
+#            + base_dur_sc 
+#            + num_syl_pron_sc 
+#                + num_cons_pron_sc 
+#                + log_lem_freq
+#                + lex_neb_sc 
+#                + log_bigf_sc 
+#                + log_bigf_prev_sc
+#                + syntax_f2_sc 
+#                + syntax_f3_sc 
+                + syntax_f4_sc 
+#                + syntax_f5_cat 
+#             + syntax_f6_cat 
+#             + syntax_f7_cat 
+#             + syntax_f8_cat 
+#                + stressed
+                + next_phon_class 
+#                + prev_mention 
+#                + corpus
+                + rel_freq_pl*pl_prop
+                + (1 | speaker) 
+                + (1 | word_ort),
+                control = lmerControl(optCtrl = list(maxfun = 1e6, ftol_abs = 1e-8)),
+                data=s_dur_ambig_conv)
+
+s_dur_ambig_conv$dur_resid2 = resid(conv)
+s_dur_ambig_conv_trim = s_dur_ambig_conv[abs(scale(s_dur_ambig_conv$dur_resid2)) < 2.5,]
+
+conv_trim = lmer(log_s_dur ~ speech_rate_pron_sc 
+#                 + base_dur_sc 
+#                 + num_syl_pron_sc 
+#                     + num_cons_pron_sc 
+#                     + log_lem_freq
+#                     + lex_neb_sc 
+#                     + log_bigf_sc 
+#                     + log_bigf_prev_sc
+#                     + syntax_f2_sc 
+#                     + syntax_f3_sc 
+                     + syntax_f4_sc 
+#                     + syntax_f5_cat 
+#                 + syntax_f6_cat 
+#                 + syntax_f7_cat 
+#                 + syntax_f8_cat
+#                     + stressed
+                     + next_phon_class 
+#                     + prev_mention 
+                     + rel_freq_pl*pl_prop
+                     + (1 | speaker) 
+                     + (1 | word_ort),
+                     control = lmerControl(optCtrl = list(maxfun = 1e6, ftol_abs = 1e-8)),
+                     data=s_dur_ambig_conv_trim)
+
+summary(conv_trim)
 
 # a cleaner way of doing this would be to define rel_freq as the relative frequency
 # of ANY plural form compared to the lemma frequency
@@ -928,7 +1038,7 @@ nrow = 8, ncol = 11, byrow = T, dimnames = list(
 
 corrplot(cat_con, method = "number")
 
-
+# should we exclude diminuatives for a fair comparison?
 
 ### try single lmer (no correlation between pl_prop, rel_freq1 and covariates)
 control3 = lmer(log_s_dur ~ speech_rate_pron_sc + base_dur_sc + num_syl_pron_sc 
@@ -936,12 +1046,16 @@ control3 = lmer(log_s_dur ~ speech_rate_pron_sc + base_dur_sc + num_syl_pron_sc
                 + log_lem_freq
 #                + log_wf_sc 
                 + lex_neb_sc + log_bigf_sc 
-                + syntax_f2_sc + syntax_f3_sc + syntax_f4_sc 
-                + syntax_f5_cat + syntax_f6_cat + syntax_f7_cat + syntax_f8_cat 
+                + log_bigf_prev_sc
+                + syntax_f2_sc 
+                + syntax_f3_sc + syntax_f4_sc 
+                + syntax_f5_cat 
+                + syntax_f6_cat 
+                + syntax_f7_cat + syntax_f8_cat 
                 + stressed
                 + next_phon_class + prev_mention 
                 + register
-                + rel_freq_pl*p_s
+                + rel_freq_pl#*register#*p_s
                 + (1 | speaker) 
                 + (1 | word_ort),
                 control = lmerControl(optCtrl = list(maxfun = 1e6, ftol_abs = 1e-8)),
@@ -955,22 +1069,83 @@ control_trim3 = lmer(log_s_dur ~ speech_rate_pron_sc + base_dur_sc + num_syl_pro
                      + log_lem_freq
 #                     + log_wf_sc 
                      + lex_neb_sc + log_bigf_sc 
-                     + syntax_f2_sc + syntax_f3_sc + syntax_f4_sc 
-                     + syntax_f5_cat + syntax_f6_cat + syntax_f7_cat + syntax_f8_cat
+                     + log_bigf_prev_sc
+                     + syntax_f2_sc 
+                     + syntax_f3_sc + syntax_f4_sc 
+                     + syntax_f5_cat 
+                     + syntax_f6_cat 
+                     + syntax_f7_cat + syntax_f8_cat
                      + stressed
                      + next_phon_class + prev_mention 
                      + register
-                     + rel_freq_pl*p_s
+                     + rel_freq_pl#*register#*p_s
                      + (1 | speaker) 
                      + (1 | word_ort),
                      control = lmerControl(optCtrl = list(maxfun = 1e6, ftol_abs = 1e-8)),
                      data=s_dur_trim3)
 
 summary(control_trim3)
+
+
+s_dur_unambig_conv = s_dur_unambig[s_dur_unambig$register == "conversation",]
+
+control3 = lmer(log_s_dur ~ speech_rate_pron_sc + base_dur_sc + num_syl_pron_sc 
+                + num_cons_pron_sc 
+                + log_lem_freq
+                #                + log_wf_sc 
+#                + lex_neb_sc 
+                + log_bigf_sc 
+#                + log_bigf_prev_sc
+#                + syntax_f2_sc 
+#                + syntax_f3_sc 
+#                + syntax_f4_sc 
+#                + syntax_f5_cat 
+#                + syntax_f6_cat 
+                + syntax_f7_cat 
+                + syntax_f8_cat 
+#                + stressed
+                + next_phon_class + prev_mention 
+                + rel_freq_pl#*p_s
+                + (1 | speaker) 
+                + (1 | word_ort),
+                control = lmerControl(optCtrl = list(maxfun = 1e6, ftol_abs = 1e-8)),
+                data=s_dur_unambig_conv)
+
+s_dur_unambig_conv$dur_resid2 = resid(control3)
+s_dur_trim3 = s_dur_unambig_conv[abs(scale(s_dur_unambig_conv$dur_resid2)) < 2.5,]
+
+control_trim3 = lmer(log_s_dur ~ speech_rate_pron_sc + base_dur_sc + num_syl_pron_sc 
+                     + num_cons_pron_sc
+                     + log_lem_freq
+                     #                     + log_wf_sc 
+#                     + lex_neb_sc 
+                     + log_bigf_sc 
+#                     + log_bigf_prev_sc
+#                     + syntax_f2_sc 
+#                     + syntax_f3_sc 
+#                     + syntax_f4_sc 
+#                     + syntax_f5_cat 
+#                     + syntax_f6_cat 
+                     + syntax_f7_cat 
+                     + syntax_f8_cat
+#                     + stressed
+                     + next_phon_class + prev_mention 
+                     + rel_freq_pl#*p_s
+                     + (1 | speaker) 
+                     + (1 | word_ort),
+                     control = lmerControl(optCtrl = list(maxfun = 1e6, ftol_abs = 1e-8)),
+                     data=s_dur_trim3)
+
+summary(control_trim3)
+
+
 plot(effect("rel_freq_pl", control_trim3), rug = F, main = "", ylab = "log(seconds)", xlab = "Proportion plural / lemma", colors = c("orange"))
 
-pm = plot_model(control_trim3, type = "eff", terms = c("rel_freq_pl"), colors = "bw", title = "Invariable -s Plurals")
-pm + labs(y = "log(seconds)", x="Proportion(PL)") # + geom_point(data = s_dur_trim3, mapping = aes(x = rel_freq_pl, y = log_s_dur), inherit.aes = FALSE)
+ggplot(data = s_dur_trim3) + aes(x = pl_prop, y = log_s_dur) + ylim(-2.66, -2.525) + xlim(0, 1) + labs(y = "log(seconds)", x="Proportion(PL)") + ggtitle("Invariable Plurals") # + geom_line(aes(linetype = "0"), alpha=0) + geom_line(aes(linetype = "0.5"), alpha=0) + geom_line(aes(linetype = "1"), alpha=0) + labs(linetype='Proportion(-s)')
+
+
+pm = plot_model(control_trim3, type = "eff", terms = c("rel_freq_pl"), colors = "bw", title = "Invariable Plurals")
+pm + ylim(-2.66, -2.525) + xlim(0, 1) + labs(y = "log(seconds)", x="Proportion(PL)") # + geom_point(data = s_dur_trim3, mapping = aes(x = rel_freq_pl, y = log_s_dur), inherit.aes = FALSE)
 
 
 #grid.arrange(p2, p1, ncol = 2)

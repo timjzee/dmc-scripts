@@ -34,28 +34,40 @@ expected_features = {"s": 1}
 window = 0.025
 step = 0.005
 
-frame_window = 5
+frame_window = 15
 
 num_feat = (2 * frame_window + 1) * (3 * 13)  # + len(corpora)
 num_feat_per_frame = (3 * 13)
 
 print("Loading Classifiers...\n")
 classifiers = {
-    "s": tf.keras.models.load_model(tens_path + "keras_models/s_5c_16k/run-4")
+    "s": tf.keras.models.load_model(tens_path + "keras_models/s_15c_16k/run-4")
 }
 
 frag_fol = "af_eval"
 file_paths = glob.glob(tens_path + "pred_fragments/" + frag_fol + "/*.wav")
+# file_paths = [
+#     tens_path + "pred_fragments/af_eval/fn001107_1_149.402_149.832.wav",
+#     tens_path + "pred_fragments/af_eval/fn001107_1_185.039_185.659.wav",
+#     tens_path + "pred_fragments/af_eval/fn001107_1_35.097_35.547.wav",
+#     tens_path + "pred_fragments/af_eval/fn001338_1_236.670_237.140.wav",
+#     tens_path + "pred_fragments/af_eval/fn000254_2_412.278_412.848.wav",
+#     tens_path + "pred_fragments/af_eval/fn000254_2_983.158_983.618.wav",
+#     tens_path + "pred_fragments/af_eval/fn000261_2_417.028_417.518.wav",
+#     tens_path + "pred_fragments/af_eval/fn000265_2_233.057_233.487.wav",
+#     tens_path + "pred_fragments/af_eval/fn000265_2_59.917_60.377.wav"
+# ]
+
 file_paths = [
-    tens_path + "pred_fragments/af_eval/fn001107_1_149.402_149.832.wav",
-    tens_path + "pred_fragments/af_eval/fn001107_1_185.039_185.659.wav",
-    tens_path + "pred_fragments/af_eval/fn001107_1_35.097_35.547.wav",
-    tens_path + "pred_fragments/af_eval/fn001338_1_236.670_237.140.wav",
-    tens_path + "pred_fragments/af_eval/fn000254_2_412.278_412.848.wav",
-    tens_path + "pred_fragments/af_eval/fn000254_2_983.158_983.618.wav",
-    tens_path + "pred_fragments/af_eval/fn000261_2_417.028_417.518.wav",
-    tens_path + "pred_fragments/af_eval/fn000265_2_233.057_233.487.wav",
-    tens_path + "pred_fragments/af_eval/fn000265_2_59.917_60.377.wav"
+    tens_path + "pred_fragments/af_eval/fn000280_1_83.561_84.041.wav",
+    tens_path + "pred_fragments/af_eval/fn000280_2_198.908_199.368.wav",
+    tens_path + "pred_fragments/af_eval/fn000289_1_155.637_156.367.wav",
+    tens_path + "pred_fragments/af_eval/fn000289_1_459.654_460.124.wav",
+    tens_path + "pred_fragments/af_eval/fn000289_2_3.083_3.663.wav",
+    tens_path + "pred_fragments/af_eval/fn000295_1_121.289_121.729.wav",
+    tens_path + "pred_fragments/af_eval/fn000296_1_347.681_348.181.wav",
+    tens_path + "pred_fragments/af_eval/fn000296_1_487.954_488.454.wav",
+    tens_path + "pred_fragments/af_eval/fn000296_1_755.526_756.006.wav"
 ]
 
 # remove already predicted fragments
@@ -133,7 +145,7 @@ for fp in file_paths:
         classifier = classifiers[af]
         probabilities = [float(i) for i in classifier.predict(X_3d)]
         predictions = [round(i) for i in probabilities]
-        print(af, predictions)
+        print(af, probabilities)
         # construct textgrids
         tier = textgrid.IntervalTier(name=af, minTime=float(start_time))
         prev_class = 99

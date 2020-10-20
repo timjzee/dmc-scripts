@@ -1,9 +1,6 @@
 form Give chunks
-    word chunk_path /Volumes/tensusers/timzee/cgn/comp-k_en_eval.csv
-    word cgn_path /Volumes/bigdata2/corpora2/CGN2/data/audio/wav/comp-
-    word kaldi_path /Volumes/tensusers/timzee/cgn/kaldi_annot/v2/comp-
-    word output_path /Volumes/tensusers/timzee/cgn/man_annot/en/comp-
-    word log_path /Volumes/tensusers/timzee/cgn/man_annot/en/
+    word chunk_path /Volumes/tensusers/timzee/ECSD/aardappel_index_ecsd.txt
+    word log_path /Volumes/tensusers/timzee/
 endform
 
 # Make sure input file has a header
@@ -22,20 +19,22 @@ endPause: "Continue", 1
 procedure annotateChunk: annotateChunk.id
     selectObject: "Table chunks"
     filepath$ = Get value: annotateChunk.id, "wav"
-    w_ort$ = Get value: annotateChunk.id, "word_ort"
-    c_start = Get value: annotateChunk.id, "chunk_start"
-    c_end = Get value: annotateChunk.id, "chunk_end"
+    c_chan = Get value: annotateChunk.id, "chan"
+    c_start = Get value: annotateChunk.id, "from"
+    c_end = Get value: annotateChunk.id, "to"
     c_tier = Get value: annotateChunk.id, "tier"
     name_length = length(filepath$)
     if left$(filepath$, 1) == "p"
         output_path$ = "/Volumes/tensusers/timzee/ECSD/aardappel_annot/"
         corpus$ = "ecsd"
+        pair_length = name_length - 10
+        pair_folder$ = "PP" + mid$(filepath$, 3, pair_length)
+        Open long sound file: "/Volumes/tensusers/timzee/ECSD/Speech/" + pair_folder$ + "/" + filepath$ + "_S.wav"
+        Rename: filepath$
         if fileReadable(output_path$) == 0
             createDirectory: output_path$
         endif
         if fileReadable(output_path$ + filepath$ + ".awd") == 0
-            pair_length = name_length - 10
-            pair_folder$ = "PP" + mid$(filepath$, 3, pair_length)
             Read from file: "/Volumes/tensusers/timzee/ECSD/kaldi_annot/v2/" + pair_folder$ + "/" + filepath$ + ".awd"
         else
             Read from file: output_path$ + filepath$ + ".awd"
@@ -43,16 +42,18 @@ procedure annotateChunk: annotateChunk.id
     elsif left$(filepath$, 1) == "D"
         output_path$ = "/Volumes/tensusers/timzee/IFADVcorpus/aardappel_annot/"
         corpus$ = "ifadv"
+        Open long sound file: "/Volumes/tensusers/timzee/IFADVcorpus/Speech/" + filepath$ + ".wav"
         if fileReadable(output_path$) == 0
             createDirectory: output_path$
         endif
         if fileReadable(output_path$ + filepath$ + ".awd") == 0
-            Read from file: "/Volumes/tensusers/timzee/IFADVcorpus/kaldi_annot/v2/" + filepath + ".awd"
-        else:
+            Read from file: "/Volumes/tensusers/timzee/IFADVcorpus/kaldi_annot/v2/" + filepath$ + ".awd"
+        else
             Read from file: output_path$ + filepath$ + ".awd"
         endif
     else
         corpus$ = left$(filepath$, 1)
+        Open long sound file: "/Volumes/bigdata2/corpora2/CGN2/data/audio/wav/comp-" + filepath$ + ".wav"
         output_path$ = "Volumes/tensusers/timzee/cgn/aardappel_annot/comp-"
         if fileReadable(output_path$ + corpus$ + "/nl/") == 0
             createDirectory: output_path$ + corpus$
@@ -64,57 +65,37 @@ procedure annotateChunk: annotateChunk.id
             Read from file: output_path$ + filepath$ + ".awd"
         endif
     endif
-
-    s_name$ = selected$("TextGrid")
-#    tier = c_tier * 4 - 3
-    selectObject: "TextGrid " + s_name$
-    tier_name$ = ""
-    tier = 0
-    while tier_name$ != c_speaker$
-        tier += 1
-        tier_name$ = Get tier name: tier
-    endwhile
-    speaker$ = Get tier name: tier
-    assert c_speaker$ == speaker$
-    word_int = Get high interval at time: tier, c_start
-    word_int -= 1
-    word_counter = 0
-    while word_counter != word_chunk_i
-        word_int += 1
-        int_lab$ = Get label of interval: tier, word_int
-        if int_lab$ != ""
-            word_counter += 1
-        endif
-    endwhile
-    int_lab$ = replace_regex$(int_lab$, "[.?! ]", "", 0)
-    appendInfoLine: "Asserting '" + int_lab$ + "' == '" + w_ort$ + "'"
-    assert int_lab$ == w_ort$
-    w_start = Get start time of interval: tier, word_int
-    w_end = Get end time of interval: tier, word_int
-
-    if left$(filepath$, 1) == "p"
-        pair_length = name_length - 10
-        pair_folder$ = "PP" + mid$(filepath$, 3, pair_length)
-        Open long sound file: "/Volumes/tensusers/timzee/ECSD/Speech/" + pair_folder$ + "/" + filepath$ + "_S.wav"
-        Rename: filepath$
-    else
-        Open long sound file: cgn_path$ + filepath$ + ".wav"
-    endif
-    plusObject: "TextGrid " + s_name$
+    selectObject: "LongSound " + filepath$
+    sample_freq = Get sampling frequency
+    sound_dur = Get end time
+    Create Sound from formula: "start", 1, 0, c_start, sample_freq, "randomGauss(0,0.01)"
+    selectObject: "LongSound " + filepath$
+    Extract part: c_start, c_end, "yes"
+    Extract one channel: c_chan
+    removeObject: "Sound " + filepath$
+    Rename: filepath$
+    Create Sound from formula: "end", 1, c_end, sound_dur, sample_freq, "randomGauss(0,0.01)"
+    plusObject: "Sound " + filepath$
+    plusObject: "Sound start"
+    Concatenate
+    removeObject: "Sound start"
+    removeObject: "Sound " + filepath$
+    removeObject: "Sound end"
+    selectObject: "Sound chain"
+    plusObject: "TextGrid " + filepath$
     View & Edit
-    editor: "TextGrid " + s_name$
-        Zoom: w_start, w_end
-        Zoom out
+    editor: "TextGrid " + filepath$
+        Zoom: c_start, c_end
     endeditor
     beginPause: "Save and continue"
-        comment: "Annotate " + w_ort$ + " on tier " + string$(tier)
+        comment: "Annotate aardappel(s|en) on tier " + string$(c_tier)
         comment: "Click continue to save the annotation."
     endPause: "Continue", 1
-    selectObject: "TextGrid " + s_name$
+    selectObject: "TextGrid " + filepath$
     Save as text file: output_path$ + filepath$ + ".awd"
     Remove
-    selectObject: "LongSound " + s_name$
-    Remove
+    removeObject: "LongSound " + filepath$
+    removeObject: "Sound chain"
 endproc
 
 if annotation_mode == 1

@@ -1,10 +1,11 @@
 form Give chunks
     word user_name TZ
-    word mounting_point /Volumes
+    word tensusers /Volumes/tensusers
+    word bigdata2 /Volumes/bigdata2
 endform
 
-chunk_path$ = mounting_point$ + "/tensusers/timzee/classifier_evaluation/s/nn_eval.csv"
-output_path$ = mounting_point$ + "/tensusers/timzee/classifier_evaluation/s/man_annot/"
+chunk_path$ = tensusers$ + "/timzee/classifier_evaluation/s/nn_eval20b.csv"
+output_path$ = tensusers$ + "/timzee/classifier_evaluation/s/man_annot/"
 
 
 # Make sure input file has a header
@@ -50,28 +51,43 @@ procedure annotateChunk: .id
     if left$(filepath$, 1) == "p"
         pair_length = name_length - 10
         pair_folder$ = "PP" + mid$(filepath$, 3, pair_length)
-        Open long sound file: mounting_point$ + "/tensusers/timzee/ECSD/Speech/" + pair_folder$ + "/" + filepath$ + ".wav"
+        Open long sound file: tensusers$ + "/timzee/ECSD/Speech/" + pair_folder$ + "/" + filepath$ + "_S.wav"
+        Rename: filepath$
         corpus$ = "ecsd"
     elsif left$(filepath$, 1) == "D"
-        Open long sound file: mounting_point$ + "/tensusers/timzee/IFADVcorpus/Speech/" + filepath$ + ".wav"
+        Open long sound file: tensusers$ + "/timzee/IFADVcorpus/Speech/" + filepath$ + ".wav"
         corpus$ = "ifadv"
     else
-        Open long sound file: mounting_point$ + "/bigdata2/corpora2/CGN2/data/audio/wav/comp-" + filepath$ + ".wav"
+        Open long sound file: bigdata2$ + "/corpora2/CGN2/data/audio/wav/comp-" + filepath$ + ".wav"
         corpus$ = left$(filepath$, 1)
     endif
     s_name$ = selected$("LongSound")
-    Extract part: c_start, c_end, "yes"
-    Extract one channel: chan
+    sound_dur = Get total duration
+    buffer = 0.3
+    if c_start - buffer < 0
+        c_start_buf = 0
+    else
+        c_start_buf = c_start - buffer
+    endif
+    if c_end + buffer > sound_dur
+        c_end_buf = sound_dur
+    else
+        c_end_buf = c_end + buffer
+    endif
+    Extract part: c_start_buf, c_end_buf, "yes"
+    if corpus$ != "c" and corpus$ != "d"
+        Extract one channel: chan
+        removeObject: "Sound " + s_name$
+        selectObject: "Sound " + s_name$ + "_ch" + chan$
+        Rename: s_name$
+    endif
     removeObject: "LongSound " + s_name$
-    removeObject: "Sound " + s_name$
-    selectObject: "Sound " + s_name$ + "_ch" + chan$
-    Rename: s_name$
     c_dur = Get total duration
     equal_interval_dur = c_dur / 5
     To TextGrid: "orthography s-boundaries reduction", ""
     Set interval text: 1, 1, ort$
     for i from 1 to 4
-        Insert boundary: 2, c_start + equal_interval_dur * i
+        Insert boundary: 2, c_start_buf + equal_interval_dur * i
     endfor
     Set interval text: 2, 2, "start"
     Set interval text: 2, 3, "max"
@@ -137,7 +153,7 @@ procedure annotateChunk: .id
         num_reduction_intervals = Get number of intervals: 3
         if num_reduction_intervals == 1
             red_lab$ = Get label of interval: 3, 1
-            if red_lab$ == "1" or red_lab$ == "2" or red_lab$ == "3"
+            if red_lab$ == "1" or red_lab$ == "2" or red_lab$ == "3" or red_lab$ == "4" or red_lab$ == "D"
                 reduction_complete = 1
             else
                 appendInfoLine: "WARNING: Wrong Reduction annotation"

@@ -11,24 +11,24 @@ import os
 
 os.nice(19)
 # os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-# os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # use id from $ nvidia-smi
+# os.environ["CUDA_VISIBLE_DEVICES"] = "1"  # use id from $ nvidia-smi
 
 
 tens_path = "/Volumes/tensusers/timzee/af_classification/" if sys.platform == "darwin" else "/vol/tensusers/timzee/af_classification/"
 log_dir = tens_path + "tb_log/"
 save_dir = tens_path + "keras_models/"
-session_name = "s_15c_8k"
-training_file = "Bootstrap_s_15c_8k_train.csv"      # toy_s_train.csv Bootstrap_s_large_16k_train.csv
-validation_file = "Bootstrap_s_15c_8k_valid.csv"    # toy_s_valid.csv Bootstrap_s_large_16k_valid.csv
-test_file = "Bootstrap_s_15c_8k_test.csv"           # Bootstrap_s_large_16k_test.csv
+session_name = "s_15c_16k_nn"
+training_file = "Bootstrap_s_15c_16k_train.csv"      # toy_s_train.csv Bootstrap_s_large_16k_train.csv
+validation_file = "Bootstrap_s_15c_16k_valid.csv"    # toy_s_valid.csv Bootstrap_s_large_16k_valid.csv
+test_file = "Bootstrap_s_15c_16k_test.csv"           # Bootstrap_s_large_16k_test.csv
 
 context_size = 15
 # mfcc_length = 429
 mfcc_length = 13 * 3 * (context_size * 2 + 1)
 corpora = ["cgn-a", "cgn-c", "cgn-d", "cgn-k", "cgn-o", "ifadv", "ecsd", "ifa"]
-train_rows = 17083197      # 5c-16k: 29453278; 5c-8k: 18318497 ; 15c-16k: 27597573; 15c-8k: 17083197; toy: 10000
-valid_rows = 2135399      # 5c-16k: 3681659; 5c-8k: 2289811; 15c-16k: 3449696; 15c-8k: 2135399; toy: 10000
-test_rows = 2135399      # 5c-16k: 3681659; 5c-8k: 2289811; 15c-16k: 3449696; 15c-8k: 2135399
+train_rows = 27597573      # 5c-16k: 29453278; 5c-8k: 18318497 ; 15c-16k: 27597573; 15c-8k: 17083197; toy: 10000
+valid_rows = 3449696      # 5c-16k: 3681659; 5c-8k: 2289811; 15c-16k: 3449696; 15c-8k: 2135399; toy: 10000
+test_rows = 3449696      # 5c-16k: 3681659; 5c-8k: 2289811; 15c-16k: 3449696; 15c-8k: 2135399
 # batch_size = 1000
 # learning_rate = 0.005
 n_epochs = 5
@@ -44,7 +44,7 @@ classification_threshold = 0.5
 HP_L_RATE = hp.HParam('learning_rate', hp.Discrete([0.001, 0.005]))         # [0.001, 0.005]
 HP_NUM_UNITS = hp.HParam('num_units', hp.Discrete([500]))                         # [500]
 HP_I_W_DECAY = hp.HParam('i_weight_decay', hp.Discrete([0.0, 0.001]))    # input/kernel weight decay   [0.0, 0.001]
-HP_R_W_DECAY = hp.HParam('r_weight_decay', hp.Discrete([0.0, 0.001]))    # recurrent weight decay      [0.0, 0.001]
+HP_R_W_DECAY = hp.HParam('r_weight_decay', hp.Discrete([0.0]))    # recurrent weight decay      [0.0, 0.001]
 HP_B_W_DECAY = hp.HParam('b_weight_decay', hp.Discrete([0.0, 0.001]))    # bias weight decay           [0.0, 0.001]
 HP_DROPOUT = hp.HParam('dropout', hp.Discrete([0.0, 0.1]))                  # [0.0, 0.1]
 HP_BATCH_SIZE = hp.HParam('batch_size', hp.Discrete([1000]))                 # [1000]
@@ -65,10 +65,8 @@ def generate_arrays_from_file(path, batchsize):
                 if batchcount > batchsize:
                     X = np.array(inputs, dtype='float32')
                     X = X[:, :-8]
-                    #             row/batch size, column/time steps, features
-                    X_3d = X.reshape((X.shape[0], (context_size * 2 + 1), 13 * 3))
                     y = np.array(targets, dtype='float32')
-                    yield (X_3d, y)
+                    yield (X, y)
                     inputs = []
                     targets = []
                     batchcount = 0
@@ -92,35 +90,25 @@ def create_model(hparams):                                                      
     """Create and compile a deep neural net."""
     with mirrored_strategy.scope():
         model = tf.keras.models.Sequential()
-        # Define the LSTM layer
-        lstm_layer1 = tf.keras.layers.LSTM(
-            return_sequences=True,
-            units=hparams[HP_NUM_UNITS], input_shape=((context_size * 2 + 1), 13 * 3),
-            dropout=hparams[HP_DROPOUT], recurrent_dropout=hparams[HP_DROPOUT],
-            kernel_regularizer=tf.keras.regularizers.l2(hparams[HP_I_W_DECAY]),
-            recurrent_regularizer=tf.keras.regularizers.l2(hparams[HP_R_W_DECAY]),
-            bias_regularizer=tf.keras.regularizers.l2(hparams[HP_B_W_DECAY]))
-        model.add(tf.keras.layers.Bidirectional(lstm_layer1))
-        lstm_layer2 = tf.keras.layers.LSTM(
-            return_sequences=True,
+        # Define the layers
+        model.add(tf.keras.layers.Dropout(hparams[HP_DROPOUT]))
+        dense_layer1 = tf.keras.layers.Dense(
             units=hparams[HP_NUM_UNITS],
-            dropout=hparams[HP_DROPOUT], recurrent_dropout=hparams[HP_DROPOUT],
             kernel_regularizer=tf.keras.regularizers.l2(hparams[HP_I_W_DECAY]),
-            recurrent_regularizer=tf.keras.regularizers.l2(hparams[HP_R_W_DECAY]),
             bias_regularizer=tf.keras.regularizers.l2(hparams[HP_B_W_DECAY]))
-        model.add(tf.keras.layers.Bidirectional(lstm_layer2))
-        lstm_layer3 = tf.keras.layers.LSTM(
+        model.add(dense_layer1)
+        model.add(tf.keras.layers.Dropout(hparams[HP_DROPOUT]))
+        dense_layer2 = tf.keras.layers.Dense(
             units=hparams[HP_NUM_UNITS],
-            dropout=hparams[HP_DROPOUT], recurrent_dropout=hparams[HP_DROPOUT],
             kernel_regularizer=tf.keras.regularizers.l2(hparams[HP_I_W_DECAY]),
-            recurrent_regularizer=tf.keras.regularizers.l2(hparams[HP_R_W_DECAY]),
             bias_regularizer=tf.keras.regularizers.l2(hparams[HP_B_W_DECAY]))
-        model.add(tf.keras.layers.Bidirectional(lstm_layer3))
-        # Define the hidden layer.
-    #    model.add(tf.keras.layers.Dense(units=300, activation='relu'))
-        # Define dropout layer for regularization
-    #    model.add(tf.keras.layers.Dropout(0.9))
-        # Define the output layer.
+        model.add(dense_layer2)
+        model.add(tf.keras.layers.Dropout(hparams[HP_DROPOUT]))
+        dense_layer3 = tf.keras.layers.Dense(
+            units=hparams[HP_NUM_UNITS],
+            kernel_regularizer=tf.keras.regularizers.l2(hparams[HP_I_W_DECAY]),
+            bias_regularizer=tf.keras.regularizers.l2(hparams[HP_B_W_DECAY]))
+        model.add(dense_layer3)
         model.add(tf.keras.layers.Dense(units=1, activation='sigmoid'))
         my_metrics = [
             tf.keras.metrics.BinaryAccuracy(name='accuracy', threshold=classification_threshold),

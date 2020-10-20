@@ -55,7 +55,7 @@ def getFeatures(word, dataset, num_s):
     return features, stress
 
 
-with codecs.open(tens_path + "other/dataset_invar.json", "r") as f:     # maybe replace this with only the invar nouns that were used for var p(s)
+with codecs.open(tens_path + "other/dataset_invar2.json", "r") as f:     # maybe replace this with only the invar nouns that were used for var p(s)
     dataset_invar = json.load(f)
 
 
@@ -99,7 +99,10 @@ result_list = p.map(run_timbl, dataset_invar)
 
 # result_dict = {}
 with codecs.open(tens_path + "other/invar_probs.csv", "w") as f:
-    f.write("word,p_en,p_s,p_other\n")
+    f.write("word,p_en,p_s,p_other,f_ev,f_mv\n")
     for line in result_list:
-        f.write(line)
+        word = line.split(",")[0]
+        f_ev = str(dataset_invar[word]["ev"])
+        f_mv = str(dataset_invar[word]["freq"])
+        f.write(line[:-1] + "," + f_ev + "," + f_mv + "\n")
 #        f.write("{},{},{},{}\n".format(w, result_dict[w]["EN"], result_dict[w]["S"], result_dict[w]["OTHER"]))
