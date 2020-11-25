@@ -41,10 +41,10 @@ num_feat_per_frame = (3 * 13)
 
 print("Loading Classifiers...\n")
 classifiers = {
-    "s": tf.keras.models.load_model(tens_path + "keras_models/s_15c_16k/run-4")
+    "s": {"16k": tf.keras.models.load_model(tens_path + "keras_models/s_15c_16k/run-4"), "8k": tf.keras.models.load_model(tens_path + "keras_models/s_15c_8k/run-6")}
 }
 
-frag_fol = "af_eval"
+frag_fol = "af_eval_s"
 file_paths = glob.glob(tens_path + "pred_fragments/" + frag_fol + "/*.wav")
 # file_paths = [
 #     tens_path + "pred_fragments/af_eval/fn001107_1_149.402_149.832.wav",
@@ -59,15 +59,19 @@ file_paths = glob.glob(tens_path + "pred_fragments/" + frag_fol + "/*.wav")
 # ]
 
 file_paths = [
-    tens_path + "pred_fragments/af_eval/fn000280_1_83.561_84.041.wav",
-    tens_path + "pred_fragments/af_eval/fn000280_2_198.908_199.368.wav",
-    tens_path + "pred_fragments/af_eval/fn000289_1_155.637_156.367.wav",
-    tens_path + "pred_fragments/af_eval/fn000289_1_459.654_460.124.wav",
-    tens_path + "pred_fragments/af_eval/fn000289_2_3.083_3.663.wav",
-    tens_path + "pred_fragments/af_eval/fn000295_1_121.289_121.729.wav",
-    tens_path + "pred_fragments/af_eval/fn000296_1_347.681_348.181.wav",
-    tens_path + "pred_fragments/af_eval/fn000296_1_487.954_488.454.wav",
-    tens_path + "pred_fragments/af_eval/fn000296_1_755.526_756.006.wav"
+    tens_path + "pred_fragments/af_eval_s/fn000784_2_588.886_589.366.wav",
+    tens_path + "pred_fragments/af_eval_s/ppX5_X6_part_09_S_2_139.707_140.137.wav",
+    tens_path + "pred_fragments/af_eval_s/fn000404_1_207.644_208.184.wav",
+    tens_path + "pred_fragments/af_eval_s/fn006968_1_49.479_49.949.wav",
+    tens_path + "pred_fragments/af_eval_s/fn000724_1_430.181_430.641.wav",
+    tens_path + "pred_fragments/af_eval_s/fn001509_1_154.551_155.031.wav",
+    tens_path + "pred_fragments/af_eval_s/fn001297_1_130.002_130.462.wav",
+    tens_path + "pred_fragments/af_eval_s/fn000434_1_440.023_440.503.wav",
+    tens_path + "pred_fragments/af_eval_s/fn002965_1_1.065_1.525.wav",
+    tens_path + "pred_fragments/af_eval_s/fn006777_1_30.569_31.029.wav",
+    tens_path + "pred_fragments/af_eval_s/fn008090_1_208.582_209.072.wav",
+    tens_path + "pred_fragments/af_eval_s/fn001560_1_125.731_126.211.wav",
+    tens_path + "pred_fragments/af_eval_s/DVA13U_1_627.522_628.042.wav"
 ]
 
 # remove already predicted fragments
@@ -105,6 +109,7 @@ time.sleep(5)
 #    for fp in file_paths[start_line - 1:end_line]:
 for fp in file_paths:
     fragment_id = ".".join(fp.split(".")[:-1]).split("/")[-1]
+    print(fragment_id)
     # get corpus info
     if fragment_id[0] in ["F", "M"]:
         corpus = "ifa"
@@ -112,13 +117,21 @@ for fp in file_paths:
         corpus = "ifadv"
     elif fragment_id[0] == "p":
         corpus = "ecsd"
-    else:
-        corpus = "cgn-" + frag_fol
+    elif fragment_id[:2] == "fn":
+#        corpus = "cgn-" + frag_fol
 #            corpus = "cgn-" + fragment_id[0]
-#            fn_num = int(fragment_id.split("_")[0][2:])
-#            corpus = "cgn-o" if fn_num > 1000 and fn_num < 1566 else "cgn-a"
-    #
-#        print(core_num, fragment_id)
+        fn_num = int(fragment_id.split("_")[0][2:-1])
+        if fn_num >= 100 and fn_num <= 159:
+            corpus = "cgn-o"
+        elif fn_num >= 800 and fn_num <= 839:
+            corpus = "cgn-c"
+        elif fn_num >= 670 and fn_num <= 703:
+            corpus = "cgn-d"
+        elif (fn_num >= 20 and fn_num <= 99) or (fn_num >= 780 and fn_num <= 799) or (fn_num >= 840 and fn_num <= 859):
+            corpus = "cgn-a"
+        else:
+            corpus = "cgn-k"
+    sample_freq = "8k" if corpus in ["cgn-c", "cgn-d"] else "16k"
     fragment_id_split = fragment_id.split("_")
     chan, start_time, end_time = fragment_id_split[-3:]
 #        wav, chan, start_time, end_time = fragment_id.split("_")
@@ -142,7 +155,7 @@ for fp in file_paths:
 #        predict_test_input_fn = create_predict_input_fn(pd_samples, batch_size=batch_size)
     tg = textgrid.TextGrid(minTime=float(start_time))
     for af in ["s"]:
-        classifier = classifiers[af]
+        classifier = classifiers[af][sample_freq]
         probabilities = [float(i) for i in classifier.predict(X_3d)]
         predictions = [round(i) for i in probabilities]
         print(af, probabilities)

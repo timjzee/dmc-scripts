@@ -286,7 +286,7 @@ s_dur = s_dur[rowSums(is.na(s_dur))<length(s_dur),]
 
 # make new predictors and get rid of unnecessary NAs
 
-
+s_dur$log_base_dur = log(s_dur$base_dur)
 s_dur$log_bigf = log(s_dur$bigram_f + 1)
 s_dur$log_bigf_prev = log(s_dur$prev_bigram_f + 1)
 
@@ -328,9 +328,32 @@ s_dur$syntax_f6 = as.numeric(s_dur$syntax_f6)
 s_dur$syntax_f7 = as.numeric(s_dur$syntax_f7)
 s_dur$syntax_f8 = as.numeric(s_dur$syntax_f8)
 
+# principle components
+col_pred = s_dur[, c("syntax_f2", "syntax_f3", "syntax_f4", "syntax_f5", "syntax_f6", "syntax_f7", "syntax_f8")]
+col_pred_pca = prcomp(col_pred, center = T, scale. = T)
+summary(col_pred_pca)
+
+rotation_df = as.data.frame(col_pred_pca$rotation)
+rotation_df_ordered = rotation_df[order(-abs(rotation_df$PC1)),]
+structure(rotation_df_ordered[, "PC1"],
+          names=rownames(rotation_df_ordered))
+
+# keep pc1 - pc5, threshold of 0.9 cumulative proportion reached
+
+s_dur$PC1 = col_pred_pca$x[,1]
+s_dur$PC2 = col_pred_pca$x[,2]
+s_dur$PC3 = col_pred_pca$x[,3]
+s_dur$PC4 = col_pred_pca$x[,4]
+s_dur$PC5 = col_pred_pca$x[,5]
+
+s_dur$rel_base_dur = s_dur$base_dur / s_dur$num_syl_pron
+
+
 # Get centred and scaled predictors
+s_dur$rel_base_dur_sc = scale(s_dur$rel_base_dur)
 s_dur$speech_rate_pron_sc = scale(s_dur$speech_rate_pron)
 s_dur$base_dur_sc = scale(s_dur$base_dur)
+s_dur$log_base_dur_sc = scale(s_dur$log_base_dur)
 s_dur$num_syl_pron_sc = scale(s_dur$num_syl_pron)
 s_dur$num_cons_pron_sc = scale(s_dur$num_cons_pron)
 s_dur$log_wf_sc = scale(s_dur$log_wf)
@@ -381,6 +404,10 @@ s_dur_ambig$ambig_type = as.factor(as.character(s_dur_ambig$ambig_type))
 # get correct frequencies/proportions
 
 var = read.csv(paste(f_path, "p_f_type_O_merge_2syl_k4_ID_invar.csv", sep = ""))
+
+var$f_nons = var$f_en + var$f_other
+var$log_freq_pl = log(var$f_s + var$f_en + var$f_other)
+var$rel_freq_pl = (var$f_s + var$f_en + var$f_other) / (var$f_s + var$f_en + var$f_other + var$f_ev)
 
 get_p_s_var = function(lem) {
   if (lem == "hersens"){
@@ -440,21 +467,78 @@ get_f_lem = function(lem) {
 
 s_dur_ambig$p_s = sapply(as.character(s_dur_ambig$lemma), get_p_s_var)
 s_dur_ambig$f_s = sapply(as.character(s_dur_ambig$lemma), get_f_s)
+s_dur_ambig$log_f_s = log(s_dur_ambig$f_s)
 s_dur_ambig$f_en = sapply(as.character(s_dur_ambig$lemma), get_f_en)
 s_dur_ambig$f_other = sapply(as.character(s_dur_ambig$lemma), get_f_oth)
+s_dur_ambig$f_nons = s_dur_ambig$f_en + s_dur_ambig$f_other
+s_dur_ambig$log_f_nons = log(s_dur_ambig$f_nons)
 s_dur_ambig$f_lem = sapply(as.character(s_dur_ambig$lemma), get_f_lem)
+s_dur_ambig$rel_f_s = s_dur_ambig$f_s / s_dur_ambig$f_lem
+s_dur_ambig$rel_f_en = s_dur_ambig$f_en / s_dur_ambig$f_lem
+s_dur_ambig$rel_f_nons = s_dur_ambig$f_nons / s_dur_ambig$f_lem
+s_dur_ambig$rel_f_other = s_dur_ambig$f_other / s_dur_ambig$f_lem
 
 s_dur_ambig$pl_prop = s_dur_ambig$f_s / (s_dur_ambig$f_s + s_dur_ambig$f_en + s_dur_ambig$f_other)
 s_dur_ambig$log_lem_freq = log(s_dur_ambig$f_lem)
 s_dur_ambig$rel_freq_pl = (s_dur_ambig$f_s + s_dur_ambig$f_en + s_dur_ambig$f_other) / s_dur_ambig$f_lem
 
 #s_dur_ambig$log_lem_freq = log(s_dur_ambig$lem_freq)
-s_dur_ambig$log_freq_pl = log(s_dur_ambig$s_freq + s_dur_ambig$en_freq)
-s_dur_ambig$rel_freq_s = s_dur_ambig$s_freq / s_dur_ambig$lem_freq
-s_dur_ambig$rel_freq_en = s_dur_ambig$en_freq / s_dur_ambig$lem_freq
-s_dur_ambig$rel_freq_diff = s_dur_ambig$rel_freq_s - s_dur_ambig$rel_freq_en
-s_dur_ambig$log_freq_s = log(s_dur_ambig$s_freq)
+s_dur_ambig$freq_pl = s_dur_ambig$f_s + s_dur_ambig$f_en + s_dur_ambig$f_other
+s_dur_ambig$f_ev = s_dur_ambig$f_lem - s_dur_ambig$freq_pl
+s_dur_ambig$rel_f_ev = s_dur_ambig$f_ev / s_dur_ambig$f_lem
+s_dur_ambig$log_f_ev = log(s_dur_ambig$f_ev + 1)
+s_dur_ambig$log_freq_pl = log(s_dur_ambig$f_s + s_dur_ambig$f_en + s_dur_ambig$f_other)
+s_dur_ambig$log_freq_pl_sc = scale(s_dur_ambig$log_freq_pl)
+#s_dur_ambig$rel_freq_s = s_dur_ambig$s_freq / s_dur_ambig$lem_freq
+#s_dur_ambig$rel_freq_en = s_dur_ambig$en_freq / s_dur_ambig$lem_freq
+#s_dur_ambig$rel_freq_diff = s_dur_ambig$rel_freq_s - s_dur_ambig$rel_freq_en
+#s_dur_ambig$log_freq_s = log(s_dur_ambig$s_freq)
 
+s_dur_ambig$entropy = -1*(ifelse(s_dur_ambig$f_ev > 0, s_dur_ambig$rel_f_ev*log2(s_dur_ambig$rel_f_ev), 0)
+                          + ifelse(s_dur_ambig$f_s > 0, s_dur_ambig$rel_f_s*log2(s_dur_ambig$rel_f_s), 0)
+                          + ifelse(s_dur_ambig$f_en > 0, s_dur_ambig$rel_f_en*log2(s_dur_ambig$rel_f_en), 0)
+                          + ifelse(s_dur_ambig$f_other > 0, s_dur_ambig$rel_f_other*log2(s_dur_ambig$rel_f_other), 0)
+                          )
+
+# put lower boundary on frequency of pl, to exclude most unreliable pl_prop measurements
+s_dur_ambig_full = s_dur_ambig
+lower_boundary = 10
+s_dur_ambig = s_dur_ambig_full[s_dur_ambig_full$freq_pl >= lower_boundary,]
+
+s_dur_ambig$speech_rate_pron_sc = scale(s_dur_ambig$speech_rate_pron)
+s_dur_ambig$base_dur_sc = scale(s_dur_ambig$base_dur)
+s_dur_ambig$num_syl_pron_sc = scale(s_dur_ambig$num_syl_pron)
+s_dur_ambig$lex_neb_sc = scale(s_dur_ambig$lex_neb)
+s_dur_ambig$log_bigf_sc = scale(s_dur_ambig$log_bigf)
+s_dur_ambig$log_bigf_prev_sc = scale(s_dur_ambig$log_bigf_prev)
+s_dur_ambig$log_f_s_sc = scale(s_dur_ambig$log_f_s)
+s_dur_ambig$log_f_nons_sc = scale(s_dur_ambig$log_f_nons)
+s_dur_ambig$p_dev = s_dur_ambig$p_s - s_dur_ambig$pl_prop
+
+#library(aods3)
+#library(VGAM)
+#s_dur_ambig$p_resid = logitlink(predict(aodml(cbind(f_s, f_nons) ~ p_s*log_freq_pl, var), newdata = s_dur_ambig), inverse = T) - s_dur_ambig$pl_prop
+
+# principle components
+col_pred = s_dur_ambig[, c("syntax_f2", "syntax_f3", "syntax_f4", "syntax_f5", "syntax_f6", "syntax_f7", "syntax_f8")]
+col_pred_pca = prcomp(col_pred, center = T, scale. = T)
+summary(col_pred_pca)
+
+# keep pc1 - pc5, threshold of 0.9 cumulative proportion reached
+s_dur_ambig$PC1 = col_pred_pca$x[,1]
+s_dur_ambig$PC2 = col_pred_pca$x[,2]
+s_dur_ambig$PC3 = col_pred_pca$x[,3]
+s_dur_ambig$PC4 = col_pred_pca$x[,4]
+s_dur_ambig$PC5 = col_pred_pca$x[,5]
+
+s_dur_ambig$PC1_sc = scale(s_dur_ambig$PC1)
+s_dur_ambig$PC2_sc = scale(s_dur_ambig$PC2)
+s_dur_ambig$PC3_sc = scale(s_dur_ambig$PC3)
+s_dur_ambig$PC4_sc = scale(s_dur_ambig$PC4)
+s_dur_ambig$PC5_sc = scale(s_dur_ambig$PC5)
+
+s_dur_ambig$speaker = as.factor(as.character(s_dur_ambig$speaker))
+s_dur_ambig$word_ort = as.factor(as.character(s_dur_ambig$word_ort))
 
 # hersnes/hersenen zit er hier niet meer in!
 
@@ -508,6 +592,12 @@ s_dur_unambig$log_lem_freq = log(s_dur_unambig$f_ev + s_dur_unambig$f_mv)
 s_dur_unambig = na.omit(s_dur_unambig)
 
 ### Inspect collinearity
+continuous = c("speech_rate_pron_sc", "base_dur_sc", "num_syl_pron_sc", 
+               "log_freq_pl", "lex_neb_sc", "log_bigf_sc", "log_bigf_prev_sc",
+               "PC1", "PC2", "PC3", "pl_prop", "rel_freq_pl")
+
+corrplot(cor(s_dur_ambig[, continuous], use = "complete.obs"), method = "number")
+
 continuous = c("speech_rate_pron", "base_dur", "num_syl_pron", 
                "num_cons_pron", "log_lem_freq", "lex_neb", "log_bigf",
                "syntax_f2", "syntax_f3", "syntax_f4", "pl_prop", "rel_freq_pl")
@@ -698,47 +788,74 @@ corrplot(cat_con, method = "number")
 
 s_dur_ambig = na.omit(s_dur_ambig)
 
+s_dur_ambig_reg = s_dur_ambig
+s_dur_ambig_reg$register = as.character(s_dur_ambig_reg$register)
+s_dur_ambig_reg = s_dur_ambig_reg[s_dur_ambig_reg$register %in% c("conversation", "stories"),]
+s_dur_ambig_reg$register = as.factor(s_dur_ambig_reg$register)
+
 ### try single lmer (no correlation between pl_prop, rel_freq1 and covariates)
-control2 = lmer(log_s_dur ~ speech_rate_pron_sc + base_dur_sc + num_syl_pron_sc 
-                + num_cons_pron_sc 
-#                + log_wf_sc 
-                + log_lem_freq
-                + lex_neb_sc + log_bigf_sc 
+control2 = lmer(log_s_dur ~ speech_rate_pron_sc 
+                + log_base_dur_sc 
+                + num_syl_pron_sc 
+#                + num_cons_pron_sc 
+                + prev_phon_class
+#                + log_freq_pl_sc
+#                + log_wf_sc
+#                + rel_f_s + rel_f_nons
+                + lex_neb_sc 
+                + log_bigf_sc 
                 + log_bigf_prev_sc
-                + syntax_f2_sc + syntax_f3_sc + syntax_f4_sc 
-                + syntax_f5_cat + syntax_f6_cat + syntax_f7_cat + syntax_f8_cat 
+#                + syntax_f2_sc + syntax_f3_sc 
+#                + syntax_f4_sc 
+#                + syntax_f5_cat + syntax_f6_cat 
+#                + syntax_f7_cat + syntax_f8_cat 
+                + PC1_sc + PC2_sc + PC3_sc + PC4_sc + PC5_sc
                 + stressed
-                + next_phon_class + prev_mention 
+                + next_phon_class 
+                + prev_mention 
                 + register
-#                + rel_freq_s
                 + rel_freq_pl*pl_prop
-                + (1 | speaker) 
-                + (1 | word_ort),
+#                + rel_freq_pl*p_resid + p_s #rel_freq_pl*p_dev
+#                + entropy
+                + #rel_f_s #*rel_f_nons #log(f_s/f_lem)
+#                + log_f_s + log_f_nons + log_f_ev
+#                + log_lem_freq
+                + (1 | word_ort)
+                + (1 | speaker),
                 control = lmerControl(optCtrl = list(maxfun = 1e6, ftol_abs = 1e-8)),
+#                REML = F,
                 data=s_dur_ambig)
 
 s_dur_ambig$dur_resid2 = resid(control2)
 s_dur_trim2 = s_dur_ambig[abs(scale(s_dur_ambig$dur_resid2)) < 2.5,]
 
-control_trim2 = lmer(log_s_dur ~ speech_rate_pron_sc + base_dur_sc + num_syl_pron_sc 
-                     + num_cons_pron_sc 
-#                     + log_wf_sc 
-                     + log_lem_freq
-                     + lex_neb_sc + log_bigf_sc 
+control_trim2 = lmer(log_s_dur ~ speech_rate_pron_sc 
+                     + log_base_dur_sc 
+                     + num_syl_pron_sc 
+#                     + num_cons_pron_sc
+                     + prev_phon_class
+#                     + log_freq_pl_sc
+#                     + log_wf_sc
+#                     + log_f_s #+ log_f_nons_sc
+                     + lex_neb_sc
+                     + log_bigf_sc 
                      + log_bigf_prev_sc
-                     + syntax_f2_sc + syntax_f3_sc + syntax_f4_sc 
-                     + syntax_f5_cat + syntax_f6_cat + syntax_f7_cat + syntax_f8_cat
+#                     + syntax_f2_sc + syntax_f3_sc 
+#                     + syntax_f4_sc 
+#                     + syntax_f5_cat + syntax_f6_cat 
+#                     + syntax_f7_cat + syntax_f8_cat
+                     + PC1_sc + PC2_sc + PC3_sc + PC4_sc + PC5_sc
                      + stressed
-                     + next_phon_class + prev_mention 
+                     + next_phon_class 
+                     + prev_mention 
                      + register
-#                     + rel_freq_s
                      + rel_freq_pl*pl_prop
-                     + (1 | speaker) 
-                     + (1 | word_ort),
+                     + (1 | word_ort)
+                     + (1 | speaker), 
                      control = lmerControl(optCtrl = list(maxfun = 1e6, ftol_abs = 1e-8)),
                      data=s_dur_trim2)
 
-summary(control_trim2)
+anova(control_trim2)
 #par(mar=c(2,2,2,2))
 plot(effect("rel_freq_pl:pl_prop", control_trim2, x.var = "rel_freq_pl")
      , multiline=T, rug = F, main = "", ylab = "log(seconds)", ci.style = "bands", 
@@ -755,31 +872,40 @@ pm + labs(y = "log(seconds)", x="Proportion(PL)") # + geom_point(data = s_dur_tr
 
 # only significant predictors:
 control2b = lmer(log_s_dur ~ speech_rate_pron_sc +
-                   + syntax_f7_cat + syntax_f8_cat 
+#                 + log_base_dur_sc
+#                 + lex_neb_sc + stressed
+                 + PC1_sc + PC2_sc + PC3_sc
                  + next_phon_class 
                  + register
-#                 + rel_freq_pl*p_s
+#                 + entropy
+#                 + log_f_s + log_f_nons + log_f_ev
+#                 + rel_f_s + pl_prop
+#                 + rel_freq_pl*p_dev
                  + rel_freq_pl*pl_prop
                  + (1 | speaker) 
                  + (1 | word_ort),
                  control = lmerControl(optCtrl = list(maxfun = 1e6, ftol_abs = 1e-8)),
+#                 REML = F,
                  data=s_dur_ambig)
 
 s_dur_ambig$dur_resid2 = resid(control2b)
 s_dur_trim2 = s_dur_ambig[abs(scale(s_dur_ambig$dur_resid2)) < 2.5,]
 
 control2b_trim = lmer(log_s_dur ~ speech_rate_pron_sc +
-                        + syntax_f7_cat + syntax_f8_cat 
+#                        + lex_neb_sc + stressed 
+                      + PC1_sc + PC2_sc + PC3_sc
                       + next_phon_class 
                       + register
-#                      + rel_freq_pl*p_s
                       + rel_freq_pl*pl_prop
                       + (1 | speaker) 
                       + (1 | word_ort),
                       control = lmerControl(optCtrl = list(maxfun = 1e6, ftol_abs = 1e-8)),
                       data=s_dur_trim2)
 
-summary(control2b_trim)
+anova(control2b_trim)
+
+qqnorm(resid(control2b_trim), main = "QQ-plot")
+qqline(resid(control2b_trim))
 
 plot(effect("rel_freq_pl:pl_prop", control2b_trim, x.var = "rel_freq_pl")
      , multiline=T, rug = F, main = "", ylab = "log(seconds)", ci.style = "bands", 
@@ -787,16 +913,71 @@ plot(effect("rel_freq_pl:pl_prop", control2b_trim, x.var = "rel_freq_pl")
      key.args = list(space="right", columns=1, title = "Proportion -s / plural", cex.title = 0.9)
 )
 
-ggplot(data = s_dur_trim2) + aes(x = pl_prop, y = log_s_dur) + ylim(-3.04, -1.9) + xlim(0, 1) + labs(y = "log(seconds)", x="Proportion(PL)") + ggtitle("Variable Plurals") # + geom_line(aes(linetype = "0"), alpha=0) + geom_line(aes(linetype = "0.5"), alpha=0) + geom_line(aes(linetype = "1"), alpha=0) + labs(linetype='Proportion(-s)')
+ggplot(data = s_dur_trim2) + aes(x = pl_prop, y = log_s_dur) + ylim(-3.2, -2.2) + xlim(0, 1) + labs(y = "log(seconds)", x="Proportion(PL)") + ggtitle("Variable Plurals") # + geom_line(aes(linetype = "0"), alpha=0) + geom_line(aes(linetype = "0.5"), alpha=0) + geom_line(aes(linetype = "1"), alpha=0) + labs(linetype='Proportion(-s)')
 
 pm = plot_model(control2b_trim, type = "pred", terms = c("rel_freq_pl", "pl_prop [0.9985915]"), colors = "bw", legend.title = "Proportion(-s)", title = "", show.legend = F)
-pm + ylim(-3.04, -1.9) + xlim(0, 1) + labs(y = "log(seconds)", x="Proportion(PL)") + ggtitle("Variable Plurals") # + geom_point(data = s_dur_trim2, mapping = aes(x = pl_prop, y = log_s_dur), inherit.aes = FALSE)
+pm + ylim(-3.2, -2.2) + xlim(0, 1) + labs(y = "log(seconds)", x="Proportion(PL)") + ggtitle("Variable Plurals") # + geom_point(data = s_dur_trim2, mapping = aes(x = pl_prop, y = log_s_dur), inherit.aes = FALSE)
 
 pm = plot_model(control2b_trim, type = "pred", terms = c("rel_freq_pl", "pl_prop [0.00227199, 0.9985915]"), colors = "bw", legend.title = "Proportion(-s)", title = "", show.legend = F)
-pm + ylim(-3.04, -1.9) + xlim(0, 1) + labs(y = "log(seconds)", x="Proportion(PL)") + ggtitle("Variable Plurals") + scale_linetype_manual(values=c("dashed", "solid")) # + geom_point(data = s_dur_trim2, mapping = aes(x = pl_prop, y = log_s_dur), inherit.aes = FALSE)
+pm + ylim(-3.2, -2.2) + xlim(0, 1) + labs(y = "log(seconds)", x="Proportion(PL)") + ggtitle("Variable Plurals") + scale_linetype_manual(values=c("dashed", "solid")) # + geom_point(data = s_dur_trim2, mapping = aes(x = pl_prop, y = log_s_dur), inherit.aes = FALSE)
+
 
 pm = plot_model(control2b_trim, type = "pred", terms = c("rel_freq_pl", "pl_prop [0.9985915, 0.00227199]"), colors = "bw", legend.title = "Proportion(-s)", title = "")
-pm + ylim(-3.04, -1.9) + xlim(0, 1) + labs(y = "log(seconds)", x="Proportion(PL)") + ggtitle("Variable Plurals") + scale_linetype_manual(values=c("dashed", "solid")) # + geom_point(data = s_dur_trim2, mapping = aes(x = pl_prop, y = log_s_dur), inherit.aes = FALSE)
+pm2 = pm + ylim(-3.2, -2.2) + xlim(0, 1) + labs(y = "log(seconds)", x="Proportion(PL)") + scale_linetype_manual(values=c("dashed", "solid"), labels=c("Min", "Max")) + ggtitle("B") # + geom_point(data = s_dur_trim2, mapping = aes(x = pl_prop, y = log_s_dur), inherit.aes = FALSE)
+
+qqplot.data <- function (vec) # argument: vector of numbers
+{
+  # following four lines from base R's qqline()
+  y <- quantile(vec[!is.na(vec)], c(0.25, 0.75))
+  x <- qnorm(c(0.25, 0.75))
+  slope <- diff(y)/diff(x)
+  int <- y[1L] - slope * x[1L]
+  
+  d <- data.frame(resids = vec)
+  
+  ggplot(d, aes(sample = resids)) + stat_qq() + geom_abline(slope = slope, intercept = int) + labs(y = "Sample Quantiles", x="Theoretical Quantiles") + ggtitle("A")
+  
+}
+
+qp = qqplot.data(resid(control2b_trim))
+
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  library(grid)
+  
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+  
+  numPlots = length(plots)
+  
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                     ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+  
+  if (numPlots==1) {
+    print(plots[[1]])
+    
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+    
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+      
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
+multiplot(qp, pm2, cols=2)
+
 
 # only conversation
 s_dur_ambig_conv = s_dur_ambig[s_dur_ambig$register == "conversation",]
@@ -806,7 +987,8 @@ conv = lmer(log_s_dur ~ speech_rate_pron_sc
 #            + base_dur_sc 
 #            + num_syl_pron_sc 
 #                + num_cons_pron_sc 
-#                + log_lem_freq
+#            + prev_phon_class
+#                + log_freq_pl
 #                + lex_neb_sc 
 #                + log_bigf_sc 
 #                + log_bigf_prev_sc
@@ -817,11 +999,12 @@ conv = lmer(log_s_dur ~ speech_rate_pron_sc
 #             + syntax_f6_cat 
 #             + syntax_f7_cat 
 #             + syntax_f8_cat 
+#              + PC1 + PC2 + PC3
 #                + stressed
                 + next_phon_class 
 #                + prev_mention 
 #                + corpus
-                + rel_freq_pl*pl_prop
+                + rel_freq_pl*pl_prop#*log_freq_pl
                 + (1 | speaker) 
                 + (1 | word_ort),
                 control = lmerControl(optCtrl = list(maxfun = 1e6, ftol_abs = 1e-8)),
@@ -834,7 +1017,8 @@ conv_trim = lmer(log_s_dur ~ speech_rate_pron_sc
 #                 + base_dur_sc 
 #                 + num_syl_pron_sc 
 #                     + num_cons_pron_sc 
-#                     + log_lem_freq
+#                  + prev_phon_class
+#                     + log_freq_pl
 #                     + lex_neb_sc 
 #                     + log_bigf_sc 
 #                     + log_bigf_prev_sc
@@ -845,16 +1029,17 @@ conv_trim = lmer(log_s_dur ~ speech_rate_pron_sc
 #                 + syntax_f6_cat 
 #                 + syntax_f7_cat 
 #                 + syntax_f8_cat
+#                  + PC1 + PC2 + PC3
 #                     + stressed
                      + next_phon_class 
 #                     + prev_mention 
-                     + rel_freq_pl*pl_prop
+                     + rel_freq_pl*pl_prop#*log_freq_pl
                      + (1 | speaker) 
                      + (1 | word_ort),
                      control = lmerControl(optCtrl = list(maxfun = 1e6, ftol_abs = 1e-8)),
                      data=s_dur_ambig_conv_trim)
 
-summary(conv_trim)
+anova(conv_trim)
 
 # a cleaner way of doing this would be to define rel_freq as the relative frequency
 # of ANY plural form compared to the lemma frequency
@@ -916,18 +1101,18 @@ plot(effect("rel_freq_pl:pl_prop", interest2, x.var = "pl_prop"),
 # do follow-up tests using https://cran.r-project.org/web/packages/interactions/vignettes/interactions.html
 library(interactions)
 
-interact_plot(control_trim2, pred = rel_freq_pl, modx = pl_prop, 
+interact_plot(control2b_trim, pred = rel_freq_pl, modx = pl_prop, 
               plot.points = T, colors = c("red", "blue", "green")
               )
 
-ssl = sim_slopes(control_trim2, pred = rel_freq_pl, modx = pl_prop
+ssl = sim_slopes(control2b_trim, pred = rel_freq_pl, modx = pl_prop
            , modx.values = c(0.01, 0.5, 0.99)
            , johnson_neyman = T, control.fdr = TRUE
            )
 
 ssl$slopes
 
-probe_interaction(control_trim2, pred = rel_freq_pl, modx = pl_prop, cond.int = TRUE,
+probe_interaction(control2b_trim, pred = rel_freq_pl, modx = pl_prop, cond.int = TRUE,
                   interval = TRUE,  jnplot = TRUE)
 
 
@@ -1040,57 +1225,69 @@ corrplot(cat_con, method = "number")
 
 # should we exclude diminuatives for a fair comparison?
 
+s_dur_unambig_reg = s_dur_unambig
+s_dur_unambig_reg$register = as.character(s_dur_unambig_reg$register)
+#s_dur_unambig_reg[s_dur_unambig_reg$register %in% c("news","stories"),]$register = "read"
+s_dur_unambig_reg = s_dur_unambig_reg[s_dur_unambig_reg$register %in% c("conversation","stories"),]
+s_dur_unambig_reg$register = as.factor(s_dur_unambig_reg$register)
+
 ### try single lmer (no correlation between pl_prop, rel_freq1 and covariates)
 control3 = lmer(log_s_dur ~ speech_rate_pron_sc + base_dur_sc + num_syl_pron_sc 
-                + num_cons_pron_sc 
+#                + num_cons_pron_sc
+                + prev_phon_class
                 + log_lem_freq
 #                + log_wf_sc 
-                + lex_neb_sc + log_bigf_sc 
-                + log_bigf_prev_sc
-                + syntax_f2_sc 
-                + syntax_f3_sc + syntax_f4_sc 
+#                + lex_neb_sc 
+                + log_bigf_sc 
+#                + log_bigf_prev_sc
+#                + syntax_f2_sc 
+#                + syntax_f3_sc 
+#                + syntax_f4_sc 
                 + syntax_f5_cat 
-                + syntax_f6_cat 
+#                + syntax_f6_cat 
                 + syntax_f7_cat + syntax_f8_cat 
-                + stressed
+#                + stressed
                 + next_phon_class + prev_mention 
                 + register
-                + rel_freq_pl#*register#*p_s
+                + rel_freq_pl*register#*p_s
                 + (1 | speaker) 
                 + (1 | word_ort),
                 control = lmerControl(optCtrl = list(maxfun = 1e6, ftol_abs = 1e-8)),
-                data=s_dur_unambig)
+                data=s_dur_unambig_reg)
 
-s_dur_unambig$dur_resid2 = resid(control3)
-s_dur_trim3 = s_dur_unambig[abs(scale(s_dur_unambig$dur_resid2)) < 2.5,]
+s_dur_unambig_reg$dur_resid2 = resid(control3)
+s_dur_trim3 = s_dur_unambig_reg[abs(scale(s_dur_unambig_reg$dur_resid2)) < 2.5,]
 
 control_trim3 = lmer(log_s_dur ~ speech_rate_pron_sc + base_dur_sc + num_syl_pron_sc 
-                     + num_cons_pron_sc
+#                     + num_cons_pron_sc
+                     + prev_phon_class
                      + log_lem_freq
 #                     + log_wf_sc 
-                     + lex_neb_sc + log_bigf_sc 
-                     + log_bigf_prev_sc
-                     + syntax_f2_sc 
-                     + syntax_f3_sc + syntax_f4_sc 
+#                     + lex_neb_sc 
+                    + log_bigf_sc 
+#                     + log_bigf_prev_sc
+#                     + syntax_f2_sc 
+#                     + syntax_f3_sc + syntax_f4_sc 
                      + syntax_f5_cat 
-                     + syntax_f6_cat 
+#                     + syntax_f6_cat 
                      + syntax_f7_cat + syntax_f8_cat
-                     + stressed
+#                     + stressed
                      + next_phon_class + prev_mention 
                      + register
-                     + rel_freq_pl#*register#*p_s
+                     + rel_freq_pl*register#*p_s
                      + (1 | speaker) 
                      + (1 | word_ort),
                      control = lmerControl(optCtrl = list(maxfun = 1e6, ftol_abs = 1e-8)),
                      data=s_dur_trim3)
 
-summary(control_trim3)
+anova(control_trim3)
 
 
 s_dur_unambig_conv = s_dur_unambig[s_dur_unambig$register == "conversation",]
 
 control3 = lmer(log_s_dur ~ speech_rate_pron_sc + base_dur_sc + num_syl_pron_sc 
-                + num_cons_pron_sc 
+#                + num_cons_pron_sc
+                + prev_phon_class
                 + log_lem_freq
                 #                + log_wf_sc 
 #                + lex_neb_sc 
@@ -1115,7 +1312,8 @@ s_dur_unambig_conv$dur_resid2 = resid(control3)
 s_dur_trim3 = s_dur_unambig_conv[abs(scale(s_dur_unambig_conv$dur_resid2)) < 2.5,]
 
 control_trim3 = lmer(log_s_dur ~ speech_rate_pron_sc + base_dur_sc + num_syl_pron_sc 
-                     + num_cons_pron_sc
+#                     + num_cons_pron_sc
+                     + prev_phon_class
                      + log_lem_freq
                      #                     + log_wf_sc 
 #                     + lex_neb_sc 

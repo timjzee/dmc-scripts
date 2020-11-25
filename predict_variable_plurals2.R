@@ -245,8 +245,8 @@ gs_index = read.csv(paste(f_path, "gs_index.csv", sep = ""), header = T)
 gs_index = gs_index[gs_index$instncs == "type" 
                     & gs_index$ad_invar == "True"
                     & gs_index$mtrc == "O"
-#                    & gs_index$ad_var == "False" 
-#                    & gs_index$ad_verb == "False" 
+                    & gs_index$ad_var == "False" 
+                    & gs_index$ad_verb == "False" 
                     & gs_index$nneigh_k < 6
                     & gs_index$shrd_lems == "True"
                     ,]
@@ -895,7 +895,13 @@ betabin_vgam = vglm(cbind(f_s, f_nons) ~ p_s * mv_relfreq + p_s * log_f_mv, beta
 
 library(aods3)
 betabin_aods3 = aodml(cbind(f_s, f_nons) ~ p_s * mv_relfreq + p_s * log_f_mv, family = "bb", data = var)
+summary(betabin_aods3)
 wald.test(b = coef(betabin_aods3), varb = vcov(betabin_aods3), Terms = 5)
+
+var$f_mv = var$f_s + var$f_en + var$f_other
+var2 = var[var$f_mv >= 10,]
+betabin_aods3b = aodml(cbind(f_s, f_nons) ~ p_s * mv_relfreq + p_s * log_f_mv, family = "bb", data = var2)
+summary(betabin_aods3b)
 
 library(dplyr)
 library(ggplot2)
@@ -996,10 +1002,11 @@ lines(p, dbeta(p, alph, bet), type = "l")
 # check half normal plot:
 # https://www.rdocumentation.org/packages/hnp/versions/1.2-6/topics/hnp
 library(hnp)
-hnp(binom)
-hnp(quasibinom)
-hnp(betabin_aods3)
-hnp(betabin_vgam)
+par(mfrow=c(1,3))
+hnp(binom, main="Binomial", how.many.out = T)
+hnp(quasibinom, main="Quasi-Binomial", how.many.out = T)
+hnp(betabin_aods3, main= "Beta-Binomial", how.many.out = T)
+par(mfrow=c(1,1))
 
 # check qqplot
 # https://intellinexus.wordpress.com/2010/11/29/creating-a-q-q-plot/
@@ -1044,6 +1051,7 @@ s_prop_hi_min = logitlink(betabin_pred$fit + qnorm(.975) * betabin_pred$se.fit, 
 
 var_plot = cbind(var, s_prop_pred_max, s_prop_lo_max, s_prop_hi_max, s_prop_pred_med, s_prop_lo_med, s_prop_hi_med, s_prop_pred_min, s_prop_lo_min, s_prop_hi_min)
 var_plot %>% ggplot() + 
+p2 = ggplot(var_plot) + 
   aes(x = p_s, y = s_prop) + 
   geom_point(color = "grey", alpha = .7) + 
   geom_line(aes(y=s_prop_pred_max, linetype = "Max")) +
@@ -1052,7 +1060,7 @@ var_plot %>% ggplot() +
   geom_ribbon( aes(ymin = s_prop_lo_med, ymax = s_prop_hi_med), alpha = .15) +
   geom_line(aes(y=s_prop_pred_min, linetype = "Min")) +
   geom_ribbon( aes(ymin = s_prop_lo_min, ymax = s_prop_hi_min), alpha = .15) +
-  labs(linetype='Proportion(PL)', x="Probability(-s)", y="Proportion(-s)") 
+  labs(linetype='Proportion(PL)', x="Probability(-s)", y="Proportion(-s)", title = "B") 
 
 
 # for presentation
@@ -1109,6 +1117,7 @@ s_prop_hi_min = logitlink(betabin_pred$fit + qnorm(.975) * betabin_pred$se.fit, 
 
 var_plot = cbind(var, s_prop_pred_max, s_prop_lo_max, s_prop_hi_max, s_prop_pred_med, s_prop_lo_med, s_prop_hi_med, s_prop_pred_min, s_prop_lo_min, s_prop_hi_min)
 var_plot %>% ggplot() + 
+p1 = ggplot(var_plot) +
   aes(x = p_s, y = s_prop) + 
   geom_point(color = "grey", alpha = .7) + 
   geom_line(aes(y=s_prop_pred_max, linetype = "Max")) +
@@ -1117,11 +1126,52 @@ var_plot %>% ggplot() +
   geom_ribbon( aes(ymin = s_prop_lo_med, ymax = s_prop_hi_med), alpha = .15) +
   geom_line(aes(y=s_prop_pred_min, linetype = "Min")) +
   geom_ribbon( aes(ymin = s_prop_lo_min, ymax = s_prop_hi_min), alpha = .15) +
-  labs(linetype='log(freq(PL))', x="Probability(-s)", y="Proportion(-s)") 
+  labs(linetype='log(freq(PL))', x="Probability(-s)", y="Proportion(-s)", title = "A") 
 
 
 # max log_f_mv predictions are not linear because of logit transformation, https://en.wikipedia.org/wiki/Logit
 # which is bounded by 0 and 1
 # but approaches linearity between 0.3 > s_prop < 0.7
 # hence median and min look linear but max does not
+
+
+
+
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  library(grid)
+  
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+  
+  numPlots = length(plots)
+  
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                     ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+  
+  if (numPlots==1) {
+    print(plots[[1]])
+    
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+    
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+      
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
+multiplot(p1, p2, cols=2)
+
 
