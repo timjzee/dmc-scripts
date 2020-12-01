@@ -36,13 +36,13 @@ with codecs.open(tens_path + "other/SUBTLEX-NL.txt", "r", "utf-8") as f:
 
 print("Loading lexicon")
 lexicon = {}
-with codecs.open(tz_path + "clst-asr-fa/lexicon_from_MARIO.txt", "r", "utf-8") as f:
+with codecs.open(tz_path + "clst-asr-fa/lexicon_comp-acd-ifadv-ecsd-ko.txt", "r", "utf-8") as f:
     for line in f:
         entry, pron = line[:-1].split("\t")
         ipa = "".join([kaldi2ipa[p] for p in pron.strip(" ").split(" ")])
         lexicon[entry] = re.sub(r"ː", "", ipa)
 
-num_cores = 40
+num_cores = 63
 num_lex_lines = len(lexicon)
 # num_lex_lines = 1000
 core_dict = {}
@@ -126,7 +126,7 @@ print("BBBBBBBBBBBBBBBBBBBBBBBBB")
 #    wrd, nghbrs = lexicon_queue.get()
 #    nl[wrd] = nghbrs
 
-with codecs.open(tz_path + "Docs/neighbour_lexicon.txt", "w", "utf-8") as f:
+with codecs.open(tz_path + "Docs/neighbour_lexicon2.txt", "w", "utf-8") as f:
     for c in core_dict:
         with codecs.open(tz_path + "Docs/neighbours" + c + ".txt", "r", "utf-8") as g:
             for line in g:
