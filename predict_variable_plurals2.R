@@ -755,7 +755,7 @@ temp_table$percentage_incongruent = mapply(get_incongruency, temp_table$default,
 tab_df(temp_table[table_order,])
 
 #var = read.csv(paste(f_path, "p_f_type_O_merge_2syl_k4_ID_invar.csv", sep = ""))
-var = read.csv(paste(f_path2, "p_f_type_O_merge_2syl_k4_ID_invar.csv", sep = ""))
+var = read.csv(paste(f_path2, "p_f_type_O_merge_2syl_k4_ID_invar3.csv", sep = ""))
 
 # remove
 # cent?,
@@ -811,6 +811,8 @@ var[var$word == "orgie",]$f_s = 16
 var[var$word == "grieve",]$f_ev = 5
 var[var$word == "grieve",]$f_s = 40
 var = var[!(var$word %in% c("l", "pop", "portier", "net", "water", "god", "cent", "karaat", "punt", "post", "kajak", "grieve")),]
+twijfel = c("bank", "big", "bink", "bon", "brief", "client", "clip", "den", "deur", "dier","district","dokter", "ex","feminist", "frank","gevaar","gif", "hostess", "inning", "kanon", "kap", "kik", "kit", "klootzak", "kwadraat", "mark", "match", "mat", "middelmaat", "moer", "mul", "naaste", "norm", "object", "ongeluk", "paard", "partij", "project", "prospect", "rank", "rel", "ring", "sim", "tand", "tong", "uitgang", "vel", "vierkant", "vijand", "vrouw", "wereld", "werk", "worm", "woud")
+#var = var[!(var$word %in% twijfel),]
 loanwords = c("")
 var = var[var$f_s != 0,]
 #var = var[var$f_other == 0,]
@@ -820,9 +822,12 @@ var$s_prop2 = (var$s_prop*(nrow(var)-1) + 0.5) / nrow(var)
 var$log_f_mv = log(var$f_s + var$f_en + var$f_other)
 # var$log_f_lem = log(var$f_s + var$f_en + var$f_other + var$f_ev)
 var$mv_relfreq = (var$f_s + var$f_en + var$f_other) / (var$f_s + var$f_en + var$f_other + var$f_ev)
-varb = na.omit(var[,!(names(var) %in% c("lex_neb"))])
+#varb = na.omit(var[,!(names(var) %in% c("lex_neb"))])
 var_no_oth = var[var$f_other == 0,]
-var_no_oth = var_no_oth[,!(names(var) %in% c("lex_neb", "seg_info", "seg_info_token"))]
+varb = var[,!(names(var) %in% c("lex_neb", "seg_info", "seg_info_token", "phon_s_num", "phon_schwa_num", "phon_s_freq", "phon_schwa_freq", "informativity_prev", "informativity_next"))]
+varb = varb[varb$age_of_aq != "#DIV/0!",]
+varb$age_of_aq = as.numeric(as.character(varb$age_of_aq))
+varb = na.omit(varb)
 var_no_oth = var_no_oth[var_no_oth$phon_s_freq > 0 & var_no_oth$phon_schwa_freq > 0,]
 var_no_oth = var_no_oth[var_no_oth$phon_s_num > 0 & var_no_oth$phon_schwa_num > 0,]
 var_no_oth = na.omit(var_no_oth)
@@ -915,7 +920,7 @@ summary(betabin_aods3)
 wald.test(b = coef(betabin_aods3), varb = vcov(betabin_aods3), Terms = 5)
 
 betabin_aods3 = aodml(cbind(f_s, f_nons) ~ p_s * mv_relfreq + p_s * log_f_mv + p_s * seg_info_token, family = "bb", data = varb)
-betabin_aods3 = aodml(cbind(f_s, f_nons) ~ p_s * mv_relfreq + p_s * log_f_mv + ratio_s_schwa_words, family = "bb", data = var_no_oth)
+betabin_aods3 = aodml(cbind(f_s, f_nons) ~ p_s * mv_relfreq + p_s * log_f_mv + concreteness * mv_relfreq, family = "bb", data = varb)
 
 
 var$f_mv = var$f_s + var$f_en + var$f_other
@@ -1070,7 +1075,6 @@ s_prop_hi_min = logitlink(betabin_pred$fit + qnorm(.975) * betabin_pred$se.fit, 
 
 
 var_plot = cbind(var, s_prop_pred_max, s_prop_lo_max, s_prop_hi_max, s_prop_pred_med, s_prop_lo_med, s_prop_hi_med, s_prop_pred_min, s_prop_lo_min, s_prop_hi_min)
-var_plot %>% ggplot() + 
 p2 = ggplot(var_plot) + 
   aes(x = p_s, y = s_prop) + 
   geom_point(color = "grey", alpha = .7) + 
@@ -1197,23 +1201,23 @@ multiplot(p1, p2, cols=2)
 
 
 var2 = varb
-var2$mv_relfreq = median(varb$mv_relfreq)
+var2$p_s = median(varb$p_s)
 var2$log_f_mv = median(varb$log_f_mv)
-var2$seg_info_token = max(varb$seg_info_token)
+var2$mv_relfreq = max(varb$mv_relfreq)
 
 betabin_pred = predict(betabin_aods3, se.fit = T, newdata = var2)
 s_prop_pred_max = logitlink(betabin_pred$fit, inverse = T)
 s_prop_lo_max = logitlink(betabin_pred$fit - qnorm(.975) * betabin_pred$se.fit, inverse = T)
 s_prop_hi_max = logitlink(betabin_pred$fit + qnorm(.975) * betabin_pred$se.fit, inverse = T)
 
-var2$seg_info_token = median(varb$seg_info_token)
+var2$mv_relfreq = median(varb$mv_relfreq)
 
 betabin_pred = predict(betabin_aods3, se.fit = T, newdata = var2)
 s_prop_pred_med = logitlink(betabin_pred$fit, inverse = T)
 s_prop_lo_med = logitlink(betabin_pred$fit - qnorm(.975) * betabin_pred$se.fit, inverse = T)
 s_prop_hi_med = logitlink(betabin_pred$fit + qnorm(.975) * betabin_pred$se.fit, inverse = T)
 
-var2$seg_info_token = min(varb$seg_info_token)
+var2$mv_relfreq = min(varb$mv_relfreq)
 
 betabin_pred = predict(betabin_aods3, se.fit = T, newdata = var2)
 s_prop_pred_min = logitlink(betabin_pred$fit, inverse = T)
@@ -1223,7 +1227,7 @@ s_prop_hi_min = logitlink(betabin_pred$fit + qnorm(.975) * betabin_pred$se.fit, 
 
 var_plot = cbind(varb, s_prop_pred_max, s_prop_lo_max, s_prop_hi_max, s_prop_pred_med, s_prop_lo_med, s_prop_hi_med, s_prop_pred_min, s_prop_lo_min, s_prop_hi_min)
 p1 = ggplot(var_plot) +
-  aes(x = p_s, y = s_prop) + 
+  aes(x = concreteness, y = s_prop) + 
   geom_point(color = "grey", alpha = .7) + 
   geom_line(aes(y=s_prop_pred_max, linetype = "Max")) +
   geom_ribbon( aes(ymin = s_prop_lo_max, ymax = s_prop_hi_max), alpha = .15) +
@@ -1231,4 +1235,4 @@ p1 = ggplot(var_plot) +
   geom_ribbon( aes(ymin = s_prop_lo_med, ymax = s_prop_hi_med), alpha = .15) +
   geom_line(aes(y=s_prop_pred_min, linetype = "Min")) +
   geom_ribbon( aes(ymin = s_prop_lo_min, ymax = s_prop_hi_min), alpha = .15) +
-  labs(linetype='-s information', x="Probability(-s)", y="Proportion(-s)", title = "A") 
+  labs(linetype='Proportion(PL)', x="Concreteness", y="Proportion(-s)", title = "A") 

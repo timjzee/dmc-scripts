@@ -1,0 +1,654 @@
+---
+title: "Exploring the paradigmatic enhancement of variable plurals."
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+setDownloadURI = function(list, filename = stop("'filename' must be specified"), textHTML = "Click here to download the data.", fileext = "RData", envir = parent.frame()){
+  require(base64enc,quietly = TRUE)
+  divname = paste(sample(LETTERS),collapse="")
+  tf = tempfile(pattern=filename, fileext = fileext)
+  save(list = list, file = tf, envir = envir)
+  filenameWithExt = paste(filename,fileext,sep=".")
+  
+  uri = dataURI(file = tf, mime = "application/octet-stream", encoding = "base64")
+  cat("<a style='text-decoration: none' id='",divname,"'></a>
+    <script>
+    var a = document.createElement('a');
+    var div = document.getElementById('",divname,"');
+    div.appendChild(a);
+    a.setAttribute('href', '",uri,"');
+    a.innerHTML = '",textHTML,"' + ' (",filenameWithExt,")';
+    if (typeof a.download != 'undefined') {
+      a.setAttribute('download', '",filenameWithExt,"');
+    }else{
+      a.setAttribute('onclick', 'confirm(\"Your browser does not support the download HTML5 attribute. You must rename the file to ",filenameWithExt," after downloading it (or use Chrome/Firefox/Opera). \")');
+    }
+    </script>",
+    sep="")
+}
+
+if (Sys.info()[1] == "Darwin"){
+  f_path = "/Volumes/tensusers/timzee/other/"
+  cgn_path = "/Volumes/tensusers/timzee/cgn/"
+  ifadv_path = "/Volumes/tensusers/timzee/IFADVcorpus/"
+  ecsd_path = "/Volumes/tensusers/timzee/ECSD/"
+} else {
+  f_path = "/vol/tensusers/timzee/other/"
+  cgn_path = "/vol/tensusers/timzee/cgn/"
+  ifadv_path = "/vol/tensusers/timzee/IFADVcorpus/"
+  ecsd_path = "/vol/tensusers/timzee/ECSD/"
+}
+
+library(ggplot2)
+
+short_vowels = c("A", "E", "I", "O", "U")
+long_vowels = c("AU", "E2", "EI", "EU", "UI", "a", "e", "i", "o", "u", "y")
+vowels = c("@", short_vowels, long_vowels)
+liquids = c("r", "l")
+approximants = c("j", "w")
+nasals = c("n", "m", "N")
+fricatives = c("G", "S", "Z", "f", "h", "s", "v", "x", "z")
+plosives = c("b", "d", "g", "k", "p", "t")
+
+obstruents = c(fricatives, plosives)
+sonorants = c(liquids, approximants, nasals)
+
+get_phon_class = function(x) {
+  if (x %in% vowels){
+    return("V")
+  } else if (x %in% liquids){
+    return("L")
+  } else if (x %in% approximants){
+    return("APP")
+  } else if (x %in% nasals){
+    return("N")
+  } else if (x %in% fricatives){
+    return("F")
+  } else if (x %in% plosives){
+    return("P")
+  } else if (!is.na(x) & x == "SIL"){
+    return("SIL")
+  } else {
+    return(NA)
+  }
+}
+
+s_dur_a = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-a_timbl2.csv", sep = ""))
+s_dur_a$corpus = as.factor("cgn-a")
+s_dur_a$register = as.factor("conversation")
+s_dur_a = s_dur_a[s_dur_a$overlap == FALSE,]
+s_dur_a = s_dur_a[ , !(names(s_dur_a) %in% c("overlap", "mean_hnr", "nn_end_score"))]
+s_dur_c = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-c_timbl2.csv", sep = ""))
+s_dur_c$corpus = as.factor("cgn-c")
+s_dur_c$register = as.factor("conversation")
+s_dur_c$birth_year = as.integer(s_dur_c$birth_year)
+s_dur_c = s_dur_c[s_dur_c$overlap == FALSE,]
+s_dur_c = s_dur_c[ , !(names(s_dur_c) %in% c("overlap", "mean_hnr", "nn_end_score"))]
+s_dur_d = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-d_timbl2.csv", sep = ""))
+s_dur_d$corpus = as.factor("cgn-d")
+s_dur_d$register = as.factor("conversation")
+s_dur_d = s_dur_d[s_dur_d$overlap == FALSE,]
+s_dur_d = s_dur_d[ , !(names(s_dur_d) %in% c("overlap", "mean_hnr", "nn_end_score"))]
+s_dur_ifadv = read.csv(paste(ifadv_path, "synvoirelPL_s_comb_ifadv_timbl2.csv", sep = ""))
+s_dur_ifadv$corpus = as.factor("ifadv")
+s_dur_ifadv$register = as.factor("conversation")
+levels(s_dur_ifadv$speaker_sex) = c("sex2", "sex1")
+s_dur_ifadv = s_dur_ifadv[ , !(names(s_dur_ifadv) %in% c("mean_hnr", "nn_end_score"))]
+s_dur_ecsd = read.csv(paste(ecsd_path, "synvoirelPL_s_comb_ecsd_timbl2.csv", sep = ""))
+s_dur_ecsd$corpus = as.factor("ecsd")
+s_dur_ecsd$register = as.factor("conversation")
+s_dur_ecsd = s_dur_ecsd[ , !(names(s_dur_ecsd) %in% c("mean_hnr", "nn_end_score"))]
+s_dur_k = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-k_timbl2.csv", sep = ""))
+s_dur_k$corpus = as.factor("cgn-k")
+s_dur_k$register = as.factor("news")
+s_dur_k = s_dur_k[ , !(names(s_dur_k) %in% c("mean_hnr", "nn_end_score"))]
+s_dur_o = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-o_timbl2.csv", sep = ""))
+s_dur_o$corpus = as.factor("cgn-o")
+s_dur_o$register = as.factor("stories")
+s_dur_o = s_dur_o[ , !(names(s_dur_o) %in% c("mean_hnr", "nn_end_score"))]
+s_dur = rbind(s_dur_a, s_dur_c, s_dur_d, s_dur_ifadv, s_dur_ecsd, s_dur_o, s_dur_k)
+s_dur = s_dur[s_dur$type_of_s == "PL",]
+s_dur$prev_mention = as.factor(s_dur$prev_mention)
+s_dur = s_dur[rowSums(is.na(s_dur))<length(s_dur),]
+s_dur$s_dur_kal = s_dur$kal_end - s_dur$kal_start
+s_dur$s_dur_nn = s_dur$nn_end - s_dur$kal_start + 0.01
+s_dur$stressed = s_dur$num_syl == s_dur$word_stress
+s_dur$stressed = as.factor(s_dur$stressed)
+possible_verbs = c("vingers", "tests", "films", "regels", "nagels", "boetes", "tips", "trips", 
+                   "clubs", "types", "sprints", "flirts", "tekens", "ketens", "tafels",
+                   "lades", "speeches")
+forbidden_words = c("bands",      # die muziek maken
+                    "stuks",      # 4 stuks
+                    "jaars",      # 2e jaars
+                    "klasses",    # van de klasses Deventer der
+                    "stands",     # leenwoord 'stents'
+                    "chatbox",    # nog niet goed verwerkt
+                    "gangs",      # leenwoord 'gengs'
+                    "zones",      # zonen is meervoud van zoon
+                    "pools",      # leenwoord 'poel'
+                    "strips",     # boekjes vs. strippenkaart (en ww)
+                    "kinders",    # andere 'speelse' betekenis, bovendien is het meervoud hier ers vs. eren
+                    "echtgenotes" # ambigue enkelvoud
+                    )
+s_dur = s_dur[!(s_dur$word_ort %in% c(forbidden_words, possible_verbs)),]
+names(s_dur)[names(s_dur) == "pl_prop"] = "prop_s"
+s_dur$pl_ambig = s_dur$prop_s < 1
+s_dur$pl_ambig = as.factor(s_dur$pl_ambig)
+s_dur = s_dur[!is.na(s_dur$pl_ambig),]
+s_dur = s_dur[rowSums(is.na(s_dur))<length(s_dur),]
+s_dur = s_dur[(!is.na(s_dur$s_dur_nn) & !s_dur$s_dur_nn < 0.005),]
+is.na(s_dur$num_syl_pron) = !s_dur$num_syl_pron
+s_dur = s_dur[!(s_dur$prev_phon_pron %in% c("t", "d") | s_dur$next_phon_pron %in% c("j", "t", "d")),]
+s_dur = s_dur[rowSums(is.na(s_dur))<length(s_dur),]
+s_dur$log_base_dur = log(s_dur$base_dur)
+s_dur$next_phon_class = as.factor(sapply(s_dur$next_phon_pron, get_phon_class))
+s_dur$prev_phon_class = as.factor(sapply(s_dur$prev_phon_pron, get_phon_class))
+s_dur$prev_phon_class = relevel(s_dur$prev_phon_class, ref="V")
+s_dur$next_phon_class = relevel(s_dur$next_phon_class, ref="V")
+s_dur[s_dur$cow_wf == 0,]$cow_wf = 1
+s_dur[is.na(s_dur$lex_neb),]$lex_neb = 0
+s_dur[is.na(s_dur$lex_neb_freq),]$lex_neb_freq = 0
+s_dur$log_s_dur = log(s_dur$s_dur_nn)
+s_dur$syntax_f2 = as.numeric(s_dur$syntax_f2)
+s_dur$syntax_f3 = as.numeric(s_dur$syntax_f3)
+s_dur$syntax_f4 = as.numeric(s_dur$syntax_f4)
+s_dur$syntax_f5 = as.numeric(s_dur$syntax_f5)
+s_dur$syntax_f6 = as.numeric(s_dur$syntax_f6)
+s_dur$syntax_f7 = as.numeric(s_dur$syntax_f7)
+s_dur$syntax_f8 = as.numeric(s_dur$syntax_f8)
+s_dur = s_dur[!(is.na(s_dur$type_of_s) | is.na(s_dur$next_phon_class) 
+                | is.na(s_dur$prev_mention) | is.na(s_dur$register)), ]
+drop = c("ptan", "ptaf", "next_phon_dur", "prev_phon_dur", "birth_year", "speaker_sex", 
+         "proportion_voiced2", "per_mil_wf", "prev_word",
+         "word_class", "word_pos", "next_phon", "prev_phon", "sent_i", "word_sent_i", "word_chunk_i", 
+         "nn_start", "nn_end", "nn_start_score", "chan", "timbl_s_prob")
+s_dur = s_dur[ , !(names(s_dur) %in% drop)]
+s_dur = s_dur[s_dur$pl_ambig == T,]
+# 624 tokens
+s_dur = na.omit(s_dur)
+# 622 tokens; 98 lemmas
+
+var = read.csv(paste(f_path, "p_f_type_O_merge_2syl_k4_ID_invar.csv", sep = ""))
+var = var[ , !(names(var) %in% c("age_of_aq", "concreteness", "lex_neb", "phon_s_num", "phon_schwa_num", "phon_s_freq", "phon_schwa_freq"))]
+var[var$word == "orgie",]$f_s = 16
+var = var[!(var$word %in% c("l", "pop", "portier", "net", "water", "god", "cent", "karaat", "punt", "post", "kajak", "grieve", "client", "big")),]
+var = var[var$f_s != 0,]
+twijfel = c("bank", "bink", "bon", "brief", "clip", "den", "deur", "dier","district","dokter", "ex","feminist", "frank","gevaar","gif", "hostess", "inning", "kanon", "kap", "kik", "kit", "klootzak", "kwadraat", "mark", "match", "mat", "middelmaat", "moer", "mul", "naaste", "norm", "object", "ongeluk", "paard", "partij", "project", "prospect", "rank", "rel", "ring", "sim", "tand", "tong", "uitgang", "vel", "vierkant", "vijand", "vrouw", "wereld", "werk", "worm", "woud")
+#var = var[!(var$word %in% twijfel),]
+var$f_nons = var$f_en + var$f_other
+var$f_pl = var$f_s + var$f_en + var$f_other
+names(var)[names(var) == "f_ev"] = "f_sg"
+var$log_freq_pl = log(var$f_pl)
+var$prop_pl = var$f_pl / (var$f_pl + var$f_sg)
+var$prop_s = var$f_s / var$f_pl
+
+get_p_s_var = function(lem) {
+  if (lem == "hersens"){
+    lem = "hersen"
+  }
+  if (lem %in% levels(var$word)){
+    return(var[var$word == lem,]$p_s)
+  } else {
+    return(NA)
+  }
+}
+
+get_f_s = function(lem) {
+  if (lem == "hersens"){
+    lem = "hersen"
+  }
+  if (lem %in% levels(var$word)){
+    return(var[var$word == lem,]$f_s)
+  } else {
+    return(NA)
+  }
+}
+
+get_f_en = function(lem) {
+  if (lem == "hersens"){
+    lem = "hersen"
+  }
+  if (lem %in% levels(var$word)){
+    return(var[var$word == lem,]$f_en)
+  } else {
+    return(NA)
+  }
+}
+
+get_f_oth = function(lem) {
+  if (lem == "hersens"){
+    lem = "hersen"
+  }
+  if (lem %in% levels(var$word)){
+    return(var[var$word == lem,]$f_other)
+  } else {
+    return(NA)
+  }
+}
+
+get_f_lem = function(lem) {
+  if (lem == "hersens"){
+    lem = "hersen"
+  }
+  if (lem %in% levels(var$word)){
+    return(var[var$word == lem,]$f_s + var[var$word == lem,]$f_en + var[var$word == lem,]$f_other + var[var$word == lem,]$f_sg)
+  } else {
+    print("bla")
+    return(NA)
+  }
+}
+
+get_prev_info = function(lem) {
+  if (lem == "hersens"){
+    lem = "hersen"
+  }
+  if (lem %in% levels(var$word)){
+    return(var[var$word == lem,]$informativity_prev)
+  } else {
+    return(NA)
+  }
+}
+
+get_next_info = function(lem) {
+  if (lem == "hersens"){
+    lem = "hersen"
+  }
+  if (lem %in% levels(var$word)){
+    return(var[var$word == lem,]$informativity_next)
+  } else {
+    return(NA)
+  }
+}
+
+s_dur$p_s = sapply(as.character(s_dur$lemma), get_p_s_var)
+s_dur$f_s = sapply(as.character(s_dur$lemma), get_f_s)
+s_dur$f_en = sapply(as.character(s_dur$lemma), get_f_en)
+s_dur$f_other = sapply(as.character(s_dur$lemma), get_f_oth)
+s_dur$f_nons = s_dur$f_en + s_dur$f_other
+s_dur$f_lem = sapply(as.character(s_dur$lemma), get_f_lem)
+s_dur$rel_f_s = s_dur$f_s / s_dur$f_lem
+s_dur$rel_f_en = s_dur$f_en / s_dur$f_lem
+s_dur$rel_f_nons = s_dur$f_nons / s_dur$f_lem
+s_dur$rel_f_other = s_dur$f_other / s_dur$f_lem
+s_dur$informativity_prev = sapply(as.character(s_dur$lemma), get_prev_info)
+s_dur$informativity_next = sapply(as.character(s_dur$lemma), get_next_info)
+s_dur$predictability_prev = -log2((s_dur$prev_bigram_f+1) / (s_dur$prev_wf+1))
+s_dur$predictability_next = -log2((s_dur$bigram_f+1) / (s_dur$next_wf+1))
+s_dur$mutualinfo_prev = -log((s_dur$prev_bigram_f+1)/((s_dur$prev_wf+1)*(s_dur$cow_wf+1)))
+s_dur$mutualinfo_next = -log((s_dur$bigram_f+1)/((s_dur$next_wf+1)*(s_dur$cow_wf+1)))
+s_dur$prop_s = s_dur$f_s / (s_dur$f_s + s_dur$f_en + s_dur$f_other)
+s_dur$log_lem_freq = log(s_dur$f_lem)
+s_dur$prop_pl = (s_dur$f_s + s_dur$f_en + s_dur$f_other) / s_dur$f_lem
+s_dur$freq_pl = s_dur$f_s + s_dur$f_en + s_dur$f_other
+s_dur$f_ev = s_dur$f_lem - s_dur$freq_pl
+s_dur$rel_f_ev = s_dur$f_ev / s_dur$f_lem
+s_dur$log_freq_pl = log(s_dur$freq_pl)
+s_dur$dominance = as.factor(ifelse(s_dur$prop_pl > .5, "plural", "singular"))
+s_dur$entropy = -1*(ifelse(s_dur$f_ev > 0, s_dur$rel_f_ev*log2(s_dur$rel_f_ev), 0)
+                          + ifelse(s_dur$f_s > 0, s_dur$rel_f_s*log2(s_dur$rel_f_s), 0)
+                          + ifelse(s_dur$f_en > 0, s_dur$rel_f_en*log2(s_dur$rel_f_en), 0)
+                          + ifelse(s_dur$f_other > 0, s_dur$rel_f_other*log2(s_dur$rel_f_other), 0)
+                          )
+names(s_dur)[names(s_dur) == "word_ort"] = "word"
+s_dur_full = s_dur
+lower_boundary = 10
+s_dur = s_dur_full[s_dur_full$freq_pl >= lower_boundary,]
+
+s_dur$speech_rate_pron_sc = scale(s_dur$speech_rate_pron)
+s_dur$log_base_dur_sc = scale(s_dur$log_base_dur)
+s_dur$num_syl_pron_sc = scale(s_dur$num_syl_pron)
+s_dur$lex_neb_sc = scale(s_dur$lex_neb)
+s_dur$informativity_next_sc = scale(s_dur$informativity_next)
+s_dur$informativity_prev_sc = scale(s_dur$informativity_prev)
+
+col_pred = s_dur[, c("syntax_f2", "syntax_f3", "syntax_f4", "syntax_f5", "syntax_f6", "syntax_f7", "syntax_f8")]
+col_pred_pca = prcomp(col_pred, center = T, scale. = T)
+# keep pc1 - pc5, threshold of 0.9 cumulative proportion reached
+s_dur$PC1 = col_pred_pca$x[,1]
+s_dur$PC2 = col_pred_pca$x[,2]
+s_dur$PC3 = col_pred_pca$x[,3]
+s_dur$PC4 = col_pred_pca$x[,4]
+s_dur$PC5 = col_pred_pca$x[,5]
+
+s_dur$PC1_sc = scale(s_dur$PC1)
+s_dur$PC2_sc = scale(s_dur$PC2)
+s_dur$PC3_sc = scale(s_dur$PC3)
+s_dur$PC4_sc = scale(s_dur$PC4)
+s_dur$PC5_sc = scale(s_dur$PC5)
+
+s_dur$speaker = as.factor(as.character(s_dur$speaker))
+s_dur$word = as.factor(as.character(s_dur$word))
+
+plot_aodml_effect = function(var_data, var_mod, predictor_var, moderator_var, constant_vars, dependent_var, predictor_lab=NULL, moderator_lab=NULL, dependent_lab=NULL, moderator_values=NULL){
+  if (is.null(predictor_lab)){
+    predictor_lab = predictor_var
+  }
+  if (is.null(moderator_lab)){
+    moderator_lab = moderator_var
+  }
+  if (is.null(dependent_lab)){
+    dependent_lab = dependent_var
+  }
+  if (is.null(moderator_values)){
+    moderator_values = "minmedmax"
+  }
+  var2 = var_data
+  for (v in constant_vars){
+    var2[[v]] = median(var_data[[v]])
+  }
+  if (moderator_values == "minmedmax"){
+    var2[[moderator_var]] = max(var_data[[moderator_var]])
+    mod_max_lab = "Max"
+  } else if (moderator_values == "0-0.5-1"){
+    var2[[moderator_var]] = 1
+    mod_max_lab = "1"
+  }
+  betabin_pred = predict(var_mod, se.fit = T, newdata = var2)
+  s_prop_pred_max = plogis(betabin_pred$fit)
+  s_prop_lo_max = plogis(betabin_pred$fit - qnorm(.975) * betabin_pred$se.fit)
+  s_prop_hi_max = plogis(betabin_pred$fit + qnorm(.975) * betabin_pred$se.fit)
+
+  if (moderator_values == "minmedmax"){
+    var2[[moderator_var]] = median(var_data[[moderator_var]])
+    mod_med_lab = "Median"
+  } else if (moderator_values == "0-0.5-1"){
+    var2[[moderator_var]] = 0.5
+    mod_med_lab = "0.5"
+  }
+
+  betabin_pred = predict(var_mod, se.fit = T, newdata = var2)
+  s_prop_pred_med = plogis(betabin_pred$fit)
+  s_prop_lo_med = plogis(betabin_pred$fit - qnorm(.975) * betabin_pred$se.fit)
+  s_prop_hi_med = plogis(betabin_pred$fit + qnorm(.975) * betabin_pred$se.fit)
+
+  if (moderator_values == "minmedmax"){
+    var2[[moderator_var]] = min(var_data[[moderator_var]])
+    mod_min_lab = "Min"
+  } else if (moderator_values == "0-0.5-1"){
+    var2[[moderator_var]] = 0
+    mod_min_lab = "0"
+  }
+
+  betabin_pred = predict(var_mod, se.fit = T, newdata = var2)
+  s_prop_pred_min = plogis(betabin_pred$fit)
+  s_prop_lo_min = plogis(betabin_pred$fit - qnorm(.975) * betabin_pred$se.fit)
+  s_prop_hi_min = plogis(betabin_pred$fit + qnorm(.975) * betabin_pred$se.fit)
+
+  ggplot(var_data, aes(x = get(predictor_var), y = get(dependent_var))) +
+         geom_point(color = "grey", alpha = .7) +
+         geom_line(aes(y=s_prop_pred_max, linetype = mod_max_lab)) +
+         geom_ribbon( aes(ymin = s_prop_lo_max, ymax = s_prop_hi_max), alpha = .15) +
+         geom_line(aes(y=s_prop_pred_med, linetype = mod_med_lab)) +
+         geom_ribbon( aes(ymin = s_prop_lo_med, ymax = s_prop_hi_med), alpha = .15) +
+         geom_line(aes(y=s_prop_pred_min, linetype = mod_min_lab)) +
+         geom_ribbon( aes(ymin = s_prop_lo_min, ymax = s_prop_hi_min), alpha = .15) +
+         labs(x=predictor_lab, y=dependent_lab, linetype=moderator_lab)
+}
+```
+
+```{r results='asis',echo=FALSE,message=FALSE}
+
+setDownloadURI(c("s_dur", "var"), filename = "varPluralData")
+
+```
+
+## Hypotheses
+
+Previous research (Cohen, 2015) has argued that *Paradigmatic Enhancement* is the result of competition between representations of contextually viable alternatives. According to Cohen, the paradigmatically related alternatives are stored as phonetically detailed exemplar representations. In a contextually non-deterministic context, exemplars of all alternatives are activated, influencing the pronunciation of the produced form. In other words, the phonetic enhancement of paradigmatically supported forms reflects the lack of reduction due to interference from the pronunciation of the alternative forms.
+Given this account, we would only expect to see paradigmatic enhancement if inflected representations actually play an important role during production. For Dutch plural inflections, the relative frequency between plural and singular forms has been argued to reflect the degree to which Dutch plurals are composed (by rule or analogy) or represented. Our own model of variable plural distribution seems to support this claim:
+
+```{r message=FALSE, warning=FALSE}
+load("varPluralData.RData")
+library(knitr)
+library(aods3)
+
+distribution_model = aodml(cbind(f_s, f_nons) ~ p_s*log_freq_pl + p_s*prop_pl, var)
+
+plot_aodml_effect(var, distribution_model, predictor_var = "p_s", moderator_var = "prop_pl", 
+                  constant_vars = c("log_freq_pl"), dependent_var = "prop_s", 
+                  predictor_lab = "Probability(-s)", moderator_lab = "Proportion(PL)", 
+                  dependent_lab = "Proportion(PL)", moderator_values = "0-0.5-1")
+
+```
+
+The plot above shows that, when the singular is more frequent than the plural (at low *Proportion(PL)*), the proportion of the -s variant (*Proportion(-s)*) can be predicted based on the phonological features of the singular (represented by *Probability(-s)*). However, when the plural is more frequent than the singular (at high *Proportion(PL)*), phonological generalization does not work very well as a predictor. Presumeably, this is due to strong representations of the plural forms that resist the phonological pressures.
+
+Given these results our hypothesis is that a higher *Proportion(-s)* should only result in a longer duration of *-s* if *Proportion(PL)* is high.
+
+## Initial Analysis
+
+Below we model *log(Duration(-s))* as a function of significant covariates and the interaction between *Proportion(-s)* and *Proportion(PL)*.
+
+```{r message=FALSE, warning=FALSE}
+library(knitr)
+library(lmerTest)
+duration_model = lmer(log_s_dur ~ speech_rate_pron_sc +
+                        PC1_sc + PC2_sc + PC3_sc +
+                        next_phon_class +
+                        register +
+                        prop_s*prop_pl +
+                        (1 | speaker) + (1 | word),
+                      data = s_dur)
+
+s_dur$dur_resid = resid(duration_model)
+s_dur_trim = s_dur[abs(scale(s_dur$dur_resid)) < 2.5,]
+
+duration_model_trim = lmer(log_s_dur ~ speech_rate_pron_sc +
+                             PC1_sc + PC2_sc + PC3_sc +
+                             next_phon_class +
+                             register +
+                             prop_s*prop_pl +
+                             (1 | speaker) + (1 | word),
+                           data = s_dur_trim)
+
+library(sjPlot)
+plot_model(duration_model_trim, type = "eff", terms = c("prop_s", "prop_pl[0, 0.5, 1]"), colors = "bw", legend.title = "Proportion(PL)", title = "", axis.title = c("Proportion(-s)", "log(duration(-s))"))
+
+```
+
+The plot above shows that we do find *paradigmatic enhancement* but only if *Proportion(PL)* is high. This is in line with our hypothesis. However, the plot also seems to show a *reduction* effect when *Proportion(PL)* is low. 
+
+## Double checking the interaction
+Let's find out whether either the apparent paradigmatic enhancement or the reduction is due to collinear predictors or non-linear relations between the variables. 
+
+First, let's see if either the reduction or the enhancement effect is only apparent by checking whether quadratic predictors improve the model:
+
+```{r message=FALSE, warning=FALSE}
+duration_model_quad = lmer(log_s_dur ~ speech_rate_pron_sc +
+                             PC1_sc + PC2_sc + PC3_sc +
+                             next_phon_class +
+                             register +
+                             poly(prop_s,2)*poly(prop_pl,2) +
+                             (1 | speaker) + (1 | word),
+                           data = s_dur)
+kable(as.matrix(summary(duration_model_quad)$coefficients), caption = "Coefficients")
+```
+
+As you can see none of the possible combinations of quadratic predictors improve the model. Only `poly(prop_s, 2)1:poly(prop_pl, 2)1`, which represents the interaction in which both predictors are linear, is significant.
+
+Now, let's check the associations between all variables in the model:
+
+```{r message=FALSE, warning=FALSE}
+library(rcompanion)
+library(corrplot)
+pred_ass = matrix(c(cramerV(table(s_dur[,c("next_phon_class", "next_phon_class")]), bias.correct = TRUE),
+                   cramerV(table(s_dur[,c("next_phon_class", "register")]), bias.correct = TRUE),
+                   sqrt(summary(lm(speech_rate_pron_sc ~ next_phon_class, data = s_dur))$r.squared),
+                   sqrt(summary(lm(PC1_sc ~ next_phon_class, data = s_dur))$r.squared),
+                   sqrt(summary(lm(PC2_sc ~ next_phon_class, data = s_dur))$r.squared),
+                   sqrt(summary(lm(PC3_sc ~ next_phon_class, data = s_dur))$r.squared),
+                   sqrt(summary(lm(prop_s ~ next_phon_class, data = s_dur))$r.squared),
+                   sqrt(summary(lm(prop_pl ~ next_phon_class, data = s_dur))$r.squared),
+                   sqrt(summary(lm(log_s_dur ~ next_phon_class, data = s_dur))$r.squared),
+                   cramerV(table(s_dur[,c("register", "next_phon_class")]), bias.correct = TRUE),
+                   cramerV(table(s_dur[,c("register", "register")]), bias.correct = TRUE),
+                   sqrt(summary(lm(speech_rate_pron_sc ~ register, data = s_dur))$r.squared),
+                   sqrt(summary(lm(PC1_sc ~ register, data = s_dur))$r.squared),
+                   sqrt(summary(lm(PC2_sc ~ register, data = s_dur))$r.squared),
+                   sqrt(summary(lm(PC3_sc ~ register, data = s_dur))$r.squared),
+                   sqrt(summary(lm(prop_s ~ register, data = s_dur))$r.squared),
+                   sqrt(summary(lm(prop_pl ~ register, data = s_dur))$r.squared),
+                   sqrt(summary(lm(log_s_dur ~ register, data = s_dur))$r.squared),
+                   sqrt(summary(lm(speech_rate_pron_sc ~ next_phon_class, data = s_dur))$r.squared),
+                   sqrt(summary(lm(speech_rate_pron_sc ~ register, data = s_dur))$r.squared),
+                   cor(s_dur$speech_rate_pron_sc, s_dur$speech_rate_pron_sc),
+                   cor(s_dur$speech_rate_pron_sc, s_dur$PC1_sc),
+                   cor(s_dur$speech_rate_pron_sc, s_dur$PC2_sc),
+                   cor(s_dur$speech_rate_pron_sc, s_dur$PC3_sc),
+                   cor(s_dur$speech_rate_pron_sc, s_dur$prop_s),
+                   cor(s_dur$speech_rate_pron_sc, s_dur$prop_pl),
+                   cor(s_dur$speech_rate_pron_sc, s_dur$log_s_dur),
+                   sqrt(summary(lm(PC1_sc ~ next_phon_class, data = s_dur))$r.squared),
+                   sqrt(summary(lm(PC1_sc ~ register, data = s_dur))$r.squared),
+                   cor(s_dur$PC1_sc, s_dur$speech_rate_pron_sc),
+                   cor(s_dur$PC1_sc, s_dur$PC1_sc),
+                   cor(s_dur$PC1_sc, s_dur$PC2_sc),
+                   cor(s_dur$PC1_sc, s_dur$PC3_sc),
+                   cor(s_dur$PC1_sc, s_dur$prop_s),
+                   cor(s_dur$PC1_sc, s_dur$prop_pl),
+                   cor(s_dur$PC1_sc, s_dur$log_s_dur),
+                   sqrt(summary(lm(PC2_sc ~ next_phon_class, data = s_dur))$r.squared),
+                   sqrt(summary(lm(PC2_sc ~ register, data = s_dur))$r.squared),
+                   cor(s_dur$PC2_sc, s_dur$speech_rate_pron_sc),
+                   cor(s_dur$PC2_sc, s_dur$PC1_sc),
+                   cor(s_dur$PC2_sc, s_dur$PC2_sc),
+                   cor(s_dur$PC2_sc, s_dur$PC3_sc),
+                   cor(s_dur$PC2_sc, s_dur$prop_s),
+                   cor(s_dur$PC2_sc, s_dur$prop_pl),
+                   cor(s_dur$PC2_sc, s_dur$log_s_dur),
+                   sqrt(summary(lm(PC3_sc ~ next_phon_class, data = s_dur))$r.squared),
+                   sqrt(summary(lm(PC3_sc ~ register, data = s_dur))$r.squared),
+                   cor(s_dur$PC3_sc, s_dur$speech_rate_pron_sc),
+                   cor(s_dur$PC3_sc, s_dur$PC1_sc),
+                   cor(s_dur$PC3_sc, s_dur$PC2_sc),
+                   cor(s_dur$PC3_sc, s_dur$PC3_sc),
+                   cor(s_dur$PC3_sc, s_dur$prop_s),
+                   cor(s_dur$PC3_sc, s_dur$prop_pl),
+                   cor(s_dur$PC3_sc, s_dur$log_s_dur),
+                   sqrt(summary(lm(prop_s ~ next_phon_class, data = s_dur))$r.squared),
+                   sqrt(summary(lm(prop_s ~ register, data = s_dur))$r.squared),
+                   cor(s_dur$prop_s, s_dur$speech_rate_pron_sc),
+                   cor(s_dur$prop_s, s_dur$PC1_sc),
+                   cor(s_dur$prop_s, s_dur$PC2_sc),
+                   cor(s_dur$prop_s, s_dur$PC3_sc),
+                   cor(s_dur$prop_s, s_dur$prop_s),
+                   cor(s_dur$prop_s, s_dur$prop_pl),
+                   cor(s_dur$prop_s, s_dur$log_s_dur),
+                   sqrt(summary(lm(prop_pl ~ next_phon_class, data = s_dur))$r.squared),
+                   sqrt(summary(lm(prop_pl ~ register, data = s_dur))$r.squared),
+                   cor(s_dur$prop_pl, s_dur$speech_rate_pron_sc),
+                   cor(s_dur$prop_pl, s_dur$PC1_sc),
+                   cor(s_dur$prop_pl, s_dur$PC2_sc),
+                   cor(s_dur$prop_pl, s_dur$PC3_sc),
+                   cor(s_dur$prop_pl, s_dur$prop_s),
+                   cor(s_dur$prop_pl, s_dur$prop_pl),
+                   cor(s_dur$prop_pl, s_dur$log_s_dur),
+                   sqrt(summary(lm(log_s_dur ~ next_phon_class, data = s_dur))$r.squared),
+                   sqrt(summary(lm(log_s_dur ~ register, data = s_dur))$r.squared),
+                   cor(s_dur$log_s_dur, s_dur$speech_rate_pron_sc),
+                   cor(s_dur$log_s_dur, s_dur$PC1_sc),
+                   cor(s_dur$log_s_dur, s_dur$PC2_sc),
+                   cor(s_dur$log_s_dur, s_dur$PC3_sc),
+                   cor(s_dur$log_s_dur, s_dur$prop_s),
+                   cor(s_dur$log_s_dur, s_dur$prop_pl),
+                   cor(s_dur$log_s_dur, s_dur$log_s_dur)
+                   ), 
+                  nrow = 9, ncol = 9, byrow = T, dimnames = list(
+                    c("Next Phonetic Class", "Register", "Speech Rate", "Prosody 1", 
+                      "Prosody 2", "Prosody 3", "Proportion(-s)", "Proportion(PL)", "log(duration(-s))"),
+                    c("Next Phonetic Class", "Register", "Speech Rate", "Prosody 1", 
+                      "Prosody 2", "Prosody 3", "Proportion(-s)", "Proportion(PL)", "log(duration(-s))")))
+corrplot(pred_ass, method = "number")
+```
+
+As you can see, the predictors of interest and the covariates aren't very correlated. However, some of the covariates are rather strongly associated with our dependent variable. In order to get a better idea of which data points support the interaction between *Proportion(-s)* and *Proportion(PL)* let's residualize on the covariates first, and then inspect our interaction effect.
+
+```{r message=FALSE, warning=FALSE}
+duration_model_cov = lmer(log_s_dur ~ speech_rate_pron_sc +
+                            PC1_sc + PC2_sc + PC3_sc +
+                            next_phon_class +
+                            register +
+                            (1 | speaker) + (1 | word),
+                          data = s_dur)
+s_dur$resid_dur = resid(duration_model_cov) 
+
+s_dur$prop_pl_groups = factor(cut(s_dur$prop_pl, breaks = 3), labels = c("small", "average", "large"))
+
+ggplot(s_dur, aes(x = prop_s,y = resid_dur, color = prop_pl_groups)) +
+  geom_point(size = .9, alpha = .3) +
+  geom_smooth(method = "lm", se = F) +
+  theme_bw() +
+  labs(x = "Proportion(-s)", y = "residual(duration(-s))", color = "Proportion(PL)") +
+  ylim(-0.5, 0.5)
+
+```
+
+From the plot above it becomes obvious that the residuals still contain quite a lot of variance that is not explained by our interaction of interest. As a result, it is hard to see whether either the reduction or the enhancement effect is not supported by the data. Using the `interactions` package, we can explore this more formally by finding the Johnson-Neyman interval.
+
+```{r message=FALSE, warning=FALSE}
+library(interactions)
+
+jn = johnson_neyman(duration_model_trim, pred = prop_s, modx = prop_pl, plot = T)
+jn$bounds
+jn$plot + xlab("Proportion(PL)") + ylab("Slope of Proportion(-s)")
+```
+
+This tells us that the effect of *Proportion(-s)* is significant if *Proportion(PL)* is either below 0.31 or above 0.87. In other words, the significant interaction reflects both a reduction and an enhancement effect. So what is the explanation for the reduction effect?
+
+## Secondary Analysis
+
+First of all, we should remember from our distributional study that what *Proportion(-s)* represents depends on the value of *Proportion(PL)*. At high *Proportion(PL)*, it might be a measure of paradigmatic competition, but at low *Proportion(PL)*, it might represent the amount of phonological support from similar paradigms. Could phonological support result in phonetic reduction? Previous research on phonological neighbourhood size suggests that this might be the case (Gahl, Yao, Johnson, 2012). Is there some way to investigate whether the durational reduction in our data is due to phonological support? We can't include *Probability(-s)* and *Proportion(-s)* in the same model, as the two measures are strongly correlated. But we can include *Probability(-s)* with the residuals of *Proportion(-s)* from the distributional model. We can make a number of predictions if we assume that the reduction effect is due to increased phonological support.
+
+* *Probability(-s)* should have a negative effect on *Duration(-s)*
+* *Resid(Proportion(-s))* should interact with *Proportion(PL)*:
+    + At low *Proportion(PL)*, 
+        - Negative *Resid(Proportion(-s))* represents underestimated phonological support $\rightarrow$ shorter duration
+        - Positive *Resid(Proportion(-s))* represents overestimated phonological support $\rightarrow$ longer duration
+    + At high *Proportion(PL)*,
+        - Negative *Resid(Proportion(-s))* represents underestimated representational strength $\rightarrow$ longer duration
+        - Positive *Resid(Proportion(-s))* represents overestimated representational strength $\rightarrow$ shorter duration
+    
+Let's see if these predictions are borne out:
+```{r message=FALSE, warning=FALSE}
+s_dur$pred_prop_s = plogis(predict(distribution_model, newdata = s_dur))
+s_dur$resid_prop_s = s_dur$pred_prop_s - s_dur$prop_s
+
+duration_model2 = lmer(log_s_dur ~ speech_rate_pron_sc +
+                         PC1_sc + PC2_sc + PC3_sc +
+                         next_phon_class +
+                         register +
+                         p_s +
+                         resid_prop_s*prop_pl +
+                         (1 | speaker) + (1 | word),
+                       data = s_dur)
+
+s_dur$dur_resid = resid(duration_model2)
+s_dur_trim = s_dur[abs(scale(s_dur$dur_resid)) < 2.5,]
+
+duration_model2_trim = lmer(log_s_dur ~ speech_rate_pron_sc +
+                              PC1_sc + PC2_sc + PC3_sc +
+                              next_phon_class +
+                              register +
+                              p_s +
+                              resid_prop_s*prop_pl +
+                              (1 | speaker) + (1 | word),
+                           data = s_dur_trim)
+
+kable(as.matrix(summary(duration_model2_trim)$coefficients), caption = "Coefficients")
+```
+
+The negative coefficient for `p_s` shows us that increased *Probability(-s)* does indeed have a reduction effect. Now, let's explore the interaction between *Resid(Proportion(-s))* and *Proportion(PL)*:
+
+```{r message=FALSE, warning=FALSE}
+plot_model(duration_model2_trim, type = "eff", terms = c("resid_prop_s", "prop_pl[0, 0.5, 1]"), colors = "bw", legend.title = "Proportion(PL)", title = "", axis.title = c("Resid(Proportion(-s))", "log(duration(-s))"))
+```
+
+The cross-over interaction we see here is consistent with an account in which the residuals of the distributional model represent different aspects of variable plural production, depending on the value of *Proportion(PL)*. At low *Proportion(PL)*, the residuals probably represent the errors in the phonological predictions (represented by the *Probability(-s)* variable). At high *Proportion(PL)*, the residuals represent the unexplained variance in *Proportion(-s)* due to the variation being stored.
+
+## References
+
+* Cohen, C. (2015). Context and paradigms: Two patterns of probabilistic pronunciation variation in Russian agreement suffixes. *The Mental Lexicon, 10*(3), 313-338.
+* Gahl, S., Yao, Y., & Johnson, K. (2012). Why reduce? Phonological neighborhood density and phonetic reduction in spontaneous speech. *Journal of memory and language, 66*(4), 789-806.

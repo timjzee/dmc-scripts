@@ -42,12 +42,30 @@ print("Loading COW bigram frequencies")
 with open(tens_path + "other/cow2.counts", "r") as f:
     cow_bi = f.read()
 
-with open(tens_path + "other/" + var_file + "2.csv", "w") as g:
+aoa_ratings = {}
+with open(tens_path + "other/AoA_ratings.csv") as f:
+    for counter, line in enumerate(f, 1):
+        if counter > 2:
+            line_l = line.split(",")
+            word = line_l[0]
+            aoa = line_l[10]
+            aoa_ratings[word] = aoa
+
+conc_ratings = {}
+with open(tens_path + "other/Concreteness_ratings.csv") as f:
+    for counter, line in enumerate(f, 1):
+        if counter > 1:
+            line_l = line.split(",")
+            word = line_l[0]
+            conc = line_l[2]
+            conc_ratings[word] = conc
+
+with open(tens_path + "other/" + var_file + ".csv", "w") as g:
     with open(tens_path + "timbl_files/" + var_file + ".csv", "r") as f:
         for n, l in enumerate(f, 1):
             l_list = l[:-1].split(",")
             if n == 1:
-                new_line = ",".join(l_list + ["seg_info", "seg_info_token", "lex_neb", "phon_s_num", "phon_schwa_num", "phon_s_freq", "phon_schwa_freq", "informativity_prev", "informativity_next"]) + "\n"
+                new_line = ",".join(l_list + ["seg_info", "seg_info_token", "lex_neb", "phon_s_num", "phon_schwa_num", "phon_s_freq", "phon_schwa_freq", "informativity_prev", "informativity_next", "age_of_aq", "concreteness"]) + "\n"
             else:
                 word = l_list[0]
                 print(word)
@@ -89,6 +107,15 @@ with open(tens_path + "other/" + var_file + "2.csv", "w") as g:
                             predictability_word = b_freq / next_word_freq
                             informativity_next += predictability_next * math.log(predictability_word, 2)
                     informativity_next = str(-1 * informativity_next)
+                # Get AoA and Concreteness
+                if word not in aoa_ratings:
+                    age_of_aq = "NA"
+                else:
+                    age_of_aq = aoa_ratings[word]
+                if word not in conc_ratings:
+                    concreteness = "NA"
+                else:
+                    concreteness = conc_ratings[word]
                 # Get other variables
                 f_s, f_en, f_oth = l_list[4:7]
                 if word not in neighbours_lex:
@@ -155,6 +182,6 @@ with open(tens_path + "other/" + var_file + "2.csv", "w") as g:
                             seg_inf_tok = "NA"
                         else:
                             seg_inf_tok = str(-1 * math.log(s_match_freq / all_match_freq, 2))
-                print(word, seg_inf, seg_inf_tok, lex_neb, s_match_n, en_match_n, s_match_freq, en_match_freq, informativity_prev, informativity_next)
-                new_line = ",".join(l_list + [seg_inf, seg_inf_tok, lex_neb, str(s_match_n), str(en_match_n), str(s_match_freq), str(en_match_freq), informativity_prev, informativity_next]) + "\n"
+                print(word, seg_inf, seg_inf_tok, lex_neb, s_match_n, en_match_n, s_match_freq, en_match_freq, informativity_prev, informativity_next, age_of_aq, concreteness)
+                new_line = ",".join(l_list + [seg_inf, seg_inf_tok, lex_neb, str(s_match_n), str(en_match_n), str(s_match_freq), str(en_match_freq), informativity_prev, informativity_next, age_of_aq, concreteness]) + "\n"
             g.write(new_line)

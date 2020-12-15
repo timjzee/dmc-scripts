@@ -400,18 +400,20 @@ s_dur_ambig = s_dur[s_dur$pl_ambig == T,]
 s_dur_ambig = s_dur_ambig[ , !(names(s_dur_ambig) %in% c("timbl_s_prob"))]
 s_dur_ambig = na.omit(s_dur_ambig)
 s_dur_ambig$ambig_type = as.factor(as.character(s_dur_ambig$ambig_type))
-
+# 622 tokens; 101 lemmas
 # get correct frequencies/proportions
 
 #var = read.csv(paste(f_path, "p_f_type_O_merge_2syl_k4_ID_invar.csv", sep = ""))
-var = read.csv(paste(other_path, "p_f_type_O_merge_2syl_k4_ID_invar.csv", sep = ""))
+var = read.csv(paste(other_path, "p_f_type_O_merge_2syl_k4_ID_invar3.csv", sep = ""))
 var[var$word == "client",]$f_ev = 115
 var[var$word == "big",]$f_ev = 801
 var[var$word == "orgie",]$f_s = 16
 var[var$word == "grieve",]$f_ev = 5
 var[var$word == "grieve",]$f_s = 40
-var = var[!(var$word %in% c("l", "pop", "portier", "net", "water", "god", "cent", "karaat", "punt", "post", "kajak", "grieve")),]
+var = var[!(var$word %in% c("l", "pop", "portier", "net", "water", "god", "cent", "karaat", "punt", "post", "kajak", "grieve", "client", "big")),]
 var = var[var$f_s != 0,]
+twijfel = c("bank", "bink", "bon", "brief", "clip", "den", "deur", "dier","district","dokter", "ex","feminist", "frank","gevaar","gif", "hostess", "inning", "kanon", "kap", "kik", "kit", "klootzak", "kwadraat", "mark", "match", "mat", "middelmaat", "moer", "mul", "naaste", "norm", "object", "ongeluk", "paard", "partij", "project", "prospect", "rank", "rel", "ring", "sim", "tand", "tong", "uitgang", "vel", "vierkant", "vijand", "vrouw", "wereld", "werk", "worm", "woud")
+#var = var[!(var$word %in% twijfel),]
 
 var$f_nons = var$f_en + var$f_other
 var$log_freq_pl = log(var$f_s + var$f_en + var$f_other)
@@ -517,6 +519,39 @@ get_phon_s_num = function(lem) {
   }
 }
 
+get_prev_info = function(lem) {
+  if (lem == "hersens"){
+    lem = "hersen"
+  }
+  if (lem %in% levels(var$word)){
+    return(var[var$word == lem,]$informativity_prev)
+  } else {
+    return(NA)
+  }
+}
+
+get_next_info = function(lem) {
+  if (lem == "hersens"){
+    lem = "hersen"
+  }
+  if (lem %in% levels(var$word)){
+    return(var[var$word == lem,]$informativity_next)
+  } else {
+    return(NA)
+  }
+}
+
+get_concreteness = function(lem) {
+  if (lem == "hersens"){
+    lem = "hersen"
+  }
+  if (lem %in% levels(var$word)){
+    return(var[var$word == lem,]$concreteness)
+  } else {
+    return(NA)
+  }
+}
+
 s_dur_ambig$p_s = sapply(as.character(s_dur_ambig$lemma), get_p_s_var)
 s_dur_ambig$f_s = sapply(as.character(s_dur_ambig$lemma), get_f_s)
 s_dur_ambig$log_f_s = log(s_dur_ambig$f_s)
@@ -534,6 +569,13 @@ s_dur_ambig$seg_info_token = sapply(as.character(s_dur_ambig$lemma), get_seg_inf
 s_dur_ambig$phon_s_freq = sapply(as.character(s_dur_ambig$lemma), get_phon_s_freq)
 s_dur_ambig$phon_s_num = sapply(as.character(s_dur_ambig$lemma), get_phon_s_num)
 s_dur_ambig$plural_prop_s = log(s_dur_ambig$f_s / s_dur_ambig$phon_s_freq)
+s_dur_ambig$informativity_prev = sapply(as.character(s_dur_ambig$lemma), get_prev_info)
+s_dur_ambig$informativity_next = sapply(as.character(s_dur_ambig$lemma), get_next_info)
+s_dur_ambig$predictability_prev = -log2((s_dur_ambig$prev_bigram_f+1) / (s_dur_ambig$prev_wf+1))
+s_dur_ambig$predictability_next = -log2((s_dur_ambig$bigram_f+1) / (s_dur_ambig$next_wf+1))
+s_dur_ambig$mutualinfo_prev = -log((s_dur_ambig$prev_bigram_f+1)/((s_dur_ambig$prev_wf+1)*(s_dur_ambig$cow_wf+1)))
+s_dur_ambig$mutualinfo_next = -log((s_dur_ambig$bigram_f+1)/((s_dur_ambig$next_wf+1)*(s_dur_ambig$cow_wf+1)))
+s_dur_ambig$concreteness = sapply(as.character(s_dur_ambig$lemma), get_concreteness)
 
 s_dur_ambig$pl_prop = s_dur_ambig$f_s / (s_dur_ambig$f_s + s_dur_ambig$f_en + s_dur_ambig$f_other)
 s_dur_ambig$log_lem_freq = log(s_dur_ambig$f_lem)
@@ -542,6 +584,7 @@ s_dur_ambig$rel_freq_pl = (s_dur_ambig$f_s + s_dur_ambig$f_en + s_dur_ambig$f_ot
 #s_dur_ambig$log_lem_freq = log(s_dur_ambig$lem_freq)
 s_dur_ambig$freq_pl = s_dur_ambig$f_s + s_dur_ambig$f_en + s_dur_ambig$f_other
 s_dur_ambig$f_ev = s_dur_ambig$f_lem - s_dur_ambig$freq_pl
+s_dur_ambig$rel_f_s2 = s_dur_ambig$f_s / (s_dur_ambig$f_s + s_dur_ambig$f_ev)
 s_dur_ambig$rel_f_ev = s_dur_ambig$f_ev / s_dur_ambig$f_lem
 s_dur_ambig$log_f_ev = log(s_dur_ambig$f_ev + 1)
 s_dur_ambig$log_freq_pl = log(s_dur_ambig$f_s + s_dur_ambig$f_en + s_dur_ambig$f_other)
@@ -563,7 +606,7 @@ s_dur_ambig$entropy = -1*(ifelse(s_dur_ambig$f_ev > 0, s_dur_ambig$rel_f_ev*log2
 s_dur_ambig_full = s_dur_ambig
 lower_boundary = 10
 s_dur_ambig = s_dur_ambig_full[s_dur_ambig_full$freq_pl >= lower_boundary,]
-
+# 600 tokens; 93 lemmas
 s_dur_ambig$speech_rate_pron_sc = scale(s_dur_ambig$speech_rate_pron)
 s_dur_ambig$base_dur_sc = scale(s_dur_ambig$base_dur)
 s_dur_ambig$num_syl_pron_sc = scale(s_dur_ambig$num_syl_pron)
@@ -572,10 +615,15 @@ s_dur_ambig$log_bigf_sc = scale(s_dur_ambig$log_bigf)
 s_dur_ambig$log_bigf_prev_sc = scale(s_dur_ambig$log_bigf_prev)
 s_dur_ambig$log_f_s_sc = scale(s_dur_ambig$log_f_s)
 s_dur_ambig$log_f_nons_sc = scale(s_dur_ambig$log_f_nons)
+s_dur_ambig$informativity_next_sc = scale(s_dur_ambig$informativity_next)
+s_dur_ambig$informativity_prev_sc = scale(s_dur_ambig$informativity_prev)
 s_dur_ambig$p_dev = s_dur_ambig$p_s - s_dur_ambig$pl_prop
 
 library(aods3)
 library(VGAM)
+#s_dur_ambig$p_pred2 = ifelse(is.na(s_dur_ambig$concreteness),NA,logitlink(predict(aodml(cbind(f_s, f_nons) ~ p_s*log_freq_pl + p_s*rel_freq_pl + informativity_prev, var), newdata = s_dur_ambig), inverse = T))
+s_dur_ambig$p_pred = logitlink(predict(aodml(cbind(f_s, f_nons) ~ p_s, var), newdata = s_dur_ambig), inverse = T)
+
 s_dur_ambig$p_pred = logitlink(predict(aodml(cbind(f_s, f_nons) ~ p_s*log_freq_pl + p_s*rel_freq_pl, var), newdata = s_dur_ambig), inverse = T)
 s_dur_ambig$p_resid = s_dur_ambig$p_pred - s_dur_ambig$pl_prop
 s_dur_ambig$p_resid2 = predict(aodml(cbind(f_s, f_nons) ~ p_s*log_freq_pl + p_s*rel_freq_pl, var), newdata = s_dur_ambig) - logitlink(s_dur_ambig$pl_prop)
@@ -934,20 +982,13 @@ pm + labs(y = "log(seconds)", x="Proportion(PL)") # + geom_point(data = s_dur_tr
 
 # only significant predictors:
 control2b = lmer(log_s_dur ~ speech_rate_pron_sc +
-#                 + log_base_dur_sc
-#                 + lex_neb_sc + stressed
                  + PC1_sc + PC2_sc + PC3_sc
                  + next_phon_class 
                  + register
-#                 + entropy
-#                 + log_f_s + log_f_nons + log_f_ev
-#                 + rel_f_s + pl_prop
-#                 + rel_freq_pl*p_dev
                  + rel_freq_pl*pl_prop
                  + (1 | speaker) 
                  + (1 | word_ort),
                  control = lmerControl(optCtrl = list(maxfun = 1e6, ftol_abs = 1e-8)),
-#                 REML = F,
                  data=s_dur_ambig)
 
 s_dur_ambig$dur_resid2 = resid(control2b)
@@ -975,17 +1016,17 @@ plot(effect("rel_freq_pl:pl_prop", control2b_trim, x.var = "rel_freq_pl")
      key.args = list(space="right", columns=1, title = "Proportion -s / plural", cex.title = 0.9)
 )
 
-ggplot(data = s_dur_trim2) + aes(x = pl_prop, y = log_s_dur) + ylim(-3.2, -2.2) + xlim(0, 1) + labs(y = "log(seconds)", x="Proportion(PL)") + ggtitle("Variable Plurals") # + geom_line(aes(linetype = "0"), alpha=0) + geom_line(aes(linetype = "0.5"), alpha=0) + geom_line(aes(linetype = "1"), alpha=0) + labs(linetype='Proportion(-s)')
+ggplot(data = s_dur_trim2) + aes(x = pl_prop, y = log_s_dur) + ylim(-3.2, -2.2) + xlim(0, 1) + labs(y = "log(Duration(-s))", x="Proportion(-s)") + ggtitle("") # + geom_line(aes(linetype = "0"), alpha=0) + geom_line(aes(linetype = "0.5"), alpha=0) + geom_line(aes(linetype = "1"), alpha=0) + labs(linetype='Proportion(-s)')
 
-pm = plot_model(control2b_trim, type = "pred", terms = c("rel_freq_pl", "pl_prop [0.9985915]"), colors = "bw", legend.title = "Proportion(-s)", title = "", show.legend = F)
-pm + ylim(-3.2, -2.2) + xlim(0, 1) + labs(y = "log(seconds)", x="Proportion(PL)") + ggtitle("Variable Plurals") # + geom_point(data = s_dur_trim2, mapping = aes(x = pl_prop, y = log_s_dur), inherit.aes = FALSE)
+pm = plot_model(control2b_trim, type = "pred", terms = c("pl_prop", "rel_freq_pl [1]"), colors = "bw", legend.title = "Proportion(PL)", title = "", show.legend = F)
+pm + ylim(-3.2, -2.2) + xlim(0, 1) + labs(y = "log(Duration(-s))", x="Proportion(-s)") #+ ggtitle("Variable Plurals") # + geom_point(data = s_dur_trim2, mapping = aes(x = pl_prop, y = log_s_dur), inherit.aes = FALSE)
 
-pm = plot_model(control2b_trim, type = "pred", terms = c("rel_freq_pl", "pl_prop [0.00227199, 0.9985915]"), colors = "bw", legend.title = "Proportion(-s)", title = "", show.legend = F)
-pm + ylim(-3.2, -2.2) + xlim(0, 1) + labs(y = "log(seconds)", x="Proportion(PL)") + ggtitle("Variable Plurals") + scale_linetype_manual(values=c("dashed", "solid")) # + geom_point(data = s_dur_trim2, mapping = aes(x = pl_prop, y = log_s_dur), inherit.aes = FALSE)
+pm = plot_model(control2b_trim, type = "pred", terms = c("pl_prop", "rel_freq_pl [1, 0]"), colors = "bw", legend.title = "Proportion(PL)", title = "", show.legend = F)
+pm + ylim(-3.2, -2.2) + xlim(0, 1) + labs(y = "log(Duration(-s))", x="Proportion(-s)") + scale_linetype_manual(values=c("dashed", "solid")) #+ ggtitle("Variable Plurals") + scale_linetype_manual(values=c("dashed", "solid")) # + geom_point(data = s_dur_trim2, mapping = aes(x = pl_prop, y = log_s_dur), inherit.aes = FALSE)
 
 
-pm = plot_model(control2b_trim, type = "pred", terms = c("rel_freq_pl", "pl_prop [0.9985915, 0.00227199]"), colors = "bw", legend.title = "Proportion(-s)", title = "")
-pm2 = pm + ylim(-3.2, -2.2) + xlim(0, 1) + labs(y = "log(seconds)", x="Proportion(PL)") + scale_linetype_manual(values=c("dashed", "solid"), labels=c("Min", "Max")) + ggtitle("B") # + geom_point(data = s_dur_trim2, mapping = aes(x = pl_prop, y = log_s_dur), inherit.aes = FALSE)
+pm = plot_model(control2b_trim, type = "pred", terms = c("pl_prop", "rel_freq_pl [1, 0]"), colors = "bw", legend.title = "Proportion(PL)", title = "")
+pm + ylim(-3.2, -2.2) + xlim(0, 1) + labs(y = "log(Duration(-s))", x="Proportion(-s)") + scale_linetype_manual(values=c("dashed", "solid"), labels=c("0", "1")) #+ ggtitle("B") # + geom_point(data = s_dur_trim2, mapping = aes(x = pl_prop, y = log_s_dur), inherit.aes = FALSE)
 
 qqplot.data <- function (vec) # argument: vector of numbers
 {
@@ -1174,7 +1215,7 @@ ssl = sim_slopes(control2b_trim, pred = rel_freq_pl, modx = pl_prop
 
 ssl$slopes
 
-probe_interaction(control2b_trim, pred = rel_freq_pl, modx = pl_prop, cond.int = TRUE,
+probe_interaction(control2b_trim, pred = pl_prop, modx = rel_freq_pl, cond.int = TRUE,
                   interval = TRUE,  jnplot = TRUE)
 
 
