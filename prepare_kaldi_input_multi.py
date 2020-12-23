@@ -7,8 +7,8 @@ import os
 home_dir = "/Volumes/timzee/" if sys.platform == "darwin" else "/home/timzee/"
 tens_dir = "/Volumes/tensusers/timzee/" if sys.platform == "darwin" else "/vol/tensusers/timzee/"
 corpus = "cgn"
-component = "k"
-index_file = "cgn_index_k_final.txt"
+component = "b"
+index_file = "cgn_index_b_final.txt"
 lex_exp_n = 1
 enable_n_weights = "True"
 
@@ -24,7 +24,7 @@ with codecs.open(home_dir + "clst-asr-fa/alphemes.txt", "w", "utf-8") as f:
 with codecs.open(tens_dir + corpus + "/" + index_file, "r", "utf-8") as f:
     cgn_index = f.readlines()
 
-running_cores = 210
+running_cores = 0
 
 num_cores = 60
 num_index_lines = len(cgn_index)

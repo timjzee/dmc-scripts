@@ -73,14 +73,14 @@ s_dur_a$nn_end_score = as.factor(s_dur_a$nn_end_score)
 s_dur_a = s_dur_a[s_dur_a$overlap == FALSE,]
 s_dur_a = s_dur_a[ , !(names(s_dur_a) %in% c("overlap"))]
 s_dur_a$language = as.factor("nl")
-#s_dur_a_vl = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-a_vl.csv", sep = ""))
-#s_dur_a_vl$corpus = as.factor("cgn-a")
-#s_dur_a_vl$register = as.factor("conversation")
-#s_dur_a_vl$mean_hnr = as.factor(s_dur_a_vl$mean_hnr)
-#s_dur_a_vl$nn_end_score = as.factor(s_dur_a_vl$nn_end_score)
-#s_dur_a_vl = s_dur_a_vl[s_dur_a_vl$overlap == FALSE,]
-#s_dur_a_vl = s_dur_a_vl[ , !(names(s_dur_a_vl) %in% c("overlap"))]
-#s_dur_a_vl$language = as.factor("vl")
+# s_dur_a_vl = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-a_vl.csv", sep = ""))
+# s_dur_a_vl$corpus = as.factor("cgn-a")
+# s_dur_a_vl$register = as.factor("conversation")
+# s_dur_a_vl$mean_hnr = as.factor(s_dur_a_vl$mean_hnr)
+# s_dur_a_vl$nn_end_score = as.factor(s_dur_a_vl$nn_end_score)
+# s_dur_a_vl = s_dur_a_vl[s_dur_a_vl$overlap == FALSE,]
+# s_dur_a_vl = s_dur_a_vl[ , !(names(s_dur_a_vl) %in% c("overlap"))]
+# s_dur_a_vl$language = as.factor("vl")
 #s_dur_c = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-c2.csv", sep = ""))
 s_dur_c = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-c_timbl2.csv", sep = ""))
 s_dur_c$corpus = as.factor("cgn-c")
@@ -91,14 +91,14 @@ s_dur_c$nn_end_score = as.factor(s_dur_c$nn_end_score)
 s_dur_c = s_dur_c[s_dur_c$overlap == FALSE,]
 s_dur_c = s_dur_c[ , !(names(s_dur_c) %in% c("overlap"))]
 s_dur_c$language = as.factor("nl")
-#s_dur_c_vl = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-c_vl.csv", sep = ""))
-#s_dur_c_vl$corpus = as.factor("cgn-c")
-#s_dur_c_vl$register = as.factor("conversation")
-#s_dur_c_vl$mean_hnr = as.factor(s_dur_c_vl$mean_hnr)
-#s_dur_c_vl$nn_end_score = as.factor(s_dur_c_vl$nn_end_score)
-#s_dur_c_vl = s_dur_c_vl[s_dur_c_vl$overlap == FALSE,]
-#s_dur_c_vl = s_dur_c_vl[ , !(names(s_dur_c_vl) %in% c("overlap"))]
-#s_dur_c_vl$language = as.factor("vl")
+# s_dur_c_vl = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-c_vl.csv", sep = ""))
+# s_dur_c_vl$corpus = as.factor("cgn-c")
+# s_dur_c_vl$register = as.factor("conversation")
+# s_dur_c_vl$mean_hnr = as.factor(s_dur_c_vl$mean_hnr)
+# s_dur_c_vl$nn_end_score = as.factor(s_dur_c_vl$nn_end_score)
+# s_dur_c_vl = s_dur_c_vl[s_dur_c_vl$overlap == FALSE,]
+# s_dur_c_vl = s_dur_c_vl[ , !(names(s_dur_c_vl) %in% c("overlap"))]
+# s_dur_c_vl$language = as.factor("vl")
 #s_dur_d = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-d2.csv", sep = ""))
 s_dur_d = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-d_timbl2.csv", sep = ""))
 s_dur_d$corpus = as.factor("cgn-d")
@@ -108,14 +108,14 @@ s_dur_d$nn_end_score = as.factor(s_dur_d$nn_end_score)
 s_dur_d = s_dur_d[s_dur_d$overlap == FALSE,]
 s_dur_d = s_dur_d[ , !(names(s_dur_d) %in% c("overlap"))]
 s_dur_d$language = as.factor("nl")
-#s_dur_d_vl = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-d_vl.csv", sep = ""))
-#s_dur_d_vl$corpus = as.factor("cgn-d")
-#s_dur_d_vl$register = as.factor("conversation")
-#s_dur_d_vl$mean_hnr = as.factor(s_dur_d_vl$mean_hnr)
-#s_dur_d_vl$nn_end_score = as.factor(s_dur_d_vl$nn_end_score)
-#s_dur_d_vl = s_dur_d_vl[s_dur_d_vl$overlap == FALSE,]
-#s_dur_d_vl = s_dur_d_vl[ , !(names(s_dur_d_vl) %in% c("overlap"))]
-#s_dur_d_vl$language = as.factor("vl")
+# s_dur_d_vl = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-d_vl.csv", sep = ""))
+# s_dur_d_vl$corpus = as.factor("cgn-d")
+# s_dur_d_vl$register = as.factor("conversation")
+# s_dur_d_vl$mean_hnr = as.factor(s_dur_d_vl$mean_hnr)
+# s_dur_d_vl$nn_end_score = as.factor(s_dur_d_vl$nn_end_score)
+# s_dur_d_vl = s_dur_d_vl[s_dur_d_vl$overlap == FALSE,]
+# s_dur_d_vl = s_dur_d_vl[ , !(names(s_dur_d_vl) %in% c("overlap"))]
+# s_dur_d_vl$language = as.factor("vl")
 #s_dur_ifadv = read.csv(paste(ifadv_path, "synvoirelPL_s_comb_ifadv.csv", sep = ""))
 s_dur_ifadv = read.csv(paste(ifadv_path, "synvoirelPL_s_comb_ifadv_timbl2.csv", sep = ""))
 s_dur_ifadv$corpus = as.factor("ifadv")
@@ -139,13 +139,13 @@ s_dur_k$register = as.factor("news")
 s_dur_k$mean_hnr = as.factor(s_dur_k$mean_hnr)
 s_dur_k$nn_end_score = as.factor(s_dur_k$nn_end_score)
 s_dur_k$language = as.factor("nl")
-#s_dur_k_vl = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-k_vl.csv", sep = ""))
-#s_dur_k_vl$corpus = as.factor("cgn-k")
-#s_dur_k_vl$register = as.factor("news")
-#s_dur_k_vl$mean_hnr = as.factor(s_dur_k_vl$mean_hnr)
-#s_dur_k_vl$nn_end_score = as.factor(s_dur_k_vl$nn_end_score)
-#s_dur_k_vl$language = as.factor("vl")
-#s_dur_k_vl = s_dur_k_vl[ , !(names(s_dur_k_vl) %in% c("overlap"))]
+# s_dur_k_vl = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-k_vl.csv", sep = ""))
+# s_dur_k_vl$corpus = as.factor("cgn-k")
+# s_dur_k_vl$register = as.factor("news")
+# s_dur_k_vl$mean_hnr = as.factor(s_dur_k_vl$mean_hnr)
+# s_dur_k_vl$nn_end_score = as.factor(s_dur_k_vl$nn_end_score)
+# s_dur_k_vl$language = as.factor("vl")
+# s_dur_k_vl = s_dur_k_vl[ , !(names(s_dur_k_vl) %in% c("overlap"))]
 #s_dur_o = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-o.csv", sep = ""))
 s_dur_o = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-o_timbl2.csv", sep = ""))
 s_dur_o$corpus = as.factor("cgn-o")
@@ -153,13 +153,13 @@ s_dur_o$register = as.factor("stories")
 s_dur_o$mean_hnr = as.factor(s_dur_o$mean_hnr)
 s_dur_o$nn_end_score = as.factor(s_dur_o$nn_end_score)
 s_dur_o$language = as.factor("nl")
-#s_dur_o_vl = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-o_vl.csv", sep = ""))
-#s_dur_o_vl$corpus = as.factor("cgn-o")
-#s_dur_o_vl$register = as.factor("stories")
-#s_dur_o_vl$mean_hnr = as.factor(s_dur_o_vl$mean_hnr)
-#s_dur_o_vl$nn_end_score = as.factor(s_dur_o_vl$nn_end_score)
-#s_dur_o_vl$language = as.factor("vl")
-#s_dur_o_vl = s_dur_o_vl[ , !(names(s_dur_o_vl) %in% c("overlap"))]
+# s_dur_o_vl = read.csv(paste(cgn_path, "synvoirelPL_s_comb_comp-o_vl.csv", sep = ""))
+# s_dur_o_vl$corpus = as.factor("cgn-o")
+# s_dur_o_vl$register = as.factor("stories")
+# s_dur_o_vl$mean_hnr = as.factor(s_dur_o_vl$mean_hnr)
+# s_dur_o_vl$nn_end_score = as.factor(s_dur_o_vl$nn_end_score)
+# s_dur_o_vl$language = as.factor("vl")
+# s_dur_o_vl = s_dur_o_vl[ , !(names(s_dur_o_vl) %in% c("overlap"))]
 
 s_dur = rbind(s_dur_a, s_dur_c, s_dur_d, s_dur_ifadv, s_dur_ecsd, s_dur_o, s_dur_k)
 #s_dur = rbind(s_dur_a, s_dur_a_vl, s_dur_c, s_dur_c_vl, s_dur_d, s_dur_d_vl, s_dur_ifadv, s_dur_ecsd, s_dur_k, s_dur_k_vl, s_dur_o, s_dur_o_vl)
@@ -609,6 +609,7 @@ s_dur_ambig = s_dur_ambig_full[s_dur_ambig_full$freq_pl >= lower_boundary,]
 # 600 tokens; 93 lemmas
 s_dur_ambig$speech_rate_pron_sc = scale(s_dur_ambig$speech_rate_pron)
 s_dur_ambig$base_dur_sc = scale(s_dur_ambig$base_dur)
+s_dur_ambig$log_base_dur_sc = scale(s_dur_ambig$log_base_dur)
 s_dur_ambig$num_syl_pron_sc = scale(s_dur_ambig$num_syl_pron)
 s_dur_ambig$lex_neb_sc = scale(s_dur_ambig$lex_neb)
 s_dur_ambig$log_bigf_sc = scale(s_dur_ambig$log_bigf)
