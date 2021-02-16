@@ -35,6 +35,19 @@ smooth = function(yy, ww){
   return(yy_smooth)
 }
 
+diff1 = function(yy){
+  xx = 1:length(yy)
+  yy_d = c()
+  for (xi in xx){
+    if (xi > 1 && xi < length(xx)) {
+      yy_d = c(yy_d, yy[xi+1] - yy[xi-1])
+    } else {
+      yy_d = c(yy_d, 0)
+    }
+  }
+  return(yy_d)
+}
+
 diff2 = function(yy){
   xx = 1:length(yy)
   yy_dd = c()
@@ -82,6 +95,9 @@ for (xi in x){
     Ydd_gs = c(Ydd_gs, 0)
   }
 }
+
+plot(1:length(Ydd_gs), Ydd_gs, type = "b")
+plot(1:length(Y), smooth(smooth(diff2(Y), 3), 3), type = "b")
 
 Yddd = c()
 for (xi in x){

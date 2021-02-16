@@ -1,3 +1,4 @@
+Text writing preferences: "UTF-8"
 prop$ = Report system properties
 os$ = extractWord$(prop$, newline$)
 
@@ -20,10 +21,11 @@ else
     home_path$ = "/home/timzee/"
 endif
 
-ali_folder$ = "v2_comp-o"
-oov_conv$ = "oov_conv_table_comp-o.txt"
-index$ = "cgn_index_o_final.txt"
-gs_folder$ = "gs24"
+ali_folder$ = "v3_comp-k"
+oov_conv$ = "oov_conv_table_comp-k.txt"
+#index$ = "grid_search_index_sorted.txt"
+index$ = "cgn_index_k_final.txt"
+gs_folder$ = "v2_gs40"
 
 procedure processWords
     # adjust boundaries
@@ -243,13 +245,13 @@ for line from 1 to n_inputlines
         if line != 1
             selectObject: "TextGrid " + wav_name$
             if corpus$ == "cgn"
-                Save as text file: tens_path$ + "cgn/kaldi_annot/v2/comp-" + pre_name$ + wav_name$ + ".awd"
+                Save as text file: tens_path$ + "cgn/kaldi_annot/v3/comp-" + pre_name$ + wav_name$ + ".awd"
             elif corpus$ == "grid_search"
                 Save as text file: tens_path$ + "grid_search/kaldi_annot/" + gs_folder$ + "/" + wav_name$ + ".awd"
             elif corpus$ == "IFADVcorpus"
-                Save as text file: tens_path$ + corpus$ + "/kaldi_annot/v2/" + pre_name$ + wav_name$ + ".awd"
+                Save as text file: tens_path$ + corpus$ + "/kaldi_annot/v3/" + pre_name$ + wav_name$ + ".awd"
             else
-                Save as text file: tens_path$ + corpus$ + "/kaldi_annot/v2/" + pair_folder$ + "/" + wav_name$ + ".awd"
+                Save as text file: tens_path$ + corpus$ + "/kaldi_annot/v3/" + pair_folder$ + "/" + wav_name$ + ".awd"
             endif
             Remove
             removeObject: "TextGrid " + wav_name$ + "_ort"
@@ -327,11 +329,11 @@ endfor
 
 selectObject: "TextGrid " + wav_name$
 if corpus$ == "cgn"
-    Save as text file: tens_path$ + "cgn/kaldi_annot/v2/comp-" + pre_name$ + wav_name$ + ".awd"
+    Save as text file: tens_path$ + "cgn/kaldi_annot/v3/comp-" + pre_name$ + wav_name$ + ".awd"
 elif corpus$ == "grid_search"
     Save as text file: tens_path$ + "grid_search/kaldi_annot/" + gs_folder$ + "/" + wav_name$ + ".awd"
 elif corpus$ == "IFADVcorpus"
-    Save as text file: tens_path$ + corpus$ + "/kaldi_annot/v2/" + pre_name$ + wav_name$ + ".awd"
+    Save as text file: tens_path$ + corpus$ + "/kaldi_annot/v3/" + pre_name$ + wav_name$ + ".awd"
 else
-    Save as text file: tens_path$ + corpus$ + "/kaldi_annot/v2/" + pair_folder$ + "/" + wav_name$ + ".awd"
+    Save as text file: tens_path$ + corpus$ + "/kaldi_annot/v3/" + pair_folder$ + "/" + wav_name$ + ".awd"
 endif

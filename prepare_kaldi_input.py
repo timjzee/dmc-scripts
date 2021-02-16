@@ -129,7 +129,8 @@ for counter, l in enumerate(cgn_index[from_l - 1:to_l], 1):
                     sw_l.append(sw_clean.lower())
                     si_l.append(str(sw_i))
                 else:     # check for '
-                    sw_match1 = re.match(r"[qwrtpsdfghjklzxcvbnm]?'[qwrtpsdfghjklzxcvbnm]", sw_clean)
+                    sw = sw[:-1] if sw[0] == "'" and sw[-1] == "'" else sw      # turns 'n' into 'n
+                    sw_match1 = re.match(r"[qwrtpsdfghjklzxcvbnm]?'[qwrtpsdfgjklzxcvbnm]", sw_clean) # removed h so l'heure and d'heure are correctly segmented
                     sw_match2 = re.search(r"(?<=[\w])'[a-z]+\*?[a-z]?", sw)
                     if sw_match1:   # handle 'tzelfde, d'rin
                         sw1 = sw_match1.group()
@@ -273,6 +274,9 @@ for counter, l in enumerate(cgn_index[from_l - 1:to_l], 1):
                                                 if (stripped not in kaldi_lex) and (stripped not in oov_lex):
                                                     oov_entry, oov_tran = g2p(stripped)
                                                     oov_lex[oov_entry] = oov_tran
+                                                else:
+                                                    if stripped in kaldi_lex:
+                                                        kaldi_lex_used[stripped] = kaldi_lex[stripped]
                                                 new_words.append(mark_final_n(stripped))
                                                 sw_l.append(stripped)
                                                 si_l.append(str(sw_i))
@@ -331,10 +335,14 @@ f.close()
 
 with codecs.open(home_dir + "clst-asr-fa/oov_lex{}.txt".format(core_num), "w", "utf-8") as f:
     for key in oov_lex:
+        if key in nnn_words:
+            f.write(key + "\t" + oov_lex[key][:-2] + "\n")
         f.write(key + "\t" + oov_lex[key] + "\n")
 
 with codecs.open(home_dir + "clst-asr-fa/kaldi_lex_used{}.txt".format(core_num), "w", "utf-8") as f:
     for key in kaldi_lex_used:
+        if key in nnn_words:
+            f.write(key + "\t" + kaldi_lex_used[key][:-2] + "\n")
         f.write(key + "\t" + kaldi_lex_used[key] + "\n")
 
 with codecs.open(home_dir + "clst-asr-fa/nnn_words{}.txt".format(core_num), "w", "utf-8") as f:

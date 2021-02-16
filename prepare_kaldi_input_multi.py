@@ -7,8 +7,8 @@ import os
 home_dir = "/Volumes/timzee/" if sys.platform == "darwin" else "/home/timzee/"
 tens_dir = "/Volumes/tensusers/timzee/" if sys.platform == "darwin" else "/vol/tensusers/timzee/"
 corpus = "cgn"
-component = "b"
-index_file = "cgn_index_b_final.txt"
+component = "l"
+index_file = "cgn_index_l_final.txt"
 lex_exp_n = 1
 enable_n_weights = "True"
 
@@ -26,7 +26,7 @@ with codecs.open(tens_dir + corpus + "/" + index_file, "r", "utf-8") as f:
 
 running_cores = 0
 
-num_cores = 60
+num_cores = 63
 num_index_lines = len(cgn_index)
 core_dict = {}
 for i in range(num_cores):
@@ -109,6 +109,9 @@ if enable_n_weights:
         with codecs.open(home_dir + "clst-asr-fa/" + exp_name, "r", "utf-8") as f:
             for line in f:
                 entry, pron = line[:-1].split("\t")
+                # remove empty pronunciations
+                if pron == "":
+                    continue
                 if entry in nnn_words:
                     if pron[-1] == "n":
                         if entry[-3:] == "nen":     # variants like 'k E n' (kennen) should not get penalty

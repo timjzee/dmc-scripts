@@ -577,7 +577,7 @@ s_dur$resid_dur = resid(duration_model_cov)
 
 s_dur$prop_pl_groups = factor(cut(s_dur$prop_pl, breaks = 3), labels = c("small", "average", "large"))
 
-ggplot(s_dur, aes(x = prop_s,y = resid_dur, color = prop_pl_groups)) +
+ggplot(s_dur, aes(x = prop_s, y = resid_dur, color = prop_pl_groups)) +
   geom_point(size = .9, alpha = .3) +
   geom_smooth(method = "lm", se = F) +
   theme_bw() +

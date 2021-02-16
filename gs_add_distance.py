@@ -5,7 +5,7 @@ import re
 
 tz_path = "/Volumes/timzee/" if sys.platform == "darwin" else "/home/timzee/"
 tens_path = "/Volumes/tensusers/timzee/" if sys.platform == "darwin" else "/vol/tensusers/timzee/"
-gs_num = "gs21"
+gs_num = "v2_gs40"
 
 kaldi2ipa = {}
 cgn2ipa = {}
@@ -45,17 +45,43 @@ with codecs.open(tens_path + "grid_search/" + gs_num + "_aligned_dist.csv", "w",
                             break
                 else:
                     ends_in_en = "FALSE"
-                if not re.search(r"(SIL|SPN|\[\]|NA)", cgn_tran) and not re.search(r"(SIL|SPN|\[\]|NA)", kal_tran):
+#                if not re.search(r"(SIL|SPN|\[\]|NA)", cgn_tran) and not re.search(r"(SIL|SPN|\[\]|NA)", kal_tran):
+                if not re.fullmatch(r"(SIL|\[SIL\]|\[SPN\]|\[\]|NA)", cgn_tran) and not re.fullmatch(r"(SIL|\[SIL\]|\[SPN\]|\[\]|NA)", kal_tran):
                     cgn_ipa = ""
                     for p in cgn_tran.split(" "):
-                        cgn_ipa += cgn2ipa[p]
+                        if p != "[]":
+                            cgn_ipa += cgn2ipa[p]
                     kal_ipa = ""
                     for p in kal_tran.split(" "):
-                        kal_ipa += kaldi2ipa[p]
+                        if p != "[]":
+                            kal_ipa += kaldi2ipa[p]
                     tran_dist = str(dst.weighted_feature_edit_distance(cgn_ipa, kal_ipa))
                 else:
-                    cgn_ipa = "NA"
-                    kal_ipa = "NA"
-                    tran_dist = "NA"
+                    if cgn_tran in ["SIL", "NA", "[SIL]"] and kal_tran in ["SIL", "NA", "[SIL]"]:
+                        tran_dist = "0.0"
+                        cgn_ipa = "NA"
+                        kal_ipa = "NA"
+                    elif cgn_tran in ["[SPN]", "[]"] and kal_tran in ["[SPN]", "[]"]:
+                        tran_dist = "0.0"
+                        cgn_ipa = "NA"
+                        kal_ipa = "NA"
+                    elif cgn_tran in ["SIL", "[SIL]", "NA", "[SPN]", "[]"] and kal_tran not in ["SIL", "[SIL]", "NA", "[SPN]", "[]"]:
+                        cgn_ipa = "NA"
+                        kal_ipa = ""
+                        for p in kal_tran.split(" "):
+                            if p != "[]":
+                                kal_ipa += kaldi2ipa[p]
+                        tran_dist = str(len(kal_tran.split(" ")) * 7)
+                    elif cgn_tran not in ["SIL", "[SIL]", "NA", "[SPN]", "[]"] and kal_tran in ["SIL", "[SIL]", "NA", "[SPN]", "[]"]:
+                        kal_ipa = "NA"
+                        cgn_ipa = ""
+                        for p in cgn_tran.split(" "):
+                            if p != "[]":
+                                cgn_ipa += cgn2ipa[p]
+                        tran_dist = str(len(cgn_tran.split(" ")) * 7)
+                    else:
+                        cgn_ipa = "NA"
+                        kal_ipa = "NA"
+                        tran_dist = "NA"
                 new_line_l = line_l + [cgn_ipa, kal_ipa, tran_dist, ends_in_en]
                 f.write(",".join(new_line_l) + "\n")

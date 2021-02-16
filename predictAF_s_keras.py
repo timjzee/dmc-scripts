@@ -46,33 +46,22 @@ classifiers = {
 
 frag_fol = "af_eval_s"
 file_paths = glob.glob(tens_path + "pred_fragments/" + frag_fol + "/*.wav")
-# file_paths = [
-#     tens_path + "pred_fragments/af_eval/fn001107_1_149.402_149.832.wav",
-#     tens_path + "pred_fragments/af_eval/fn001107_1_185.039_185.659.wav",
-#     tens_path + "pred_fragments/af_eval/fn001107_1_35.097_35.547.wav",
-#     tens_path + "pred_fragments/af_eval/fn001338_1_236.670_237.140.wav",
-#     tens_path + "pred_fragments/af_eval/fn000254_2_412.278_412.848.wav",
-#     tens_path + "pred_fragments/af_eval/fn000254_2_983.158_983.618.wav",
-#     tens_path + "pred_fragments/af_eval/fn000261_2_417.028_417.518.wav",
-#     tens_path + "pred_fragments/af_eval/fn000265_2_233.057_233.487.wav",
-#     tens_path + "pred_fragments/af_eval/fn000265_2_59.917_60.377.wav"
-# ]
 
-file_paths = [
-    tens_path + "pred_fragments/af_eval_s/fn000784_2_588.886_589.366.wav",
-    tens_path + "pred_fragments/af_eval_s/ppX5_X6_part_09_S_2_139.707_140.137.wav",
-    tens_path + "pred_fragments/af_eval_s/fn000404_1_207.644_208.184.wav",
-    tens_path + "pred_fragments/af_eval_s/fn006968_1_49.479_49.949.wav",
-    tens_path + "pred_fragments/af_eval_s/fn000724_1_430.181_430.641.wav",
-    tens_path + "pred_fragments/af_eval_s/fn001509_1_154.551_155.031.wav",
-    tens_path + "pred_fragments/af_eval_s/fn001297_1_130.002_130.462.wav",
-    tens_path + "pred_fragments/af_eval_s/fn000434_1_440.023_440.503.wav",
-    tens_path + "pred_fragments/af_eval_s/fn002965_1_1.065_1.525.wav",
-    tens_path + "pred_fragments/af_eval_s/fn006777_1_30.569_31.029.wav",
-    tens_path + "pred_fragments/af_eval_s/fn008090_1_208.582_209.072.wav",
-    tens_path + "pred_fragments/af_eval_s/fn001560_1_125.731_126.211.wav",
-    tens_path + "pred_fragments/af_eval_s/DVA13U_1_627.522_628.042.wav"
-]
+# file_paths = [
+#     tens_path + "pred_fragments/af_eval_s/fn000784_2_588.886_589.366.wav",
+#     tens_path + "pred_fragments/af_eval_s/ppX5_X6_part_09_S_2_139.707_140.137.wav",
+#     tens_path + "pred_fragments/af_eval_s/fn000404_1_207.644_208.184.wav",
+#     tens_path + "pred_fragments/af_eval_s/fn006968_1_49.479_49.949.wav",
+#     tens_path + "pred_fragments/af_eval_s/fn000724_1_430.181_430.641.wav",
+#     tens_path + "pred_fragments/af_eval_s/fn001509_1_154.551_155.031.wav",
+#     tens_path + "pred_fragments/af_eval_s/fn001297_1_130.002_130.462.wav",
+#     tens_path + "pred_fragments/af_eval_s/fn000434_1_440.023_440.503.wav",
+#     tens_path + "pred_fragments/af_eval_s/fn002965_1_1.065_1.525.wav",
+#     tens_path + "pred_fragments/af_eval_s/fn006777_1_30.569_31.029.wav",
+#     tens_path + "pred_fragments/af_eval_s/fn008090_1_208.582_209.072.wav",
+#     tens_path + "pred_fragments/af_eval_s/fn001560_1_125.731_126.211.wav",
+#     tens_path + "pred_fragments/af_eval_s/DVA13U_1_627.522_628.042.wav"
+# ]
 
 # remove already predicted fragments
 tg_fol = frag_fol if len(frag_fol) > 1 else "cgn-" + frag_fol

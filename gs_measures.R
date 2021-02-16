@@ -5,7 +5,7 @@ if (Sys.info()[1] == "Darwin"){
   f_path = "/vol/tensusers/timzee/grid_search/"
 }
 
-gs_num = "gs21"
+gs_num = "v2_gs40"
 
 gs = read.csv(paste(f_path, gs_num, "_aligned_dist.csv", sep = ""))
 gs$corpus = as.factor(substr(gs$wav, 1, 1))
@@ -222,18 +222,18 @@ measures = matrix(c(mean_dist_a, mean_dist_k, mean_dist_o, mean_distance,
                     schwa_F1_a, schwa_F1_k, schwa_F1_o, schwa_F1,
                     spn_recall_a, spn_recall_k, spn_recall_o, spn_recall,
                     spn_precision_a, spn_precision_k, spn_precision_o, spn_precision,
-                    spn_F1_a, spn_F1_k, spn_F1_o, spn_F1), 
+                    spn_F1_a, spn_F1_k, spn_F1_o, spn_F1),
                   nrow = 19, byrow = TRUE,
                   dimnames = list(c("Mean Distance", "SIL recall", "SIL precision",
                                     "SIL F-measure", "SIL start diff", "SIL end diff",
-                                    "Word start diff", "Word end diff", "All start diff", 
+                                    "Word start diff", "Word end diff", "All start diff",
                                     "All end diff", "N recall",
                                     "N precision", "N F-measure", "Schwa recall",
                                     "Schwa precision", "Schwa F-measure",
-                                    "SPN recall", "SPN precision", "SPN F-measure"), 
+                                    "SPN recall", "SPN precision", "SPN F-measure"),
                                   c("comp-a", "comp-k", "comp-o", "combined")))
 
-write.table(measures, file = paste(f_path, gs_num, "_measures.csv", sep = ""), 
+write.table(measures, file = paste(f_path, gs_num, "_measures.csv", sep = ""),
             row.names=TRUE, col.names=TRUE, sep=",", quote = FALSE)
 
 cat("\nMEASURES:\n")
