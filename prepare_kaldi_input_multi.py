@@ -7,8 +7,8 @@ import os
 home_dir = "/Volumes/timzee/" if sys.platform == "darwin" else "/home/timzee/"
 tens_dir = "/Volumes/tensusers/timzee/" if sys.platform == "darwin" else "/vol/tensusers/timzee/"
 corpus = "cgn"
-component = "l"
-index_file = "cgn_index_l_final.txt"
+component = "o"
+index_file = "cgn_index_o_final2.txt"
 lex_exp_n = 1
 enable_n_weights = "True"
 

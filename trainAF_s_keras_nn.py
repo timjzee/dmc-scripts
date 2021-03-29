@@ -17,18 +17,18 @@ os.nice(19)
 tens_path = "/Volumes/tensusers/timzee/af_classification/" if sys.platform == "darwin" else "/vol/tensusers/timzee/af_classification/"
 log_dir = tens_path + "tb_log/"
 save_dir = tens_path + "keras_models/"
-session_name = "s_15c_8k_nn"
-training_file = "Bootstrap_s_15c_8k_train.csv"      # toy_s_train.csv Bootstrap_s_large_16k_train.csv
-validation_file = "Bootstrap_s_15c_8k_valid.csv"    # toy_s_valid.csv Bootstrap_s_large_16k_valid.csv
-test_file = "Bootstrap_s_15c_8k_test.csv"           # Bootstrap_s_large_16k_test.csv
+session_name = "s_5c_16k_nn"
+training_file = "Bootstrap_s_large_16k_train.csv"      # toy_s_train.csv Bootstrap_s_large_16k_train.csv
+validation_file = "Bootstrap_s_large_16k_valid.csv"    # toy_s_valid.csv Bootstrap_s_large_16k_valid.csv
+test_file = "Bootstrap_s_large_16k_test.csv"           # Bootstrap_s_large_16k_test.csv
 
-context_size = 15
+context_size = 5
 # mfcc_length = 429
 mfcc_length = 13 * 3 * (context_size * 2 + 1)
 corpora = ["cgn-a", "cgn-c", "cgn-d", "cgn-k", "cgn-o", "ifadv", "ecsd", "ifa"]
-train_rows = 17083197      # 5c-16k: 29453278; 5c-8k: 18318497 ; 15c-16k: 27597573; 15c-8k: 17083197; toy: 10000
-valid_rows = 2135399      # 5c-16k: 3681659; 5c-8k: 2289811; 15c-16k: 3449696; 15c-8k: 2135399; toy: 10000
-test_rows = 2135399      # 5c-16k: 3681659; 5c-8k: 2289811; 15c-16k: 3449696; 15c-8k: 2135399
+train_rows = 29453278      # 5c-16k: 29453278; 5c-8k: 18318497 ; 15c-16k: 27597573; 15c-8k: 17083197; toy: 10000
+valid_rows = 3681659      # 5c-16k: 3681659; 5c-8k: 2289811; 15c-16k: 3449696; 15c-8k: 2135399; toy: 10000
+test_rows = 3681659      # 5c-16k: 3681659; 5c-8k: 2289811; 15c-16k: 3449696; 15c-8k: 2135399
 # batch_size = 1000
 # learning_rate = 0.005
 n_epochs = 5

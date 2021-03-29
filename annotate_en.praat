@@ -84,22 +84,25 @@ procedure annotateChunk: .id
     removeObject: "LongSound " + s_name$
     c_dur = Get total duration
     equal_interval_dur = c_dur / 5
-    To TextGrid: "orthography schwa-boundaries n-boundaries schwa-reduction n-boundaries", ""
+    To TextGrid: "orthography schwa nasalization nasal-stop schwa-reduction stop-reduction", ""
     Set interval text: 1, 1, ort$
+    Insert boundary: 3, c_start_buf + equal_interval_dur
+    Insert boundary: 3, c_start_buf + equal_interval_dur * 4
     for i from 1 to 4
         Insert boundary: 2, c_start_buf + equal_interval_dur * i
-        Insert boundary: 3, c_start_buf + equal_interval_dur * i
+        Insert boundary: 4, c_start_buf + equal_interval_dur * i
     endfor
     Set interval text: 2, 2, "start"
     Set interval text: 2, 3, "max"
     Set interval text: 2, 4, "end"
-    Set interval text: 3, 2, "start"
-    Set interval text: 3, 3, "max"
-    Set interval text: 3, 4, "end"
+    Set interval text: 3, 2, "nasalization"
+    Set interval text: 4, 2, "start"
+    Set interval text: 4, 3, "max"
+    Set interval text: 4, 4, "end"
     plusObject: "Sound " + s_name$
     View & Edit
     editor: "TextGrid " + s_name$
-        Spectrogram settings: 0, 8000, 0.005, 70
+        Spectrogram settings: 0, 5000, 0.005, 70
         editor_info$ = Editor info
         pitch_enabled = extractNumber(editor_info$, "Pitch show:")
         spectrogram_enabled = extractNumber(editor_info$, "Spectrogram show:")
@@ -122,16 +125,211 @@ procedure annotateChunk: .id
             Show pulses
         endif
     endeditor
+    clicked1 = 4
+    clicked2 = 0
+    b1_lab$ = "-@"
+    b2_lab$ = "-n"
+    b3_lab$ = "-N"
     annotation_incomplete = 1
     while annotation_incomplete == 1
+        selectObject: "TextGrid " + s_name$
         phone_boundaries_complete = 1
         reduction_complete_schwa = 0
         reduction_complete_n = 0
-        beginPause: "Save and continue"
-            comment: "Annotate word number " + string$(word_chunk_i) + ": " + w_ort$
-            comment: "Click continue to save the annotation."
-        endPause: "Continue", 1
-        selectObject: "TextGrid " + s_name$
+        label BEGIN
+        if clicked1 == 7 or clicked1 == 1 or clicked1 == 2 or clicked1 == 3 or clicked1 == 4 or clicked1 == 5 or clicked2 == 6
+            editor: "TextGrid " + s_name$
+                Spectrogram settings: 0, 5000, 0.005, 70
+            endeditor
+            beginPause: "Save and continue"
+                comment: "Annotate word number " + string$(word_chunk_i) + ": " + w_ort$
+                comment: "Click next to save the annotation."
+            clicked1 = endPause: b1_lab$, b2_lab$, b3_lab$, "N.@", "N.n", "Nar", "->", 7
+            clicked2 = 0
+            if clicked1 == 1
+                if b1_lab$ == "-@"
+                    b1_lab$ = "+@"
+                    Set interval text: 2, 3, ""
+                    max_start = Get start time of interval: 2, 3
+                    max_end = Get end time of interval: 2, 3
+                    Remove left boundary: 2, 3
+                    Insert boundary: 2, max_start + (max_end - max_start)/2
+                    Remove right boundary: 2, 3
+                else
+                    b1_lab$ = "-@"
+                    start_start = Get start time of interval: 2, 2
+                    middle = Get end time of interval: 2, 2
+                    end_end = Get end time of interval: 2, 3
+                    Insert boundary: 2, start_start + (middle - start_start)/2
+                    Remove right boundary: 2, 3
+                    Set interval text: 2, 3, "max"
+                    Insert boundary: 2, middle + (end_end - middle)/2
+                    Set interval text: 2, 4, "end"
+                endif
+                goto BEGIN
+            elsif clicked1 == 2
+                if b2_lab$ == "-n"
+                    b2_lab$ = "+n"
+                    Set interval text: 4, 3, ""
+                    max_start = Get start time of interval: 4, 3
+                    max_end = Get end time of interval: 4, 3
+                    Remove left boundary: 4, 3
+                    Insert boundary: 4, max_start + (max_end - max_start)/2
+                    Remove right boundary: 4, 3
+                else
+                    b2_lab$ = "-n"
+                    start_start = Get start time of interval: 4, 2
+                    middle = Get end time of interval: 4, 2
+                    end_end = Get end time of interval: 4, 3
+                    Insert boundary: 4, start_start + (middle - start_start)/2
+                    Remove right boundary: 4, 3
+                    Set interval text: 4, 3, "max"
+                    Insert boundary: 4, middle + (end_end - middle)/2
+                    Set interval text: 4, 4, "end"
+                endif
+                goto BEGIN
+            elsif clicked1 == 3
+                if b3_lab$ == "-N"
+                    b3_lab$ = "+N"
+                    Set interval text: 3, 2, ""
+                    Remove right boundary: 3, 2
+                    Remove left boundary: 3, 2
+                else
+                    b3_lab$ = "-N"
+                    num_stop_int = Get number of intervals: 4
+                    stop_end = Get start time of interval: 4, num_stop_int
+                    schwa_start = Get end time of interval: 2, 1
+                    Insert boundary: 3, schwa_start
+                    Insert boundary: 3, stop_end
+                    Set interval text: 3, 2, "nasalization"
+                endif
+                goto BEGIN
+            elsif clicked1 == 4
+                if b3_lab$ == "-N"
+                    schwa_start = Get end time of interval: 2, 1
+                    num_schwa_int = Get number of intervals: 2
+                    schwa_end = Get start time of interval: 2, num_schwa_int
+                    Set interval text: 3, 2, ""
+                    Remove right boundary: 3, 2
+                    Remove left boundary: 3, 2
+                    Insert boundary: 3, schwa_start
+                    Insert boundary: 3, schwa_end
+                    Set interval text: 3, 2, "nasalization"
+                endif
+                goto BEGIN
+            elsif clicked1 == 5
+                if b3_lab$ == "-N"
+                    stop_start = Get end time of interval: 4, 1
+                    num_stop_int = Get number of intervals: 4
+                    stop_end = Get start time of interval: 4, num_stop_int
+                    Set interval text: 3, 2, ""
+                    Remove right boundary: 3, 2
+                    Remove left boundary: 3, 2
+                    Insert boundary: 3, stop_start
+                    Insert boundary: 3, stop_end
+                    Set interval text: 3, 2, "nasalization"
+                endif
+                goto BEGIN
+            elsif clicked1 == 6
+                goto BEGIN
+            endif
+        elsif clicked1 == 6 or clicked2 == 1 or clicked2 == 2 or clicked2 == 3 or clicked2 == 4 or clicked2 == 5 or clicked2 == 7
+            editor: "TextGrid " + s_name$
+                Spectrogram settings: 0, 5000, 0.02, 70
+            endeditor
+            beginPause: "Save and continue"
+                comment: "Annotate word number " + string$(word_chunk_i) + ": " + w_ort$
+                comment: "Click next to save the annotation."
+            clicked2 = endPause: b1_lab$, b2_lab$, b3_lab$, "N.@", "N.n", "Brd", "->", 7
+            clicked1 = 0
+            if clicked2 == 1
+                if b1_lab$ == "-@"
+                    b1_lab$ = "+@"
+                    Set interval text: 2, 3, ""
+                    max_start = Get start time of interval: 2, 3
+                    max_end = Get end time of interval: 2, 3
+                    Remove left boundary: 2, 3
+                    Insert boundary: 2, max_start + (max_end - max_start)/2
+                    Remove right boundary: 2, 3
+                else
+                    b1_lab$ = "-@"
+                    start_start = Get start time of interval: 2, 2
+                    middle = Get end time of interval: 2, 2
+                    end_end = Get end time of interval: 2, 3
+                    Insert boundary: 2, start_start + (middle - start_start)/2
+                    Remove right boundary: 2, 3
+                    Set interval text: 2, 3, "max"
+                    Insert boundary: 2, middle + (end_end - middle)/2
+                    Set interval text: 2, 4, "end"
+                endif
+                goto BEGIN
+            elsif clicked2 == 2
+                if b2_lab$ == "-n"
+                    b2_lab$ = "+n"
+                    Set interval text: 4, 3, ""
+                    max_start = Get start time of interval: 4, 3
+                    max_end = Get end time of interval: 4, 3
+                    Remove left boundary: 4, 3
+                    Insert boundary: 4, max_start + (max_end - max_start)/2
+                    Remove right boundary: 4, 3
+                else
+                    b2_lab$ = "-n"
+                    start_start = Get start time of interval: 4, 2
+                    middle = Get end time of interval: 4, 2
+                    end_end = Get end time of interval: 4, 3
+                    Insert boundary: 4, start_start + (middle - start_start)/2
+                    Remove right boundary: 4, 3
+                    Set interval text: 4, 3, "max"
+                    Insert boundary: 4, middle + (end_end - middle)/2
+                    Set interval text: 4, 4, "end"
+                endif
+                goto BEGIN
+            elsif clicked2 == 3
+                if b3_lab$ == "-N"
+                    b3_lab$ = "+N"
+                    Set interval text: 3, 2, ""
+                    Remove right boundary: 3, 2
+                    Remove left boundary: 3, 2
+                else
+                    b3_lab$ = "-N"
+                    num_stop_int = Get number of intervals: 4
+                    stop_end = Get start time of interval: 4, num_stop_int
+                    schwa_start = Get end time of interval: 2, 1
+                    Insert boundary: 3, schwa_start
+                    Insert boundary: 3, stop_end
+                    Set interval text: 3, 2, "nasalization"
+                endif
+                goto BEGIN
+            elsif clicked2 == 4
+                if b3_lab$ == "-N"
+                    schwa_start = Get end time of interval: 2, 1
+                    num_schwa_int = Get number of intervals: 2
+                    schwa_end = Get start time of interval: 2, num_schwa_int
+                    Set interval text: 3, 2, ""
+                    Remove right boundary: 3, 2
+                    Remove left boundary: 3, 2
+                    Insert boundary: 3, schwa_start
+                    Insert boundary: 3, schwa_end
+                    Set interval text: 3, 2, "nasalization"
+                endif
+                goto BEGIN
+            elsif clicked2 == 5
+                if b3_lab$ == "-N"
+                    stop_start = Get end time of interval: 4, 1
+                    num_stop_int = Get number of intervals: 4
+                    stop_end = Get start time of interval: 4, num_stop_int
+                    Set interval text: 3, 2, ""
+                    Remove right boundary: 3, 2
+                    Remove left boundary: 3, 2
+                    Insert boundary: 3, stop_start
+                    Insert boundary: 3, stop_end
+                    Set interval text: 3, 2, "nasalization"
+                endif
+                goto BEGIN
+            elsif clicked2 == 6
+                goto BEGIN
+            endif
+        endif
         # num_phon_intervals = Get number of intervals: 2
         # if num_phon_intervals == 5 or num_phon_intervals == 4
         #     labels$ = ""
@@ -155,9 +353,9 @@ procedure annotateChunk: .id
         # else
         #     appendInfoLine: "WARNING: Wrong amount of phone boundaries"
         # endif
-        num_reduction_intervals = Get number of intervals: 4
+        num_reduction_intervals = Get number of intervals: 5
         if num_reduction_intervals == 1
-            red_lab$ = Get label of interval: 4, 1
+            red_lab$ = Get label of interval: 5, 1
             if red_lab$ == "1" or red_lab$ == "2" or red_lab$ == "3" or red_lab$ == "4" or red_lab$ == "D"
                 reduction_complete_schwa = 1
             else
@@ -166,9 +364,9 @@ procedure annotateChunk: .id
         else
             appendInfoLine: "WARNING: Reduction tier should not contain boundaries"
         endif
-        num_reduction_intervals = Get number of intervals: 5
+        num_reduction_intervals = Get number of intervals: 6
         if num_reduction_intervals == 1
-            red_lab$ = Get label of interval: 5, 1
+            red_lab$ = Get label of interval: 6, 1
             if red_lab$ == "1" or red_lab$ == "2" or red_lab$ == "3" or red_lab$ == "4" or red_lab$ == "D"
                 reduction_complete_n = 1
             else

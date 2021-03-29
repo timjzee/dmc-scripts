@@ -31,11 +31,11 @@ del entitydefs["lt"]
 del entitydefs["gt"]
 
 component = "d"
-input_file_path = tens_path + "cgn/cgn_index_d_mono_nl.txt"
+input_file_path = tens_path + "cgn/cgn_index_d_mono2.txt"
 with codecs.open(input_file_path, "r", "utf-8") as f:
     input_file = f.readlines()
 
-running_cores = 7
+running_cores = 26
 
 # Do not run with more than 5 cores.
 num_cores = 7
@@ -76,7 +76,7 @@ with codecs.open(tens_path + "other/dutchCP_uni.txt", "r", "utf-8") as f:
 
 print("Loading Lexicon neighbours")
 neighbours_lex = {}
-with codecs.open(tz_path + "Docs/neighbour_lexicon.txt", "r", "utf-8") as f:
+with codecs.open(tz_path + "Docs/neighbour_lexicon2.txt", "r", "utf-8") as f:
     for counter, line in enumerate(f, 1):
         word, lev_neb, lev_neb_num, lev_neb_freq, nlev_neb, nlev_neb_num, nlev_neb_freq = line[:-1].split("\t")
         neighbours_lex[word] = [lev_neb_num, lev_neb_freq]
@@ -182,21 +182,22 @@ def checkCanonical(w, position, chunk_id):
 
 def getAnnotInfo(orig_path, c_start, c_end, spkr, word_index):
     """Calls a Praat script which finds the chunk and returns info on phonetic context."""
-    output = subprocess.check_output([tz_path + "praat_nogui", "--run", tz_path + "GitHub/dmc-scripts/getAnnotInfo.praat", orig_path, c_start, c_end, spkr, str(word_index), "cgn/kaldi_annot/v2/comp-"]).decode("utf-8")[:-1].split(" ")
+    output = subprocess.check_output([tz_path + "praat_nogui", "--run", tz_path + "GitHub/dmc-scripts/getAnnotInfo.praat", orig_path, c_start, c_end, spkr, str(word_index), "cgn/kaldi_annot/v3/comp-"]).decode("utf-8")[:-1].split(" ")
 #    print(output)
     return output
 
 
 def getNDLphons(orig_path, c_start, c_end, spkr, word_index, wndw_start, wndw_end):
     """Calls a Praat script which finds the chunk and returns info on phonetic context."""
-    output = subprocess.check_output([tz_path + "praat_nogui", "--run", tz_path + "GitHub/dmc-scripts/getNDLphons.praat", orig_path, c_start, c_end, spkr, str(word_index), str(wndw_start), str(wndw_end), "cgn/kaldi_annot/v2/comp-"]).decode("utf-8")[:-1].split(" ")
+    output = subprocess.check_output([tz_path + "praat_nogui", "--run", tz_path + "GitHub/dmc-scripts/getNDLphons.praat", orig_path, c_start, c_end, spkr, str(word_index), str(wndw_start), str(wndw_end), "cgn/kaldi_annot/v3/comp-"]).decode("utf-8")[:-1].split(" ")
 #    print(output)
     return output
 
 
 def getSentenceInfo(rt, spkr, from_t, to_t, wrd):
     candidates = []
-    wrd = "'s" if wrd == "da's" else wrd
+    if (component not in ["c", "d"]) or (spkr[0] != "V"):     # my own .skp files do not split up da's
+        wrd = "'s" if wrd == "da's" else wrd
     for child in rt:
         if child.tag == "tau":
             if child.attrib["s"] == spkr:
@@ -422,14 +423,18 @@ def parseLine(f_path, chan, from_time, to_time, ort, tier, new_file):
     global hnr
     speaker = getSpeaker(f_path, tier)
     if new_file:
-        with gzip.open(cgn_path2 + "xml/skp-ort/comp-" + f_path + ".skp.gz") as h:
-            skp_gz = h.read()
-        skp_txt = codecs.decode(skp_gz, "ascii")
-#        skp_txt = skp_txt.encode("utf-8")
-        for ent in entitydefs:
-            skp_txt = re.sub(r"&{};".format(ent), entitydefs[ent].decode("latin-1"), skp_txt)
-#            skp_txt.replace("&" + ent + ";", entitydefs[ent].decode("latin-1"))
-#        print(skp_txt)
+        if f_path.split("/")[-1][:2] == "fv" and component in ["c", "d"]:
+            with codecs.open(cgn_path + "skp-ort/comp-" + component + "/" + f_path.split("/")[-1] + ".skp", "r", "utf-8") as h:
+                skp_txt = h.read()
+        else:
+            with gzip.open(cgn_path2 + "xml/skp-ort/comp-" + f_path + ".skp.gz") as h:
+                skp_gz = h.read()
+            skp_txt = codecs.decode(skp_gz, "ascii")
+    #        skp_txt = skp_txt.encode("utf-8")
+            for ent in entitydefs:
+                skp_txt = re.sub(r"&{};".format(ent), entitydefs[ent].decode("latin-1"), skp_txt)
+    #            skp_txt.replace("&" + ent + ";", entitydefs[ent].decode("latin-1"))
+    #        print(skp_txt)
         global skp_root
         skp_root = ET.fromstring(skp_txt)
         with codecs.open(cgn_path + "tag/comp-" + component + "/" + f_path.split("/")[-1] + ".tag", "r", "utf-8") as h:
@@ -538,6 +543,8 @@ def parseLine(f_path, chan, from_time, to_time, ort, tier, new_file):
                 output_lines.append([str(word_chunk_i), str(sent_i), str(word_sent_i), word, word_phon, num_phon, phon_pron, prev_phon, prev_phon_pron, next_phon, next_phon_pron, overlap, oov_meta, word_pos, word_class, type_of_en, speaker, subtlexwf, lg10wf, lex_neb_num, lex_neb_freq, ptan, ptaf, cow_wf, next_word, next_wf, bigram_f, prev_word, prev_wf, prev_bigram_f, num_syl, word_stress, boundary_diphones, other_ndl_cues])
                 print(word, word_pos, type_of_en)
         if counter > 1:
+            if old_parent is None:
+                print("ALERT: {},{},{},{},{} no old_parent".format(f_path, sent_i, from_time, to_time, word))
             if old_found in old_parent:
                 old_parent.remove(old_found)
         if boundary_diphones != "":

@@ -1,16 +1,26 @@
 import tensorflow as tf
 import sys
+import os
 import numpy as np
 import scipy.io.wavfile
 import python_speech_features
 import glob
 import textgrid
-# import multiprocessing
-import re
-import time
 
+
+if len(sys.argv) > 1:
+    network_type = str(sys.argv[1])
+    context_frames = str(sys.argv[2])
+else:
+    network_type = "BLSTM"
+    context_frames = "15"
 
 tens_path = "/Volumes/tensusers/timzee/af_classification/" if sys.platform == "darwin" else "/vol/tensusers/timzee/af_classification/"
+
+model_locations = {
+    "BLSTM": {"5": {"16k": "s_5c_16k/run-6", "8k": "s_5c_8k/run-4"}, "15": {"16k": "s_15c_16k/run-4", "8k": "s_15c_8k/run-6"}},
+    "FFNN": {"5": {"16k": "s_5c_16k_nn/run-0", "8k": "s_5c_8k_nn/run-2"}, "15": {"16k": "s_15c_16k_nn/run-0", "8k": "s_15c_8k_nn/run-0"}}
+}
 
 features = {
     "s": {1: "True", 0: "False"}
@@ -34,20 +44,20 @@ expected_features = {"s": 1}
 window = 0.025
 step = 0.005
 
-frame_window = 15
+frame_window = int(context_frames)
 
 num_feat = (2 * frame_window + 1) * (3 * 13)  # + len(corpora)
 num_feat_per_frame = (3 * 13)
 
 print("Loading Classifiers...\n")
 classifiers = {
-    "s": {"16k": tf.keras.models.load_model(tens_path + "keras_models/s_15c_16k/run-4"), "8k": tf.keras.models.load_model(tens_path + "keras_models/s_15c_8k/run-6")}
+    "s": {"16k": tf.keras.models.load_model(tens_path + "keras_models/" + model_locations[network_type][context_frames]["16k"]), "8k": tf.keras.models.load_model(tens_path + "keras_models/" + model_locations[network_type][context_frames]["8k"])}
 }
 
 frag_fol = "af_eval_s"
 file_paths = glob.glob(tens_path + "pred_fragments/" + frag_fol + "/*.wav")
 
-file_paths = [tens_path + "pred_fragments/af_eval_s/DVA10O_1_36.916_37.356.wav"]
+# file_paths = [tens_path + "pred_fragments/af_eval_s/DVA10O_1_36.916_37.356.wav"]
 
 # file_paths = [
 #     tens_path + "pred_fragments/af_eval_s/fn000784_2_588.886_589.366.wav",
@@ -67,20 +77,10 @@ file_paths = [tens_path + "pred_fragments/af_eval_s/DVA10O_1_36.916_37.356.wav"]
 
 # remove already predicted fragments
 tg_fol = frag_fol if len(frag_fol) > 1 else "cgn-" + frag_fol
-tg_paths = glob.glob(tens_path + "pred_textgrids_keras/" + tg_fol + "/*.IntensityTier")
+tg_paths = glob.glob(tens_path + "pred_textgrids_keras/" + tg_fol + "/*")
 
-print("number of wav files before: ", len(file_paths))
 for tg_path in tg_paths:
-    fp1 = "/".join(tg_path.split("/")[:-1]) + "/"
-    fp1 = re.sub(r"pred_textgrids_keras", "pred_fragments", fp1)
-    fp1 = re.sub("/" + tg_fol + "/", "/" + frag_fol + "/", fp1)
-    fp2 = "_".join(tg_path.split("/")[-1].split("_")[:-1]) + ".wav"
-    fp = fp1 + fp2
-    if fp in file_paths:
-        file_paths.remove(fp)
-print("number of wav files after: ", len(file_paths))
-
-time.sleep(5)
+    os.remove(tg_path)
 
 # running_cores = 0
 #
@@ -138,7 +138,8 @@ for fp in file_paths:
 #                new_row = np.array([np.append(new_feat, corpora[corpus])])
 #                print(unseen_samples.shape, np.array(new_row).shape)
             unseen_samples = np.append(unseen_samples, [new_feat], axis=0)
-    X_3d = unseen_samples.reshape((unseen_samples.shape[0], (frame_window * 2 + 1), 13 * 3))
+    if network_type == "BLSTM":
+        unseen_samples = unseen_samples.reshape((unseen_samples.shape[0], (frame_window * 2 + 1), 13 * 3))
     # save unseen samples for inspection
 #        summary_text = pd.DataFrame(np_mfcc).describe()
 #        summary_text.to_csv(tens_path + "pred_mfcc_keras/" + corpus + "/" + fragment_id + "_sum.csv", float_format="%.2f")
@@ -147,7 +148,7 @@ for fp in file_paths:
     tg = textgrid.TextGrid(minTime=float(start_time))
     for af in ["s"]:
         classifier = classifiers[af][sample_freq]
-        probabilities = [float(i) for i in classifier.predict(X_3d)]
+        probabilities = [float(i) for i in classifier.predict(unseen_samples)]
         predictions = [round(i) for i in probabilities]
         print(af, probabilities)
         # construct textgrids
