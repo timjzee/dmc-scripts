@@ -7,229 +7,145 @@ import timbl
 import multiprocessing
 import random
 
-random.seed(80)
+random.seed(1)
 
 tens_path = "/Volumes/tensusers/timzee/" if sys.platform == "darwin" else "/vol/tensusers/timzee/"
-output_path = tens_path + "timbl_files2/"
-
-mistakes = {
-    "S": [
-        "agressiviteit",
-        "hij",      # hij's
-        "rijkelui",     # rijkelui's
-        "mån",
-        "voortgang",    # +++
-        "wéé",
-        "àl",
-        "ál",
-        "afstandsbepaling",
-        "banning",
-        "bescherming",
-        "bestrijding",
-        "bewapening",
-        "beëindiging",
-        "conservering",
-        "doorzetting",
-        "functionering",
-        "geheimhouding",
-        "herkenning",
-        "invoeging",
-        "kalmering",
-        "massavernietiging",
-        "ontspanning",
-        "opvoeding",
-        "paring",
-        "reclassering",
-        "ringeling",
-        "tekstverwerking",
-        "uithouding",
-        "uitlevering",
-        "vermeerdering",
-        "vernietiging",
-        "veroudering",
-        "verspreiding",
-        "verwarming",
-        "verwerking",
-        "voedselvergiftiging",
-        "voortplanting",
-        "watervoorziening",
-        "zelfbediening",
-        "zelfverdediging",
-        "zelfvernietiging",
-        "aanmelding",
-        "aanmoediging",
-        "aantrekking",
-        "achtervolging",
-        "ademhaling",
-        "afleiding",
-        "aflevering",
-        "afpersing",
-        "afstoting",
-        "bediening",
-        "belegering",
-        "beroving",
-        "besturing",
-        "betaling",
-        "beveiliging",
-        "bevolking",
-        "bevoorrading",
-        "beweging",
-        "dreiging",
-        "echtscheiding",
-        "geleiding",
-        "genezing",
-        "herhaling",
-        "investering",
-        "inwijding",
-        "lening",
-        "mening",
-        "misleiding",
-        "omgeving",
-        "ontmoeting",
-        "ontsnapping",
-        "ontsteking",
-        "ontvoering",
-        "ontwijking",
-        "opsporing",
-        "overleving",
-        "programmering",
-        "regering",
-        "riolering",
-        "samenzwering",
-        "scheiding",
-        "scheuring",
-        "sluiting",
-        "spanning",
-        "straling",
-        "toelating",
-        "toewijding",
-        "uitbetaling",
-        "uitvoering",
-        "verdediging",
-        "verdoving",
-        "vergelding",
-        "verkenning",
-        "verkiezing",
-        "verkrachting",
-        "verleiding",
-        "verrassing",
-        "verscheping",
-        "verzekering",
-        "waarneming",
-        "waarschuwing",
-        "zuivering",
-        "zo",           # zo<U+0092>n
-        "extreem",      # afgeleid van bijv. naamw. altijd -en
-        "aankoop",   # shouldn't be excluded? aankoopsbon can be found on google / words with prepositions only get -en ?
-        "gebed",     # +++
-        "geluid",    # +++
-        "gevecht",   # +++
-        "gezicht",   # +++
-        "grootheid",
-        "identiteit",
-        "illegaal",     # afgeleid van bijv. naamw. altijd -en
-        "kwaliteit",
-        "beleefdheid",
-        "afstand",  # +++ 5
-        "bedrijf",  # +++ 5
-        "bruid",    # +++
-        "bruiloft",  # +++
-        "dam",          # ww
-        "groep",  # ww
-        "grond",  # ww
-        "kalf",     # kalveren
-        "naam",   # +++
-        "oorlog",  # +++ 25 maar ook >25 samenstellingen
-        "persoonlijkheid",
-        "publiek",  # +++
-        "schip",    # schepen
-        "schoonheid",
-        "seizoen",  # +++
-        "snelheid",
-        "toegang",  # +++
-        "universiteit",
-        "god",  # +++
-        "cent",     # maat/eenheid
-        "karaat",   # maat/eenheid
-        "punt"      # maat/eenheid
-    ],
-    "EN": [
-        "sportster",    # different lexemes
-        "gebeuren",     # gebeuren is treated as plural
-        "demon"         # should not be excluded!
-    ],
-    "OTHER": [
-        "room",         # ww
-        "zijn",         # ww
-        "bankman",      # banklui
-        "bootsman",     # bootslui
-        "buitenman",    # buitenlui
-        "jus",          # different lexemes
-        "man",          # mannekes
-        "persman",      # perslui
-        "koren",        # komrt
-        "bos",          # ww
-        "kantoorpik",   # kantoorpikkies
-        "kop",          # koppies
-        "kwaad",         # kwaaien
-        "penny",         # pence
-        "das",          # das's
-        "zus",          # zus's
-        "den"   # different lexemes + weird singular dede dt
-    ]
-}
+output_path = tens_path + "timbl_files3/"
 
 # all verbs in van dale
 possible_verbs = [
-    "vinger", "test", "film", "regel", "nagel", "boete", "tip", "trip",
-    "club", "type", "sprint", "flirt", "teken", "keten", "tafel",
-    "lade", "speech", "hint", "leg", "lobby", "pass", "pik", "ram", "stel",
-    "stop", "storm", "toer", "tongen", "week", "vuur", "zon", "aanval",
-    "barbecue", "kajak", "grieve"
+    "aanval", "barbecue", "bijdrage", "bloed", "boete", "dam", "film", "flirt", "gal", "hengel", "hint", "hoeve", "kajak", "kap", "kenteken", "keten", "kik", "kit", "klem", "klik", "lade", "leg", "lobby", "maal", "match", "nagel", "orakel", "parel", "pass", "pik", "post", "ram", "regel", "ruzie", "sar", "sim", "speech", "sponsor", "sprint", "stel", "step", "stop", "storm", "tafel", "teken", "test", "tip", "trip", "twist", "type", "vinger", "vuur", "wapen", "werk", "wortel", "zijn", "zon"
 ]
 
 forbidden_words = [
+    # 2 meanings in Algemene Nederlandse Spraakkunst
+    "bal", "cent", "curator", "harmonie", "hemel", "kolonie", "letter", "maat", "middel", "olie", "patroon", "plan", "portier", "rede", "reden", "strip", "stuk", "tafel", "test", "tip", "vader", "vizier", "wapen", "water", "wortel",
+
+    # 2 meanings
+    "apache",
     "band",      # die muziek maken
-    "stuk",      # 4 stuks
-    "jaar",      # 2e jaars
-    "klasse",    # klasse vs. klas
-    "stand",     # leenwoord 'stents'
-    "chatbox",    # nog niet goed verwerkt
+    "blad",      # bladen and bladeren are different words
+    "brief",     # briefs
+    "clip",
+    "club",      # knots/disco
+    "den",   # different lexemes + weird singular dede dt
+    "dijbeen",   # different words
+    "fee",
+    "flap",
     "gang",      # leenwoord 'gengs'
+    "gel",
+    "gif",
+    "horde",
+    "inning",
+    "klasse",    # klasse vs. klas
+    "mul",
+    "net",          # 2 meanings
+    "sportster",    # different lexemes
+    "stand",     # leenwoord 'stents'
+    "step",      # step / steppe
     "zone",      # zonen is meervoud van zoon
     "pool",      # leenwoord 'poel'
-    "strip",     # boekjes vs. strippenkaart (en ww)
-    "kinder",    # andere 'speelse' betekenis, bovendien is het meervoud hier ers vs. eren
-    "atlete",    # also exclude female forms for which the plural en is shared with male forms
-    "advocate",
-    "echtgenote",
-    "blind",      # afgeleid van bijv. naamw. altijd -en
-    "bal",       # 2 betekenissen
-    "bloed",     # heeft geen meervoud; ww
-    "laat",        # afgeleid van bijv. naamw. altijd -en
-    "blad",      # bladen and bladeren are different words
-    "dijbeen",   # different words
-    "dood",         # afgeleid van bijv. naamw. altijd -en
-    "gal",      # ww
-    "lomp",  # afgeleid van bijv. naamw. altijd -en
-    "neer",         # shouldn't be excluded? Neer is a village in Limburg; zij zijn Neers
-    "provinciaal",   # afgeleid van bijv. naamw. altijd -en
+    "pop",
+    "post",
     "rede",  # plural reden confusable with singular reden
-    "sar",          # ww
-    "sjiek",        # afgeleid van bijv. naamw. altijd -en
-    "sociaal",      # afgeleid van bijv. naamw. altijd -en
+    "scoop",
+    "sim",
+    "sirene",
+    "standaard",
+
+    # male/female forms
+    "advocate",
+    "atlete",    # also exclude female forms for which the plural en is shared with male forms
+    "echtgenote",
+    "feminist",  # hoe weet je dat femisten niet mv van feministe is
     "spionne",
-    "verstand",     # +++
-    "volbloed",     # afgeleid van bijv. naamw. altijd -en
+
+    "deur",      # 2 deurs
+    "jaar",      # 2e jaars
+    "stuk",      # 4 stuks
+    "tand",      # 3 tands
+    "maal",     # 2 maals eenheid
+    "week",     # 2 weeks
+
+    # measures/units
+    "frank",     # valuta
+    "mark",      # valuta
+    "shilling",  # valuta
+    "cent",      # valuta
+    "karaat", "punt",  # maat/eenheid
+
+    # mistakes in SUBTLEX
+    "bank",         # bank's
+    "bisschop",     # bisschop's
+    "bos",          # bosssen
+    "dokter"        # dokters/doktoren
+    "ex",           # ex's
+    "havik",        # havik's
+    "klootzak",     # klootzak's
+    "mark",         # mark's
+    "partij",       # partij's
+    "vrouw",        # vrouw's
+    "wereld",       # wereld's
+    "thee",         # thee's
+    "schaduw",      # schaduw's
+    "wereld",       # wereld's
+    "werk",         # werk's
+    "zatlap",       # zatlap's
+    "das",          # das's
+    "zus",          # zus's
+    "hij",          # hij's
+    "rijkelui",     # rijkelui's
+    "mån",
+    "dokter",       # doktoren
+    "dynastie",     # dynastie<U+0091>n
+    "zo",           # zo<U+0092>n
+    "wéé",
+    "àl",
+    "ál",
+    "gebeuren",     # gebeuren is treated as plural
+    "koren",        # komrt
+    "mutagen",      # nl'se woorde is mutageen
+    "cocon",        # cocons cocoonen (zie SUBTLEX cocoonen niet een zelfst. naamw.)
     "l",
-    "pop",          # 2 meanings / ww
-    "portier",      # 2 meanings
-    "net",          # 2 meanings
-    "water",        # ww
-    "post"          # ww
+
+    # idiosyncratic plurals
+    "kinder",    # andere 'speelse' betekenis, bovendien is het meervoud hier ers vs. eren
+    "bankman",      # banklui
+    "bootsman",     # bootslui
+    "buitenman",    # buitenlui
+    "jus",          # different lexemes
+    "man",          # mannekes
+    "persman",      # perslui
+    "kantoorpik",   # kantoorpikkies
+    "kop",          # koppies
+    "kwaad",         # kwaaien
+    "penny",         # pence
+    "schip",    # schepen
+    "kalf",     # kalveren
+
+    # Adjectives
+    "middelmaat",   # wij zijn middelmaats
+    "engel",        # kan verward worden met de taal; wij zijn engels
+
+    # derived from adjectives
+    "blind", "laat", "dood", "lomp", "provinciaal", "sjiek", "sociaal", "rode", "naaste", "volbloed", "illegaal", "extreem",
+
+    # -iteit
+    "universiteit", "identiteit", "kwaliteit", "agressiviteit",
+
+    # -heid
+    "persoonlijkheid", "schoonheid", "snelheid", "grootheid", "beleefdheid",
+
+    # -ing
+    "dropping", "inning", "kidnapping", "shilling", "training", "afstandsbepaling", "banning", "bescherming", "bestrijding", "bewapening", "beëindiging", "conservering", "doorzetting", "functionering", "geheimhouding", "herkenning", "invoeging", "kalmering", "massavernietiging", "ontspanning", "opvoeding", "paring", "reclassering", "ringeling", "tekstverwerking", "uithouding", "uitlevering", "vermeerdering", "vernietiging", "veroudering", "verspreiding", "verwarming", "verwerking", "voedselvergiftiging", "voortplanting", "watervoorziening", "zelfbediening", "zelfverdediging", "zelfvernietiging", "aanmelding", "aanmoediging", "aantrekking", "achtervolging", "ademhaling", "afleiding", "aflevering", "afpersing", "afstoting", "bediening", "belegering", "beroving", "besturing", "betaling", "beveiliging", "bevolking", "bevoorrading", "beweging", "dreiging", "echtscheiding", "geleiding", "genezing", "herhaling", "investering", "inwijding", "lening", "mening", "misleiding", "omgeving", "ontmoeting", "ontsnapping", "ontsteking", "ontvoering", "ontwijking", "opsporing", "overleving", "programmering", "regering", "riolering", "samenzwering", "scheiding", "scheuring", "sluiting", "spanning", "straling", "toelating", "toewijding", "uitbetaling", "uitvoering", "verdediging", "verdoving", "vergelding", "verkenning", "verkiezing", "verkrachting", "verleiding", "verrassing", "verscheping", "verzekering", "waarneming", "waarschuwing", "zuivering",
+
+    # plural token frequency < number of compounds with corresponding interfix
+    "voortgang", "gebed", "geluid", "gevecht", "gezicht", "afstand", "bedrijf", "bruid", "bruiloft", "naam", "oorlog", "publiek", "seizoen", "toegang", "god", "arend", "district", "faillissement", "gedachte", "gevaar", "havik", "kanon", "lende", "lichaam", "linde", "moer", "neutron", "ongeluk", "uitgang", "vakbond", "verstand", "vierkant", "wereld", "groep", "rel", "zon",
+
+    # English forms more frequent than Dutch in Subtlex-NL
+    "ring", "stern", "big", "client", "palm", "room"
 ]
 
-# moeten we nog iets met woorden als 'advocate'?
 
 frivative_voicing = {
     "f": "v",
@@ -492,14 +408,6 @@ with codecs.open(tens_path + "other/SUBTLEX-NL.master.txt", "r", "utf-8") as f:
             else:
                 continue
 
-# remove mistakes
-for lab in mistakes:
-    for w in mistakes[lab]:
-        if lab in noun_dict[w]:
-            del noun_dict[w][lab]
-        else:
-            print(w)
-
 # remove verbs
 for v in list(set(verb_deletion_list)):
     del noun_dict[v]
@@ -706,13 +614,13 @@ halfvocalen = ["j", "w"]
 medeklinkers = occlusieven + fricatieven + nasalen + liquidae + halfvocalen
 
 
-invar_keys = list(dataset_invar.keys())
-sample_size = int(len(invar_keys) / 10)
-test_set_keys = random.sample(invar_keys, sample_size)
+# invar_keys = list(dataset_invar.keys())
+# sample_size = int(len(invar_keys) / 10)
+# test_set_keys = random.sample(invar_keys, sample_size)
 
-dataset_test = {}
-for k in test_set_keys:
-    dataset_test[k] = dataset_invar.pop(k)
+# dataset_test = {}
+# for k in test_set_keys:
+#     dataset_test[k] = dataset_invar.pop(k)
 
 
 def getFeatures(word, dataset, num_s):
@@ -947,14 +855,15 @@ def runTimbl(instances, metric, shared_lemmas, type_merge, num_syl, nn_k, dist_w
 #    else:
 #        loo_acc = "NA"
 
-    for wrd in dataset_test:
-        feat, strs = getFeatures(wrd, dataset_test, num_syl)
-        compound_word_syls = len(re.findall(r'[euoa]+(?=[^euioa]*)|(?<!e)i(?=[^euioa])', celex[strip_accents(wrd)]["compound"])) if celex[strip_accents(wrd)]["compound"] else 0
-        pl_class = dataset_test[wrd]['class']
-        line = [wrd] + feat + strs + [wrd[-1]]
-        classifier.addinstance(model_name + ".test", tuple(line), pl_class)
+#     for wrd in dataset_test:
+#         feat, strs = getFeatures(wrd, dataset_test, num_syl)
+#         compound_word_syls = len(re.findall(r'[euoa]+(?=[^euioa]*)|(?<!e)i(?=[^euioa])', celex[strip_accents(wrd)]["compound"])) if celex[strip_accents(wrd)]["compound"] else 0
+#         pl_class = dataset_test[wrd]['class']
+#         line = [wrd] + feat + strs + [wrd[-1]]
+#         classifier.addinstance(model_name + ".test", tuple(line), pl_class)
 
-    acc = str(classifier.test(model_name + ".test"))
+#     acc = str(classifier.test(model_name + ".test"))
+    acc = str(classifier.leaveoneout())
 
     if os.path.exists(output_path + model_name + ".var"):
         os.remove(output_path + model_name + ".var")
@@ -1145,9 +1054,9 @@ if grid_search:
 else:
     inst = "type"      # type or token
     mtr = "O"
-    shrd = True
+    shrd = False
     mrg = True
-    n_syl = 2           # 2
+    n_syl = 3           # 2
     n_k = 4
     d_w = "ID"
     add_v = False

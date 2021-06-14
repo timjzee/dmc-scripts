@@ -1,35 +1,3 @@
----
-title: "Exploring the paradigmatic enhancement of variable plurals."
-output: html_document
----
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-
-setDownloadURI = function(list, filename = stop("'filename' must be specified"), textHTML = "Click here to download the data.", fileext = "RData", envir = parent.frame()){
-  require(base64enc,quietly = TRUE)
-  divname = paste(sample(LETTERS),collapse="")
-  tf = tempfile(pattern=filename, fileext = fileext)
-  save(list = list, file = tf, envir = envir)
-  filenameWithExt = paste(filename,fileext,sep=".")
-  
-  uri = dataURI(file = tf, mime = "application/octet-stream", encoding = "base64")
-  cat("<a style='text-decoration: none' id='",divname,"'></a>
-    <script>
-    var a = document.createElement('a');
-    var div = document.getElementById('",divname,"');
-    div.appendChild(a);
-    a.setAttribute('href', '",uri,"');
-    a.innerHTML = '",textHTML,"' + ' (",filenameWithExt,")';
-    if (typeof a.download != 'undefined') {
-      a.setAttribute('download', '",filenameWithExt,"');
-    }else{
-      a.setAttribute('onclick', 'confirm(\"Your browser does not support the download HTML5 attribute. You must rename the file to ",filenameWithExt," after downloading it (or use Chrome/Firefox/Opera). \")');
-    }
-    </script>",
-    sep="")
-}
-
 if (Sys.info()[1] == "Darwin"){
   f_path = "/Volumes/tensusers/timzee/other/"
   cgn_path = "/Volumes/tensusers/timzee/cgn/"
@@ -115,176 +83,19 @@ s_dur = s_dur[s_dur$type_of_s == "PL",]
 s_dur$prev_mention = as.factor(s_dur$prev_mention)
 s_dur = s_dur[rowSums(is.na(s_dur))<length(s_dur),]
 s_dur$s_dur_kal = s_dur$kal_end - s_dur$kal_start
-#s_dur$nn_start = s_dur$nn_start_e - s_dur$nn_start_b
-#s_dur$nn_end = s_dur$nn_end_e - s_dur$nn_end_b
-#s_dur$nn_max = s_dur$nn_end_b - s_dur$nn_start_e
-#s_dur$nn_start_end_prop = (s_dur$nn_start + s_dur$nn_end) / (s_dur$nn_start + s_dur$nn_end + s_dur$nn_max)
-s_dur$s_dur_nn = s_dur$nn_end - s_dur$nn_start
 s_dur$stressed = s_dur$num_syl == s_dur$word_stress
 s_dur$stressed = as.factor(s_dur$stressed)
-possible_verbs = c("vingers", "tests", "films", "regels", "nagels", "boetes", "tips", "trips", 
-                   "clubs", "types", "sprints", "flirts", "tekens", "ketens", "tafels",
-                   "lades", "speeches")
-forbidden_words = c("bands",      # die muziek maken
-                    "stuks",      # 4 stuks
-                    "jaars",      # 2e jaars
-                    "klasses",    # van de klasses Deventer der
-                    "stands",     # leenwoord 'stents'
-                    "chatbox",    # nog niet goed verwerkt
-                    "gangs",      # leenwoord 'gengs'
-                    "zones",      # zonen is meervoud van zoon
-                    "pools",      # leenwoord 'poel'
-                    "strips",     # boekjes vs. strippenkaart (en ww)
-                    "kinders",    # andere 'speelse' betekenis, bovendien is het meervoud hier ers vs. eren
-                    "echtgenotes" # ambigue enkelvoud
-                    )
-s_dur = s_dur[!(s_dur$word_ort %in% c(forbidden_words, possible_verbs)),]
 names(s_dur)[names(s_dur) == "pl_prop"] = "prop_s"
 
 
 var = read.csv(paste(f_path, "p_f_type_O_merge_2syl_k5_ID_invar.csv", sep = ""))
-#var = var[ , !(names(var) %in% c("age_of_aq", "concreteness", "lex_neb", "phon_s_num", "phon_schwa_num", "phon_s_freq", "phon_schwa_freq"))]
-#var[var$word == "orgie",]$f_s = 8
-#var[var$word == "giraf",]$f_ev = 28 + 52
-#var[var$word == "enveloppe",]$f_ev = 133 + 274
-##var[var$word == "imperium",]$f_other = 1 + 2
-#var[var$word == "jarretel",]$f_ev = 6 + 1
-#var[var$word == "jarretel",]$f_s = 25 + 5
-##var[var$word == "logaritme",]$f_s = 1 + 1
-##var[var$word == "mortuarium",]$f_other = 8 + 2
-##var[var$word == "mortuarium",]$f_ev = 253 + 2
-
-# hoe bepalen welke engelse woorden uitsluiten?
-# woorden die een meer frequente entry hebben in SUBTLEX met 'vreemd' zijn gekenmerkt met ******
-# hoe bepalen welke onderbroken samenstellingen uitsluiten?
-# -s tokens <= 3 + samenstelling met -s in SUBTLEX gekenmerkt met ++++++++++
-
 var = var[var$f_s != 0,]
-#var = var[var$f_other == 0,]
-twijfel = c("bank", #bank's
-            "bisschop", #bisschop's
-            "ex", #ex's
-            "havik", #havik's
-            "klootzak", # klootzak's
-            "mark", # mark's
-            "partij", #partij's
-            "vrouw", # vrouw's 
-            "wereld", # wereld's
-            "thee", # thee's
-            "schaduw", # schaduw's
-            "wereld", # wereld's
-            "werk", # werk's
-            "zatlap", # zatlap's
-            "dokter", # doktoren
-            "dynastie", #dynastie<U+0091>n
-            
-            "dropping",
-            "inning",
-            "kidnapping",
-            "shilling",
-            "training",
-
-            "deur", # 2 deurs
-            "tand", # 3 tands
-            
-            "middelmaat", # wij zijn middelmaats
-            "engel", # kan verward worden met de taal; wij zijn engels
-            
-            "feminist", # hoe weet je dat femisten niet mv van feministe is
-            "mutagen", # nl'se woorde is mutageen
-            "cocon", # cocons cocoonen (zie SUBTLEX cocoonen niet een zelfst. naamw.)
-            
-            "clip", # 2 betekenissen
-            "den", # 2 betekenissen
-            "gif", # 2 betekenissen
-            "inning", # 2 betekenissen
-            "mul", # ww / 2 betekenissen
-            "horde", # 2 betekenissen
-            "scoop", # 2 betekenissen
-            "standaard", # verschillende betekensisen
-            "sim", # verschillende betekenissen
-            "sirene", # 2 betekenissen
-            "fee", # 2 betekenissen
-            "apache", # 2 betekenissen
-
-            "frank", # valuta
-            "mark", # valuta
-            "shilling", # valuta
-            "cent", "karaat", "punt", # maat/eenheid
-
-            "rode", # not a noun / afgeleid van bijv. naamw. altijd -en
-            "naaste", # des naastes / afgeleid van bijv. naamw. altijd -en
-
-            "l", # not a noun
-            "pop", # 2 betekenissen
-            "portier", # 2 betekenissen
-            "net", # 2 betekenissen letterlijk en digitaal
-            "water", # 2 betekenissen
-            "god", # engels gods / wellicht genitief
-            "post", # 2 betekenissen
-            "grieve", # ww in van dale
-            
-            "ring", # engels rings **********
-            "stern", # *******************
-            "big", # engels ************
-            "client", # engels clients*******
-            "palm", # ************* 
-            "arend",    # +++++
-            "district", # +++++
-            "faillissement", # +++++
-            "gedachte", # +++++
-            "gevaar",   # +++++
-            "havik",    # +++++
-            "kanon",    # +++++
-            "lende",    # +++++
-            "lichaam",  # +++++
-            "linde",    # +++++
-            "moer",     # +++++
-            "neutron",  # +++++
-#            "onderofficier", # +++++ Don't exclude according to f_s < number of compounds
-            "ongeluk",  # +++++
-            "uitgang",  # +++++
-            "vakbond",  # +++++
-            "vierkant", # +++++
-            "wereld", # +++++
-            "flap", # 2 betekenissen
-            "gel" # 2 betekenissen
-)
-ww_wiktionary = c("ader", "adder", "bank", "bijdrage", "brief", "dokter", "eikel", "flap", "gruwel", "handicap", "hengel", "hoeve", "kade", "kandelaar", "kap", "kar", "kenteken", "kit", "klem", "klik", "leraar", "maal", "mat", "meneer", "meubel", "mevrouw", "monitor", "naaste", "nevel", "orakel", "palm", "parel", "pier", "rank", "rel", "ring", "ruzie", "schaduw", "sim", "slede", "sponsor", "steppe", "tand", "tong", "twist", "vel", "vleugel", "voorteken", "werk", "wonder")
-ww_dikke_van_dale = c("adder", "ader", "apostel", "bank", "big", "bijdragen", "binken", "brief", "clip", "dokter", "duivel", "eikel", "fabel", "flap", "gruwel", "handicap", "hengel", "heuvel", "hoeve", "hoorn", "horde", "kandelaar", "kap", "kar", "kenteken", "kik", "kit", "klem", "klik", "klootzak", "koopman", "leraar", "maal", "mat", "match", "meneer", "mentor", "meubel", "mevrouw", "moer", "monitor", "mossel", "mul", "naaste", "nevel", "orakel", "paard", "palm", "parel", "patroon", "pier", "platform", "protocol", "rank", "rel", "ring", "rode", "ruzie", "schaduw", "sim", "slede", "snip", "spade", "sponsor", "steppe", "tand", "thee", "tong", "twist", "vel", "vierkant", "voorteken", "wang", "wapen", "weekend", "werk", "wonder", "wortel")
-ww_van_dale = c("adder", "bank", "big", "bijdrage", "brief", "dokter", "eikel", "gruwel", "hengel", "heuvel", "hoeve", "kandelaar", "kap", "kar", "kenteken", "kik", "kit", "klem", "klik", "leraar", "maal", "mat", "match", "mentor", "meubel", "moer", "monitor", "naaste", "nevel", "orakel", "parel", "pier", "rank", "rel", "ring", "ruzie", "schaduw", "sim", "sponsor", "steppe", "tand", "tong", "twist", "vel", "wapen", "werk", "wortel")
-spraakkunst = c("bal", "cent", "curator", "harmonie", "hemel", "kolonie", "letter", "maat", "middel", "olie", "patroon", "plan", "portier", "rede", "reden", "strip", "stuk", "tafel", "test", "tip", "vader", "vizier", "wapen", "water", "wortel")
-var = var[!(var$word %in% spraakkunst),]
-var = var[!(var$word %in% twijfel),]
-var = var[!(var$word %in% ww_van_dale),]
-s_dur = s_dur[!(s_dur$lemma %in% spraakkunst),]
-s_dur = s_dur[!(s_dur$lemma %in% twijfel),]
-s_dur = s_dur[!(s_dur$lemma %in% ww_van_dale),]
 var$f_nons = var$f_en + var$f_other
 var$f_pl = var$f_s + var$f_en + var$f_other
 names(var)[names(var) == "f_ev"] = "f_sg"
 var$log_freq_pl = log(var$f_pl)
-var$prop_pl = var$f_pl / (var$f_pl + var$f_sg)
 var$prop_s = var$f_s / var$f_pl
-#var$log_ratio_pl = log(var$ratio_pl + quantile(var$ratio_pl, 0.25)^2/quantile(var$ratio_pl, 0.75))
 var$log_ratio_pl = log((var$f_pl + 1) / (var$f_sg + 1))
-#var$log_ratio_s_timbl = log((var$p_s * var$f_pl + 1)/((1 - var$p_s) * var$f_pl + 1))
-#var$p_s2 = (var$p_s*(nrow(var)-1) + 0.5)/nrow(var)
-#var$log_ratio_s_timbl2 = log(var$p_s2/(1-var$p_s2))
-#var$p_s3 = var$p_s
-#var[var$p_s3 < 0.01,]$p_s3 = .001
-#var[var$p_s3 > 0.99,]$p_s3 = .999
-
-get_p_s_var = function(lem) {
-  if (lem == "hersens"){
-    lem = "hersen"
-  }
-  if (lem %in% levels(var$word)){
-    return(var[var$word == lem,]$p_s)
-  } else {
-    return(NA)
-  }
-}
 
 get_f_s = function(lem) {
   if (lem == "hersens"){
@@ -331,52 +142,22 @@ get_f_lem = function(lem) {
   }
 }
 
-get_prev_info = function(lem) {
-  if (lem == "hersens"){
-    lem = "hersen"
-  }
-  if (lem %in% levels(var$word)){
-    return(var[var$word == lem,]$informativity_prev)
-  } else {
-    return(NA)
-  }
-}
-
-get_next_info = function(lem) {
-  if (lem == "hersens"){
-    lem = "hersen"
-  }
-  if (lem %in% levels(var$word)){
-    return(var[var$word == lem,]$informativity_next)
-  } else {
-    return(NA)
-  }
-}
-
 s_dur = s_dur[!is.na(s_dur$lemma),]
-s_dur$p_s = as.numeric(sapply(as.character(s_dur$lemma), get_p_s_var))
-s_dur = s_dur[!is.na(s_dur$p_s) & length(s_dur$p_s)!=0,]
+s_dur$f_s = as.numeric(sapply(as.character(s_dur$lemma), get_f_s))
+s_dur = s_dur[!is.na(s_dur$f_s) & length(s_dur$f_s)!=0,]
 
-
-#s_dur$pl_ambig = s_dur$prop_s < 1
-#s_dur$pl_ambig = as.factor(s_dur$pl_ambig)
-#s_dur = s_dur[!is.na(s_dur$pl_ambig),]
 s_dur = s_dur[rowSums(is.na(s_dur))<length(s_dur),]
-#s_dur = s_dur[(!is.na(s_dur$s_dur_nn) & !s_dur$s_dur_nn < 0.005),]
+
 is.na(s_dur$num_syl_pron) = !s_dur$num_syl_pron
-s_dur = s_dur[!(s_dur$prev_phon_pron %in% c("t", "d") | s_dur$next_phon_pron %in% c("j", "t", "d")),]
+s_dur = s_dur[!(s_dur$prev_phon_pron %in% c("s", "z", "S", "Z", "t", "d", "j") | s_dur$next_phon_pron %in% c("s", "z", "S", "Z", "t", "d", "j")),]
 s_dur = s_dur[rowSums(is.na(s_dur))<length(s_dur),]
 s_dur$log_base_dur = log(s_dur$base_dur)
-s_dur$log_s_dur_rel = log(s_dur$s_dur_kal / s_dur$base_dur)
-s_dur$log_s_dur_rel2 = log(s_dur$s_dur_kal / (s_dur$base_dur/s_dur$num_syl_pron))
 s_dur$next_phon_class = as.factor(sapply(s_dur$next_phon_pron, get_phon_class))
 s_dur$prev_phon_class = as.factor(sapply(s_dur$prev_phon_pron, get_phon_class))
 s_dur$prev_phon_class = relevel(s_dur$prev_phon_class, ref="V")
 s_dur$next_phon_class = relevel(s_dur$next_phon_class, ref="V")
-# s_dur[s_dur$cow_wf == 0,]$cow_wf = 1
 s_dur[is.na(s_dur$lex_neb),]$lex_neb = 0
 s_dur[is.na(s_dur$lex_neb_freq),]$lex_neb_freq = 0
-#s_dur$log_s_dur = log(s_dur$s_dur_nn)
 s_dur$log_s_dur_kal = log(s_dur$s_dur_kal)
 s_dur$syntax_f2 = as.numeric(s_dur$syntax_f2)
 s_dur$syntax_f3 = as.numeric(s_dur$syntax_f3)
@@ -388,7 +169,6 @@ s_dur$syntax_f8 = as.numeric(s_dur$syntax_f8)
 s_dur = s_dur[!(is.na(s_dur$type_of_s) | is.na(s_dur$next_phon_class) 
                 | is.na(s_dur$prev_mention) | is.na(s_dur$register)), ]
 # remove data without prev_word or next_word to avoid artefacts when calculating conditional probabilities
-#s_dur = s_dur[as.character(s_dur$prev_word) != "" & as.character(s_dur$next_word) != "",]
 s_dur = s_dur[!(s_dur$next_wf == 0 & s_dur$bigram_f == 0),]
 s_dur = s_dur[!(s_dur$prev_wf == 0 & s_dur$prev_bigram_f == 0),]
 drop = c("ptan", "ptaf", "next_phon_dur", "prev_phon_dur", "birth_year", "speaker_sex", 
@@ -396,20 +176,14 @@ drop = c("ptan", "ptaf", "next_phon_dur", "prev_phon_dur", "birth_year", "speake
          "word_class", "word_pos", "next_phon", "prev_phon", "sent_i", "word_sent_i", "word_chunk_i", 
          "nn_start", "nn_end", "nn_start_b", "nn_end_b", "nn_start_e", "nn_end_e", "s_dur", "s_dur_nn", "s_dur_kal", "nn_start_score", "nn_end_score", "chan", "timbl_s_prob")
 s_dur = s_dur[ , !(names(s_dur) %in% drop)]
-#s_dur = s_dur[s_dur$pl_ambig == T,]
+
 
 s_dur$word_ort = as.character(s_dur$word_ort)
 s_dur = s_dur[substr(s_dur$word_ort, nchar(s_dur$word_ort)-2, nchar(s_dur$word_ort)) != "jes",]
 s_dur = s_dur[substr(s_dur$word_ort, nchar(s_dur$word_ort)-2, nchar(s_dur$word_ort)) != "kes",]
 s_dur$word_ort = as.factor(s_dur$word_ort)
-# 624 tokens
 s_dur = na.omit(s_dur)
-# 622 tokens; 98 lemmas
 
-
-
-#s_dur$p_s = sapply(as.character(s_dur$lemma), get_p_s_var)
-s_dur$f_s = sapply(as.character(s_dur$lemma), get_f_s)
 s_dur$f_en = sapply(as.character(s_dur$lemma), get_f_en)
 s_dur$f_other = sapply(as.character(s_dur$lemma), get_f_oth)
 s_dur$f_nons = s_dur$f_en + s_dur$f_other
@@ -421,67 +195,26 @@ s_dur$log_rel_f_s = log(s_dur$rel_f_s)
 s_dur$rel_f_en = s_dur$f_en / s_dur$f_lem
 s_dur$rel_f_nons = s_dur$f_nons / s_dur$f_lem
 s_dur$rel_f_other = s_dur$f_other / s_dur$f_lem
-#s_dur$informativity_prev = sapply(as.character(s_dur$lemma), get_prev_info)
-#s_dur$informativity_next = sapply(as.character(s_dur$lemma), get_next_info)
 s_dur$probability_prev = log((s_dur$prev_bigram_f+1) / (s_dur$prev_wf+1))
 s_dur$probability_next = log((s_dur$bigram_f+1) / (s_dur$next_wf+1))
-s_dur$mutualinfo_prev = -log((s_dur$prev_bigram_f+1)/((s_dur$prev_wf+1)*(s_dur$cow_wf+1)))
-s_dur$mutualinfo_next = -log((s_dur$bigram_f+1)/((s_dur$next_wf+1)*(s_dur$cow_wf+1)))
-s_dur$prop_s = s_dur$f_s / (s_dur$f_s + s_dur$f_en + s_dur$f_other)
 s_dur$log_lem_freq = log(s_dur$f_lem)
-s_dur$prop_pl = (s_dur$f_s + s_dur$f_en + s_dur$f_other) / s_dur$f_lem
 s_dur$freq_pl = s_dur$f_s + s_dur$f_en + s_dur$f_other
 # get rid of variable plurals that only occur twice, because their prop_s is rather meaningless
 var = var[var$f_pl > 2,]
 s_dur = s_dur[s_dur$freq_pl > 2,]
 s_dur$f_ev = s_dur$f_lem - s_dur$freq_pl
 s_dur$log_f_sg = log(s_dur$f_ev + 1)
-s_dur$rel_f_ev = s_dur$f_ev / s_dur$f_lem
 s_dur$rel_f_sg = s_dur$f_ev / s_dur$f_lem
 s_dur$log_freq_pl = log(s_dur$freq_pl)
 s_dur$log_f_pl = log(s_dur$freq_pl)
 s_dur$log_ratio_pl = log((s_dur$freq_pl + 1) / (s_dur$f_ev + 1))
 s_dur$log_ratio_s =  log(s_dur$f_s / s_dur$f_nons)
-s_dur$dominance = as.factor(ifelse(s_dur$prop_pl > .5, "plural", "singular"))
-s_dur$entropy = -1*(ifelse(s_dur$f_ev > 0, s_dur$rel_f_ev*log2(s_dur$rel_f_ev), 0)
-                          + ifelse(s_dur$f_s > 0, s_dur$rel_f_s*log2(s_dur$rel_f_s), 0)
-                          + ifelse(s_dur$f_en > 0, s_dur$rel_f_en*log2(s_dur$rel_f_en), 0)
-                          + ifelse(s_dur$f_other > 0, s_dur$rel_f_other*log2(s_dur$rel_f_other), 0)
-                          )
 names(s_dur)[names(s_dur) == "word_ort"] = "word"
-
-invar = read.csv(paste(f_path, "invar_distribution.csv", sep = ""))
-
-f_s_cum = sum(var$f_s) + sum(invar$f_s)
-f_en_cum = sum(var$f_en) + sum(invar$f_en)
-f_oth_cum = sum(var$f_other) + sum(invar$f_other)
-f_pl_cum = f_s_cum + f_en_cum + f_oth_cum
-f_sg_cum = sum(var$f_sg) + sum(invar$f_ev)
-f_lem_cum = f_pl_cum + f_sg_cum
-
-global_p_s = f_s_cum / f_lem_cum
-global_p_en = f_en_cum / f_lem_cum
-global_p_oth = f_oth_cum / f_lem_cum
-global_p_sg = f_sg_cum / f_lem_cum
-
-s_dur$relative_entropy = (ifelse(s_dur$rel_f_ev > 0, s_dur$rel_f_ev*log2(s_dur$rel_f_ev/global_p_sg), 0)
-              + ifelse(s_dur$rel_f_s > 0, s_dur$rel_f_s*log2(s_dur$rel_f_s/global_p_s), 0)
-              + ifelse(s_dur$rel_f_en > 0, s_dur$rel_f_en*log2(s_dur$rel_f_en/global_p_en), 0)
-              + ifelse(s_dur$rel_f_other > 0, s_dur$rel_f_other*log2(s_dur$rel_f_other/global_p_oth), 0)
-)
-
-#s_dur_full = s_dur
-#lower_boundary = 10
-#s_dur = s_dur_full[s_dur_full$freq_pl >= lower_boundary,]
 
 s_dur$speech_rate_pron_sc = scale(s_dur$speech_rate_pron)
 s_dur$log_base_dur_sc = scale(s_dur$log_base_dur)
 s_dur$num_syl_pron_sc = scale(s_dur$num_syl_pron)
 s_dur$lex_neb_sc = scale(s_dur$lex_neb)
-#s_dur$informativity_next_sc = scale(s_dur$informativity_next)
-#s_dur$informativity_prev_sc = scale(s_dur$informativity_prev)
-s_dur$mutualinfo_next_sc = scale(s_dur$mutualinfo_next)
-s_dur$mutualinfo_prev_sc = scale(s_dur$mutualinfo_prev)
 s_dur$probability_next_sc = scale(s_dur$probability_next)
 s_dur$probability_prev_sc = scale(s_dur$probability_prev)
 
@@ -908,12 +641,13 @@ pred_ass = matrix(c(cramerV(table(s_dur[,c("next_phon_class", "next_phon_class")
                    ), 
                   nrow = 20, ncol = 20, byrow = T, dimnames = list(
 #                    c("Next segment", "Previous segment", "Word stress", "Register", "Previously mentioned", "Speech rate", "Number of syllables", "log(dur(base))", ":Prosody[PC1]", ":Prosody[PC2]", ":Prosody[PC3]", ":Prosody[PC4]", ":Prosody[PC5]", "Lexical neighbours", ":'log(P(w'['n']*' | w'['n-1']*'))'", ":'log(P(w'['n']*' | w'['n+1']*'))'", "log(ratio(-s))", "log(ratio(PL))", "log(freq(-s))", "log(relfreq(-s))"),
-                    c("Next segment", "Previous segment", "Word stress", "Register", "Previously mentioned", "Speech rate", "Number of syllables", "Base Duration", ":Prosody[PC1]", ":Prosody[PC2]", ":Prosody[PC3]", ":Prosody[PC4]", ":Prosody[PC5]", "Lexical neighbours", "Probability from prev. word", "Probability from next word", "-s Bias", "Plural Dominance", "-s Frequency", "Relative -s Frequency"),
-                    c("Next segment", "Previous segment", "Word stress", "Register", "Previously mentioned", "Speech rate", "Number of syllables", "Base Duration", ":Prosody[PC1]", ":Prosody[PC2]", ":Prosody[PC3]", ":Prosody[PC4]", ":Prosody[PC5]", "Lexical neighbours", "Probability from prev. word", "Probability from next word", "-s Bias", "Plural Dominance", "-s Frequency", "Relative -s Frequency")
+                    c("Next segment", "Previous segment", "Word stress", "Register", "Recently mentioned", "Speech rate", "Number of syllables", "Base duration", ":Prosody[PC1]", ":Prosody[PC2]", ":Prosody[PC3]", ":Prosody[PC4]", ":Prosody[PC5]", "Phonological neighbours", "Probability from prev. word", "Probability from next word", "-s Bias", "Plural Dominance", "-s Frequency", "Relative -s Frequency"),
+                    c("Next segment", "Previous segment", "Word stress", "Register", "Recently mentioned", "Speech rate", "Number of syllables", "Base duration", ":Prosody[PC1]", ":Prosody[PC2]", ":Prosody[PC3]", ":Prosody[PC4]", ":Prosody[PC5]", "Phonological neighbours", "Probability from prev. word", "Probability from next word", "-s Bias", "Plural Dominance", "-s Frequency", "Relative -s Frequency")
                     ))
 
-# make it so numbers are automatically extracted from string:
-# if (length(regmatches("-4_0_4", gregexpr("_","-4_0_4"))[[1]]) == 2){}
+#colorBlindBlack8  <- c("#000000", "#E69F00", "#56B4E9", "#009E73", 
+#                       "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+#pie(rep(1, 8), col = colorBlindBlack8)
 
 plot_aodml_effect = function(var_data, var_mod, predictor_var, moderator_var, constant_vars, dependent_var, predictor_lab=NULL, moderator_lab=NULL, dependent_lab=NULL, moderator_values=NULL, backtransform=NULL){
   if (is.null(backtransform)){
@@ -1003,44 +737,46 @@ plot_aodml_effect = function(var_data, var_mod, predictor_var, moderator_var, co
   s_prop_lo_min = ifelse(backtransform_vec, plogis(betabin_pred$fit - qnorm(.975) * betabin_pred$se.fit), betabin_pred$fit - qnorm(.975) * betabin_pred$se.fit)
   s_prop_hi_min = ifelse(backtransform_vec, plogis(betabin_pred$fit + qnorm(.975) * betabin_pred$se.fit), betabin_pred$fit + qnorm(.975) * betabin_pred$se.fit)
 
+  # ggplot(var_data, aes(x = get(predictor_var), y = get(dependent_var))) +
+  #        geom_point(color = "grey", alpha = 1) +
+  #        geom_line(aes(y=s_prop_pred_max, linetype = mod_max_lab, color=mod_max_lab), size=1) +
+  #        geom_ribbon( aes(ymin = s_prop_lo_max, ymax = s_prop_hi_max, linetype = mod_max_lab, color=mod_max_lab), alpha = 0) +
+  #        geom_line(aes(y=s_prop_pred_med, linetype = mod_med_lab, color=mod_med_lab), size=1) +
+  #        geom_ribbon( aes(ymin = s_prop_lo_med, ymax = s_prop_hi_med, linetype = mod_med_lab, color=mod_med_lab), alpha = 0) +
+  #        geom_line(aes(y=s_prop_pred_min, linetype = mod_min_lab, color=mod_min_lab), size=1) +
+  #        geom_ribbon( aes(ymin = s_prop_lo_min, ymax = s_prop_hi_min, linetype = mod_min_lab, color=mod_min_lab), alpha = 0) +
+  #        labs(x=predictor_lab, y=dependent_lab) +
+  #        scale_colour_manual(name=moderator_lab, values=c("#000000", "#0072B2", "#D55E00")) + 
+  #        scale_linetype_manual(name=moderator_lab, values=c("solid", "dotted", "dashed"))
   ggplot(var_data, aes(x = get(predictor_var), y = get(dependent_var))) +
-         geom_point(color = "grey", alpha = .7) +
-         geom_line(aes(y=s_prop_pred_max, linetype = mod_max_lab)) +
-         geom_ribbon( aes(ymin = s_prop_lo_max, ymax = s_prop_hi_max), alpha = .15) +
-         geom_line(aes(y=s_prop_pred_med, linetype = mod_med_lab)) +
-         geom_ribbon( aes(ymin = s_prop_lo_med, ymax = s_prop_hi_med), alpha = .15) +
-         geom_line(aes(y=s_prop_pred_min, linetype = mod_min_lab)) +
-         geom_ribbon( aes(ymin = s_prop_lo_min, ymax = s_prop_hi_min), alpha = .15) +
-         labs(x=predictor_lab, y=dependent_lab, linetype=moderator_lab)
+    geom_ribbon( aes(ymin = s_prop_lo_max, ymax = s_prop_hi_max, color=mod_max_lab, fill=mod_max_lab), alpha = 1) +
+    geom_ribbon( aes(ymin = s_prop_lo_med, ymax = s_prop_hi_med, color=mod_med_lab, fill=mod_med_lab), alpha = 1) +
+    geom_ribbon( aes(ymin = s_prop_lo_min, ymax = s_prop_hi_min, color=mod_min_lab, fill=mod_min_lab), alpha = 1) +
+#    geom_ribbon( aes(ymin = s_prop_lo_max, ymax = s_prop_hi_max, color=mod_max_lab, linetype = mod_max_lab), alpha = 0) +
+#    geom_ribbon( aes(ymin = s_prop_lo_med, ymax = s_prop_hi_med, color=mod_med_lab, linetype = mod_med_lab), alpha = 0) +
+#    geom_ribbon( aes(ymin = s_prop_lo_min, ymax = s_prop_hi_min, color=mod_min_lab, linetype = mod_min_lab), alpha = 0) +
+    geom_ribbon( aes(ymin = s_prop_lo_min, ymax = s_prop_hi_min, color=mod_min_lab), alpha = 0) +
+    geom_ribbon( aes(ymin = s_prop_lo_med, ymax = s_prop_hi_med, color=mod_med_lab), alpha = 0) +
+    geom_ribbon( aes(ymin = s_prop_lo_max, ymax = s_prop_hi_max, color=mod_max_lab), alpha = 0) +
+    geom_point(color = "grey", alpha = 1, size=0.5) +
+    geom_line(aes(y=s_prop_pred_max, linetype = mod_max_lab)) +
+    geom_line(aes(y=s_prop_pred_med, linetype = mod_med_lab)) +
+    geom_line(aes(y=s_prop_pred_min, linetype = mod_min_lab)) +
+    labs(x=predictor_lab, y=dependent_lab) +
+    scale_colour_manual(name=moderator_lab, values=c("#009E73", "#0072B2", "#D55E00")) + 
+    scale_linetype_manual(name=moderator_lab, values=c("solid", "dotted", "dashed")) +
+    scale_fill_manual(name=moderator_lab, values=c("#009E73", "#0072B2", "#D55E00")) +
+    theme(legend.position="top")
 }
-```
 
-```{r results='asis',echo=FALSE,message=FALSE}
-
-setDownloadURI(c("s_dur", "var"), filename = "varPluralData")
-
-```
-
-## Hypotheses
-
-Previous research (Cohen, 2015) has argued that *Paradigmatic Enhancement* is the result of competition between representations of contextually viable alternatives. According to Cohen, the paradigmatically related alternatives are stored as phonetically detailed exemplar representations. In a contextually non-deterministic context, exemplars of all alternatives are activated, influencing the pronunciation of the produced form. In other words, the phonetic enhancement of paradigmatically supported forms reflects the lack of reduction due to interference from the pronunciation of the alternative forms.
-Given this account, we would only expect to see paradigmatic enhancement if inflected representations actually play an important role during production. For Dutch plural inflections, the relative frequency between plural and singular forms has been argued to reflect the degree to which Dutch plurals are composed (by rule or analogy) or represented. Our own model of variable plural distribution seems to support this claim:
-
-```{r message=FALSE, warning=FALSE}
-load("varPluralData.RData")
-library(knitr)
 library(aods3)
 library(hnp)
 
 distribution_model = aodml(cbind(f_s, f_nons) ~ p_s*log_freq_pl + p_s*log_ratio_pl, var)
 
+summary(distribution_model)
 wald.test(b = coef(distribution_model), varb = vcov(distribution_model), Terms = 6)
 
-plot_aodml_effect(var, distribution_model, predictor_var = "p_s", moderator_var = "log_ratio_pl", 
-                  constant_vars = c("log_freq_pl"), dependent_var = "prop_s", 
-                  predictor_lab = expression("Probability"["TiMBL"]*"(-s)"), 
-                  moderator_lab = "log(ratio(PL))", 
-                  dependent_lab = "Proportion(-s)", moderator_values = "-4_0_4")
 
 plot_aodml_effect(var, distribution_model, predictor_var = "p_s", moderator_var = "log_ratio_pl", 
                   constant_vars = c("log_freq_pl"), dependent_var = "prop_s", 
@@ -1048,6 +784,8 @@ plot_aodml_effect(var, distribution_model, predictor_var = "p_s", moderator_var 
                   moderator_lab = "Plural Dominance", 
                   dependent_lab = "-s Bias", moderator_values = "-4_0_4",
                   backtransform = F)
+ggsave(file="~/OneDrive/PhD_Nijmegen/dist_eff.eps", width = 8.5, height = 10, units = "cm")
+
 
 plot_aodml_effect(var, distribution_model, predictor_var = "p_s", moderator_var = "log_freq_pl", 
                   constant_vars = c("log_ratio_pl"), dependent_var = "prop_s", 
@@ -1055,35 +793,32 @@ plot_aodml_effect(var, distribution_model, predictor_var = "p_s", moderator_var 
                   moderator_lab = "Plural Frequency", 
                   dependent_lab = "-s Bias", moderator_values = "minmeanmax",
                   backtransform = F)
+ggsave(file="~/OneDrive/PhD_Nijmegen/dist_eff2.eps", width = 8.5, height = 10, units = "cm")
 
 distribution_model_bin = glm(cbind(f_s, f_nons) ~ p_s*log_freq_pl + p_s*log_ratio_pl, family = "binomial", data = var)
+summary(distribution_model_bin)
 
+lrt_X = -2 * (as.numeric(logLik(distribution_model_bin))-as.numeric(logLik(distribution_model)))
+lrt_p = pchisq(lrt_X, df = 1, lower.tail = FALSE)
+print(paste("X(1)=", as.character(lrt_X), ", p=", as.character(lrt_p), sep = ""))
+
+distribution_model_glmer = glmer(cbind(f_s, f_nons) ~ p_s*log_freq_pl + p_s*log_ratio_pl + (1|word), family = "binomial", data = var, control = glmerControl(optimizer = "bobyqa"))
+summary(distribution_model_glmer)
+
+lrt_X = -2 * (as.numeric(logLik(distribution_model))-as.numeric(logLik(distribution_model_glmer)))
+lrt_p = pchisq(lrt_X, df = 1, lower.tail = FALSE)
+print(paste("X(1)=", as.character(lrt_X), ", p=", as.character(lrt_p), sep = ""))
+
+setEPS()
+postscript("~/OneDrive/PhD_Nijmegen/dist_hnp.eps", width = 7.08661, height = 4)
 par(mfrow=c(1,2))
 hnp(distribution_model_bin, how.many.out = T, main="Binomial")
 hnp(distribution_model, how.many.out = T, main="Beta-binomial")
 par(mfrow=c(1,1))
+dev.off()
 
-```
-
-The plot above shows that, when the singular is more frequent than the plural (at low *Proportion(PL)*), the proportion of the -s variant (*Proportion(-s)*) can be predicted based on the phonological features of the singular (represented by *Probability(-s)*). However, when the plural is more frequent than the singular (at high *Proportion(PL)*), phonological generalization does not work very well as a predictor. Presumeably, this is due to strong representations of the plural forms that resist the phonological pressures.
-
-Given these results our hypothesis is that a higher *Proportion(-s)* should only result in a longer duration of *-s* if *Proportion(PL)* is high.
-
-## Initial Analysis
-
-Below we model *log(Duration(-s))* as a function of significant covariates and the interaction between *Proportion(-s)* and *Proportion(PL)*.
-
-```{r message=FALSE, warning=FALSE}
-library(knitr)
 library(lmerTest)
 library(corrplot)
-
-s_dur$pred_prop_s = plogis(predict(distribution_model, newdata = s_dur))
-s_dur$pred_log_ratio_s = log(s_dur$pred_prop_s / (1 - s_dur$pred_prop_s))
-s_dur$resid_log_ratio_s = s_dur$pred_log_ratio_s - s_dur$log_ratio_s
-
-# Do correlation check and exclude variables with high correlations to pred. of interest to improve model interpretation; mention that full model still yields same results w.r.t. pred. of interest
-# do correlation check and exclude prev_phon_class becasue it is high correlated with stressed
 
 duration_model_cov = lmer(log_s_dur_kal ~ 
                             speech_rate_pron_sc + 
@@ -1096,57 +831,44 @@ duration_model_cov = lmer(log_s_dur_kal ~
                             register +
                             (1 | word) +
                             (1 | speaker), 
-                          REML = F,
+                          REML = T,
                           data = s_dur)
 
-duration_model_abs1 = update(duration_model_cov, . ~ . + log_f_s)
-duration_model_abs2 = update(duration_model_cov, . ~ . + log_f_s*log_f_nons*log_f_sg)
-duration_model_abs3 = update(duration_model_cov, . ~ . + log_f_s*log_f_sg)
-duration_model_abs4 = update(duration_model_cov, . ~ . + log_f_nons*log_f_sg)
-duration_model_rel1 = update(duration_model_cov, . ~ . + rel_f_s)
-duration_model_rel2 = update(duration_model_cov, . ~ . + log_rel_f_s)
-duration_model_rel3 = update(duration_model_cov, . ~ . + rel_f_s*rel_f_sg)
-duration_model_rel4 = update(duration_model_cov, . ~ . + rel_f_nons*rel_f_sg)
-duration_model_ent1 = update(duration_model_cov, . ~ . + entropy)
-duration_model_ent2 = update(duration_model_cov, . ~ . + relative_entropy)
-duration_model_ent3 = update(duration_model_cov, . ~ . + entropy + relative_entropy)
-duration_model_prop = update(duration_model_cov, . ~ . + prop_s*prop_pl)
+duration_model_abs = update(duration_model_cov, . ~ . + log_f_s)
+duration_model_rel = update(duration_model_cov, . ~ . + log_rel_f_s)
 duration_model_ratio = update(duration_model_cov, . ~ . + log_ratio_s*log_ratio_pl)
-duration_model_ratio2 = update(duration_model_cov, . ~ . + log_ratio_s*prop_pl)
-duration_model_resid = update(duration_model_cov, . ~ . + resid_log_ratio_s*prop_pl + p_s)
-duration_model_resid2 = update(duration_model_cov, . ~ . + resid_log_ratio_s*log_ratio_pl + p_s)
-duration_model_cov2 = update(duration_model_cov, . ~ . + prev_phon_class + stressed + num_syl_pron_sc + lex_neb_sc)
-                               
-#prev_phon_class + stressed + num_syl_pron_sc + lex_neb_sc)
 
+s_dur$dur_resid = resid(duration_model_abs)
+s_dur_trim = s_dur[abs(scale(s_dur$dur_resid)) < 2.5,]
+duration_model_abs_trim = lmer(duration_model_abs@call$formula, REML = T, data = s_dur_trim)                   
+summary(duration_model_abs_trim)
+s_dur$dur_resid = resid(duration_model_rel)
+s_dur_trim = s_dur[abs(scale(s_dur$dur_resid)) < 2.5,]
+duration_model_rel_trim = lmer(duration_model_rel@call$formula, REML = T, data = s_dur_trim)
+summary(duration_model_rel_trim)
+s_dur$dur_resid = resid(duration_model_ratio)
+s_dur_trim = s_dur[abs(scale(s_dur$dur_resid)) < 2.5,]
+duration_model_ratio_trim = lmer(duration_model_ratio@call$formula, REML = T, data = s_dur_trim)
+summary(duration_model_ratio_trim)
 
-AICs = c(AIC(duration_model_abs1), 
-         AIC(duration_model_abs2), 
-         AIC(duration_model_abs3),
-         AIC(duration_model_abs4),
-         AIC(duration_model_rel1),
-         AIC(duration_model_rel2),
-         AIC(duration_model_rel3),
-         AIC(duration_model_rel4),
-         AIC(duration_model_ent1),
-         AIC(duration_model_ent2),
-         AIC(duration_model_ent3),
-         AIC(duration_model_prop),
-         AIC(duration_model_ratio),
-         AIC(duration_model_ratio2),
-         AIC(duration_model_resid),
-         AIC(duration_model_resid2),
-         AIC(duration_model_cov2)
+AICs = c(AIC(refitML(duration_model_abs)), 
+         AIC(refitML(duration_model_rel)),
+         AIC(refitML(duration_model_ratio))
          )
-mod_labs = c("log_f_s", "log_f_s * log_f_nons * log_f_sg", "log_f_s * log_f_sg", "log_f_nons * log_f_sg", "rel_f_s", "log_rel_f_s", "rel_f_s * rel_f_sg", "rel_f_nons * rel_f_sg", "entropy", "relative_entropy", "entropy + relative_entropy", "prop_s * prop_pl", "log_ratio_s * log_ratio_pl", "log_ratio_s * prop_pl", "resid_ratio_s * prop_pl + p_s", "resid_ratio_s * log_ratio_pl + p_s", "corr covariates")
+mod_labs = c("log_f_s", "log_rel_f_s", "log_ratio_s * log_ratio_pl")
 
 plot(1:length(AICs), AICs, xlab = "", ylab = "", xaxt='n', type = "h")
 text(1:length(AICs), par("usr")[3], labels = mod_labs, srt = 45, adj = c(1.1,1.1), xpd = TRUE, cex=0.65)
-abline(h = AIC(duration_model_cov), lty = "dashed")
+abline(h = AIC(refitML(duration_model_cov)), lty = "dashed")
 
-par(mar=c(3,3,3,3), oma=c(3,3,3,3))
-corrplot(pred_ass, method = "number", type = "lower", tl.cex = 0.8, number.cex = 0.5)
-par(mar=c(5.1, 4.1, 4.1, 2.1), oma=c(0,0,0,0))
+AIC(refitML(duration_model_ratio))
+AIC(refitML(duration_model_abs))
+exp((AIC(refitML(duration_model_ratio)) - AIC(refitML(duration_model_abs)))/2)
+
+setEPS()
+postscript("~/OneDrive/PhD_Nijmegen/dur_cor.eps", width = 7.08661, height = 7.5)
+corrplot(pred_ass, method = "number", type = "lower", tl.cex = 0.8, number.cex = 0.5, mar=c(0, 0, 0.8, 0))
+dev.off()
 # remove due to correlation with log_ratio_s: stressed, num_syl_pron
 
 duration_model_full = lmer(log_s_dur_kal ~ 
@@ -1162,98 +884,98 @@ duration_model_full = lmer(log_s_dur_kal ~
                            REML = T,
                            data = s_dur)
 
-backward_elim = step(duration_model_full)
+# see https://www.rdocumentation.org/packages/lmerTest/versions/2.0-36/topics/step for description
+backward_elim = step(duration_model_full#, reduce.random=F
+                     )
 backward_elim
 
-duration_model_ratioREML = lmer(log_s_dur_kal ~ 
+duration_model_ratio_small = lmer(log_s_dur_kal ~ 
                             speech_rate_pron_sc + 
                             PC2_sc + 
                             next_phon_class + 
                             register +
                             log_ratio_s*log_ratio_pl +
+#                            (1 | word) +
                             (1 | speaker), 
                           REML = T,
                           data = s_dur)
 
-s_dur$dur_resid = resid(duration_model_ratioREML)
+s_dur$dur_resid = resid(duration_model_ratio_small)
 s_dur_trim = s_dur[abs(scale(s_dur$dur_resid)) < 2.5,]
 
-duration_model_ratio_trim = lmer(log_s_dur_kal ~ 
-                                   speech_rate_pron_sc +
-                                   PC2_sc + 
-                                   next_phon_class +
-                                   register +
-                                   log_ratio_s*log_ratio_pl +
-                                   (1 | speaker), 
+duration_model_ratio_small_trim = lmer(duration_model_ratio_small@call$formula, 
                                  REML = T,
                                  data = s_dur_trim)
 
+summary(duration_model_ratio_small_trim)
+
+qqnorm(resid(duration_model_ratio_small_trim))
+qqline(resid(duration_model_ratio_small_trim), col="red")
+
 library(sjPlot)
-#plot_model(duration_model_ratio_trim, type = "eff", terms = c("log_ratio_s", "log_ratio_pl[-4, 0, 4]"), colors = "bw", legend.title = "log(ratio(PL))", title = "", axis.title = c("log(ratio(-s))", "log(duration(-s))"))
-svg(filename="~/OneDrive/PhD_Nijmegen/dur_eff.svg", 
-    width=5, 
-    height=4, 
-    pointsize=12)
 
-plot_model(duration_model_ratio_trim, type = "eff", terms = c("log_ratio_s", "log_ratio_pl[-4, 0, 4]"), colors = "bw", legend.title = "Plural Dominance", title = "", axis.title = c("-s Bias", "-s Duration"))
+set_theme(legend.title.face = "plain", legend.pos="top", legend.size = 0.8, axis.title.size = 1, axis.title.color = "black", axis.textsize = 0.9)
+pm = plot_model(duration_model_ratio_small_trim, type = "eff", terms = c("log_ratio_s", "log_ratio_pl[-4, 0, 4]"), color="bw", legend.title = "Plural Dominance", show.legend = T, title = "", axis.title = c("-s Bias", "-s Duration"))
+pm$guides$colour = "legend"
+pm$guides$fill = "legend"
+pm$labels$title = NULL
+pm + geom_ribbon(aes(ymin=pm$data$conf.low, ymax=pm$data$conf.high), alpha = 1, linetype=0, show.legend = T) + 
+  geom_ribbon( aes(ymin=pm$data$conf.low, ymax=pm$data$conf.high), alpha = 0, linetype="solid", show.legend = T) + 
+  geom_point(data = s_dur_trim, mapping = aes(x = log_ratio_s, y = log_s_dur_kal), inherit.aes = FALSE, size=0.5, color="grey") +
+  geom_line(aes(y=pm$data$predicted, x=pm$data$x), color="black", show.legend = T) +
+  scale_colour_manual(name="Plural Dominance", values=c("#009E73", "#0072B2", "#D55E00")) + 
+  scale_fill_manual(name="Plural Dominance", values=c("#009E73", "#0072B2", "#D55E00")) +
+  scale_linetype_manual(name="Plural Dominance", values=c("solid", "dotted", "dashed"))
+ggsave(file="~/OneDrive/PhD_Nijmegen/dur_eff.eps", width = 8.5, height = 10, units = "cm")
 
-dev.off()
 
 library(interactions)
-jn = johnson_neyman(duration_model_ratio_trim, pred = log_ratio_s, modx = log_ratio_pl, plot = T, control.fdr = T)
+jn = johnson_neyman(duration_model_ratio_small_trim, pred = log_ratio_s, modx = log_ratio_pl, plot = T, control.fdr = T)
 jn$bounds
-jn$plot + xlab("log(ratio((PL))") + ylab("Slope of log(ratio(-s))")
-
+jn$plot$theme$legend.position = "top"
+jn$plot$layers[[4]]$aes_params$alpha = 1
+jn$plot$layers[[5]]$aes_params$alpha = 1
+jn$plot$layers[[6]]$aes_params$alpha = 1
+jn$plot$layers[[9]]$aes_params$colour = "black"
+jn$plot$layers[[10]]$aes_params$colour = "black"
+jn$plot + xlab("Plural Dominance") + ylab("Slope of -s Bias") + theme(text = element_text(size = 10), legend.text = element_text(size = 10), legend.key.width = unit(0.5, 'cm')) +
+  geom_line(aes(y=jn$plot$layers[[1]]$data$`Slope of log_ratio_s`, x=jn$plot$layers[[1]]$data$log_ratio_pl), color="black") +
+  geom_line(aes(y=jn$plot$layers[[2]]$data$`Slope of log_ratio_s`, x=jn$plot$layers[[2]]$data$log_ratio_pl), color="black") +
+  geom_line(aes(y=jn$plot$layers[[3]]$data$`Slope of log_ratio_s`, x=jn$plot$layers[[3]]$data$log_ratio_pl), color="black")
+ggsave(file="~/OneDrive/PhD_Nijmegen/dur_jn.eps", width = 8.5, height = 10, units = "cm")
 
 # why reduction effect of log_ratio_s at low log_ratio_pl
 # perhaps because I didn't include correlated covariates?
 # no because same interaction in full model
 
 # show that a full model still works
-duration_model_full = lmer(log_s_dur_kal ~ 
-                             speech_rate_pron_sc + 
-                             num_syl_pron_sc + 
-                             log_base_dur_sc + 
-                             PC1_sc + PC2_sc + PC3_sc + PC4_sc + PC5_sc + 
-                             stressed +
-                             next_phon_class + 
-                             prev_phon_class + 
-                             lex_neb_sc +
-                             probability_prev_sc + probability_next_sc +
-                             prev_mention + register + 
-                            log_ratio_s*log_ratio_pl +
-                             (1 | word) + 
-                             (1 | speaker), 
-                           REML = T,
-                           data = s_dur)
 
-s_dur$dur_resid = resid(duration_model_full)
-s_dur_trim = s_dur[abs(scale(s_dur$dur_resid)) < 2.5,]
+summary(duration_model_ratio_trim)
 
-duration_model_full_trim = lmer(log_s_dur_kal ~ 
-                             speech_rate_pron_sc + 
-                             num_syl_pron_sc + 
-                             log_base_dur_sc + 
-                             PC1_sc + PC2_sc + PC3_sc + PC4_sc + PC5_sc + 
-                             stressed +
-                             next_phon_class + 
-                             prev_phon_class + 
-                             lex_neb_sc +
-                             probability_prev_sc + probability_next_sc +
-                             prev_mention + register + 
-                            log_ratio_s*log_ratio_pl +
-                             (1 | word) + 
-                             (1 | speaker), 
-                           REML = T,
-                           data = s_dur_trim)
-
-plot_model(duration_model_full_trim, type = "eff", terms = c("log_ratio_s", "log_ratio_pl[-4, 0, 4]"), colors = "bw", legend.title = "log(ratio(PL))", title = "", axis.title = c("log(ratio(-s))", "log(duration(-s))"))
+plot_model(duration_model_ratio_trim, type = "eff", terms = c("log_ratio_s", "log_ratio_pl[-4, 0, 4]"), colors = "bw", legend.title = "log(ratio(PL))", title = "", axis.title = c("log(ratio(-s))", "log(duration(-s))"))
 
 # alternative explanation
+get_p_s_var = function(lem) {
+  if (lem == "hersens"){
+    lem = "hersen"
+  }
+  if (lem %in% levels(var$word)){
+    return(var[var$word == lem,]$p_s)
+  } else {
+    return(NA)
+  }
+}
+
+s_dur$p_s = as.numeric(sapply(as.character(s_dur$lemma), get_p_s_var))
+
+s_dur$pred_prop_s = plogis(predict(distribution_model, newdata = s_dur))
+s_dur$pred_log_ratio_s = log(s_dur$pred_prop_s / (1 - s_dur$pred_prop_s))
+s_dur$resid_log_ratio_s = s_dur$pred_log_ratio_s - s_dur$log_ratio_s
+
 
 duration_model_residREML = lmer(log_s_dur_kal ~ 
                                   speech_rate_pron_sc +
-                                  PC1_sc + PC2_sc + 
+                                  PC2_sc + 
                                   next_phon_class +
                                   register +
                                   p_s + resid_log_ratio_s*log_ratio_pl +
@@ -1266,7 +988,7 @@ s_dur_trim = s_dur[abs(scale(s_dur$dur_resid)) < 2.5,]
 
 duration_model_resid_trim = lmer(log_s_dur_kal ~ 
                                    speech_rate_pron_sc +
-                                   PC1_sc + PC2_sc + 
+                                   PC2_sc + 
                                    next_phon_class +
                                    register +
                                    p_s + resid_log_ratio_s*log_ratio_pl +

@@ -1,13 +1,27 @@
-form Command line parameters
-    boolean apply_penalty 1
-    real kal_diff_weight 1
-    integer n_smooths 4
-    boolean take_sqrt 0
-    integer n_prec_values 10
-    integer n_subs_values 0
-    word context_frames "15"
-    word network_type "BLSTM"
-endform
+par_set$ = "overall"
+
+b2i["overall"] = 1
+b2i["startb"] = 2
+b2i["starte"] = 3
+b2i["endb"] = 4
+b2i["ende"] = 5
+p2i["apply_penalty"] = 1
+p2i["kal_diff_weight"] = 2
+p2i["n_smooths"] = 3
+p2i["take_sqrt"] = 4
+p2i["n_prec_values"] = 5
+p2i["n_subs_values"] = 6
+
+parameters## = {{ 1, 0.5, 1, 1, 10, 10 }, { 0, 0.5, 1, 0, 10, 0 }, { 0, 0.5, 2, 0, 10, 0 }, { 0, 0.5, 0, 1, 10, 0 }, { 0, 0.5, 4, 1, 0, 0 }}
+
+apply_penalty = parameters##[b2i[par_set$],p2i["apply_penalty"]]                ; 1
+kal_diff_weight = parameters##[b2i[par_set$],p2i["kal_diff_weight"]]            ; 0.5
+n_smooths = parameters##[b2i[par_set$],p2i["n_smooths"]]                        ; 1
+take_sqrt = parameters##[b2i[par_set$],p2i["take_sqrt"]]                        ; 1
+n_prec_values = parameters##[b2i[par_set$],p2i["n_prec_values"]]                ; 10
+n_subs_values = parameters##[b2i[par_set$],p2i["n_subs_values"]]                ; 10
+context_frames$ = "15"      ; "15"
+network_type$ = "FFNN"      ; "FFNN"
 
 if macintosh
     tensusers$ = "/Volumes/tensusers/timzee/"
@@ -17,71 +31,33 @@ else
     bigdata2$ = "/vol/bigdata2/"
 endif
 
-annotators$[1] = "TR"
-annotators$[2] = "TS"
 double_derivative = 1
 frag_buffer = 0.2
 
 # Make sure input file has a header
-Read Table from comma-separated file: tensusers$ + "classifier_evaluation/s/" + "nn_eval20b.csv"
+Read Table from comma-separated file: tensusers$ + "cgn/synvoirelPL_s_comb_comp-c_timbl2.csv"
+input_name$ = selected$("Table")
 Rename: "chunks"
-Append column: "TR_start_b"
-Append column: "TR_start_e"
-Append column: "TR_end_b"
-Append column: "TR_end_e"
-Append column: "TR_reduction"
-Append column: "TS_start_b"
-Append column: "TS_start_e"
-Append column: "TS_end_b"
-Append column: "TS_end_e"
-Append column: "TS_reduction"
-Append column: "nn_start_b"
-Append column: "nn_start_e"
-Append column: "nn_end_b"
-Append column: "nn_end_e"
-Append column: "kal_b"
-Append column: "kal_e"
-Append column: "wrd_e"
-Append column: "nn_trace"
-
-procedure getSegments: .int_lab$
-    .num_phons = 0
-    .num_letters = length(.int_lab$)
-    .phon$ = ""
-    for .let from 1 to .num_letters
-        .let$ = mid$(.int_lab$, .let, 1)
-        if .let$ != "+" and .let$ != "~" and .let$ != ":" and .let$ != "]"
-            if .phon$ != ""
-                .phons$[.num_phons] = .phon$
-            endif
-            .num_phons += 1
-            .phon$ = .let$
-        else
-            .phon$ = .phon$ + .let$
-            .phons$[.num_phons] = .phon$
-            .phon$ = ""
-        endif
-        if .let == .num_letters and .phon$ != ""
-            .phons$[.num_phons] = .phon$
-        endif
-    endfor
-endproc
-
-procedure getWordArray: .c_ort$
-    .words$ = .c_ort$ + " "
-    .space_index = -1
-    .num_words = 0
-    while .space_index != 0
-        .num_words += 1
-        .space_index = index(.words$, " ")
-        .word$ = left$(.words$, .space_index - 1)
-        .words$ = right$(.words$, length(.words$) - .space_index)
-        if .word$ != ""
-            .word_array$[.num_words] = .word$
-        endif
-    endwhile
-    .num_words -= 1
-endproc
+# Append column: "TR_start_b"
+# Append column: "TR_start_e"
+# Append column: "TR_end_b"
+# Append column: "TR_end_e"
+# Append column: "TR_reduction"
+# Append column: "TS_start_b"
+# Append column: "TS_start_e"
+# Append column: "TS_end_b"
+# Append column: "TS_end_e"
+# Append column: "TS_reduction"
+if par_set$ == "overall"
+    Append column: "nn_start_b"
+    Append column: "nn_start_e"
+    Append column: "nn_end_b"
+    Append column: "nn_end_e"
+endif
+# Append column: "kal_b"
+# Append column: "kal_e"
+# Append column: "wrd_e"
+# Append column: "nn_trace"
 
 procedure inspectChunk: annotateChunk.id
     selectObject: "Table chunks"
@@ -117,7 +93,6 @@ procedure inspectChunk: annotateChunk.id
     c_speaker$ = Get value: annotateChunk.id, "speaker"
     word_chunk_i = Get value: annotateChunk.id, "word_chunk_i"
     word_chunk_i$ = string$(word_chunk_i)
-    c_ort$ = Get value: annotateChunk.id, "ort"
 #    tier = c_tier * 4 - 3
     selectObject: "TextGrid " + s_name$
     tier_name$ = ""
@@ -150,195 +125,6 @@ procedure inspectChunk: annotateChunk.id
     kal_end = Get end time of interval: tier + 3, s_int
     Rename: s_name$ + "_kal"
 
-    # get wrd boundaries
-    if cgn == 1 and corpus$ != "d"
-        wrd_path$ = bigdata2$ + "corpora2/CGN2/data/annot/text/wrd/comp-"
-        runSystem_nocheck: "cp -f " + wrd_path$ + filepath$ + ".wrd.gz " + tensusers$ + "cgn/cgn_annot/"
-        runSystem_nocheck: "gunzip -f " + tensusers$ + "cgn/cgn_annot/" + s_name$ + ".wrd.gz"
-        Read from file: tensusers$ + "cgn/cgn_annot/" + s_name$ + ".wrd"
-        runSystem_nocheck: "rm -f " + tensusers$ + "cgn/cgn_annot/" + s_name$ + ".wrd"
-        Rename: s_name$ + "_wrd"
-        selectObject: "TextGrid " + s_name$ + "_wrd"
-        tier_name$ = Get tier name: c_tier * 2 - 1
-        Extract one tier: c_tier * 2
-        Rename: "tier"
-        Extract part: c_start, c_end, "yes"
-        Rename: "chunk"
-        removeObject: "TextGrid tier"
-        num_ints = Get number of intervals: 1
-        # handle '=' and '-'
-        for int from 1 to num_ints
-            int_lab$ = Get label of interval: 1, int
-            int_lab$ = replace$(int_lab$, "=", "", 0)
-            if int < num_ints
-                next_lab$ = Get label of interval: 1, int + 1
-                if index(next_lab$, "-")
-                    int_lab$ = replace_regex$(int_lab$, "-.$", "", 0)
-                endif
-            endif
-            int_lab$ = replace_regex$(int_lab$, "^.-", "", 0)
-            int_lab$ = replace_regex$(int_lab$, "#", "\[SPN\]", 0)
-            Set interval text: 1, int, int_lab$
-        endfor
-        # handle '_'
-        int = 0
-        while int < num_ints
-            int += 1
-            int_lab$ = Get label of interval: 1, int
-            int_start = Get start time of interval: 1, int
-            int_end = Get end time of interval: 1, int
-            int_dur = int_end - int_start
-            if left$(int_lab$, 1) == "_" or right$(int_lab$, 1) == "_"
-                if int_lab$ == "_" or left$(int_lab$, 1) == "_"
-                    prev_lab$ = Get label of interval: 1, int - 1
-                else
-                    prev_lab$ = left$(int_lab$, length(int_lab$) - 1)
-                endif
-                @getSegments: prev_lab$
-                prev_n = getSegments.num_phons
-                for i from 1 to prev_n
-                    prev_phons$[i] = getSegments.phons$[i]
-                endfor
-                if int_lab$ == "_" or right$(int_lab$, 1) == "_"
-                    next_lab$ = Get label of interval: 1, int + 1
-                else
-                    next_lab$ = right$(int_lab$, length(int_lab$) - 1)
-                endif
-                @getSegments: next_lab$
-                next_n = getSegments.num_phons
-                for i from 1 to next_n
-                    next_phons$[i] = getSegments.phons$[i]
-                endfor
-                shared_n = 0
-                pre_segs$ = ""
-                post_segs$ = "bla"
-                while pre_segs$ != post_segs$
-                    shared_n += 1
-                    pre_segs$ = ""
-                    for i from prev_n - (shared_n - 1) to prev_n
-                        pre_segs$ = pre_segs$ + prev_phons$[i]
-                    endfor
-                    post_segs$ = ""
-                    for i from 1 to shared_n
-                        post_segs$ = post_segs$ + next_phons$[i]
-                    endfor
-    #                appendInfoLine: pre_segs$, " ", post_segs$, " ", f_path$, " ", c_start$, " ", c_end$
-                endwhile
-                if int_lab$ == "_"
-                    if prev_n == shared_n
-                        Set interval text: 1, int, ""
-                        new_boundary = int_start + int_dur / 2
-                        Insert boundary: 1, new_boundary
-                        Remove left boundary: 1, int
-                        Remove right boundary: 1, int
-                    else
-                        Set interval text: 1, int - 1, left$(prev_lab$, length(prev_lab$) - length(pre_segs$))
-                        Set interval text: 1, int, ""
-                        Remove right boundary: 1, int
-                    endif
-                elif left$(int_lab$, 1) == "_"
-                    Set interval text: 1, int - 1, left$(prev_lab$, length(prev_lab$) - length(pre_segs$))
-                    Set interval text: 1, int, next_lab$
-                elif right$(int_lab$, 1) == "_"
-                    Set interval text: 1, int, prev_lab$
-                    new_right_boundary = int_end - (shared_n / prev_n) * 0.5 * int_dur
-                    Insert boundary: 1, new_right_boundary
-                    Remove right boundary: 1, int + 1
-                endif
-            endif
-            num_ints = Get number of intervals: 1
-        endwhile
-        selectObject: "TextGrid " + s_name$ + "_kal"
-        num_tiers = Get number of tiers
-        kal_tier_name$ = ""
-        t = 0
-        while kal_tier_name$ != tier_name$
-            t += 1
-            kal_tier_name$ = Get tier name: t
-        endwhile
-        Extract one tier: t
-        Rename: "ort_tier"
-        Extract part: c_start, c_end, "yes"
-        Rename: "ort_chunk"
-        removeObject: "TextGrid ort_tier"
-        selectObject: "TextGrid " + s_name$ + "_kal"
-        Extract one tier: t + 2
-        Rename: "tran_tier"
-        Extract part: c_start, c_end, "yes"
-        Rename: "tran_chunk"
-        removeObject: "TextGrid tran_tier"
-        selectObject: "TextGrid " + s_name$ + "_kal"
-        Extract one tier: t + 3
-        Rename: "phon_tier"
-        Extract part: c_start, c_end, "yes"
-        Rename: "phon_chunk"
-        removeObject: "TextGrid phon_tier"
-        selectObject: "TextGrid chunk"
-        plusObject: "TextGrid ort_chunk"
-        plusObject: "TextGrid tran_chunk"
-        plusObject: "TextGrid phon_chunk"
-        Merge
-        Rename: "combined"
-        removeObject: "TextGrid chunk"
-        removeObject: "TextGrid ort_chunk"
-        removeObject: "TextGrid tran_chunk"
-        removeObject: "TextGrid phon_chunk"
-        @getWordArray: c_ort$
-        num_words = getWordArray.num_words
-        for i from 1 to num_words
-            word_array$[i] = getWordArray.word_array$[i]
-        endfor
-        wrd_i = 0
-        kal_i = 0
-        num_wrd_i = Get number of intervals: 1
-        num_kal_i = Get number of intervals: 2
-        for word_i from 1 to num_words + 1
-            selectObject: "TextGrid combined"
-            # get wrd info first
-            wrd_tran$ = ""
-            insert_wrd_sil = 0
-            # second part of while statement is because we want to include trailing silences
-            # by measuring sil start here subsequent silences (in case of leading/trailing sil) are treated as 1
-            if wrd_i < num_wrd_i
-                wrd_sil_start = Get start time of interval: 1, wrd_i + 1
-            endif
-            while (wrd_tran$ == "") and (wrd_i < num_wrd_i)
-                wrd_i += 1
-                wrd_tran$ = Get label of interval: 1, wrd_i
-                if wrd_tran$ == ""
-                    insert_wrd_sil = 1
-                    wrd_sil_end = Get end time of interval: 1, wrd_i
-                endif
-            endwhile
-            # get kal info
-            kal_ort$ = ""
-            insert_kal_sil = 0
-            if kal_i < num_kal_i
-                kal_sil_start = Get start time of interval: 2, kal_i + 1
-            endif
-            while (kal_ort$ == "") and (kal_i < num_kal_i)
-                kal_i += 1
-                kal_ort$ = Get label of interval: 2, kal_i
-                if kal_ort$ == ""
-                    insert_kal_sil = 1
-                    kal_sil_end = Get end time of interval: 2, kal_i
-                endif
-            endwhile
-            if word_i == word_chunk_i
-                selectObject: "TextGrid combined"
-                man_end = Get end time of interval: 1, wrd_i
-                man_end$ = fixed$(man_end, 5)
-                kal_word$ = Get label of interval: 2, kal_i
-#                appendInfoLine: "Asserting '" + kal_word$ + "' == '" + w_ort$ + "'"
-                assert replace_regex$(kal_word$, "[.?]", "", 0) == w_ort$
-            endif
-        endfor
-        removeObject: "TextGrid combined"
-        removeObject: "TextGrid " + s_name$ + "_kal"
-        removeObject: "TextGrid " + s_name$ + "_wrd"
-    else
-        man_end$ = "NA"
-    endif
 
     # Get neural network boundaries
     frag_start = kal_start - frag_buffer
@@ -351,7 +137,12 @@ procedure inspectChunk: annotateChunk.id
     if frag_end > sound_end
         frag_end = sound_end
     endif
-    frag_path$ = tensusers$ + "af_classification/pred_textgrids_keras/af_eval_s/" + network_type$ + "_" + context_frames$ + "/"
+    if length(corpus$) == 1
+        corp_fol$ = "cgn-" + corpus$
+    else
+        corp_fol$ = corpus$
+    endif
+    frag_path$ = tensusers$ + "af_classification/pred_textgrids_keras/" + corp_fol$ + "/" + network_type$ + "_" + context_frames$ + "/"
     if corpus$ = "ecsd"
         frag_file$ = frag_path$ + s_name$ + "_S_" + c_channel$ + "_" + frag_start$ + "_" + fixed$(frag_end, 3) + "_s.IntensityTier"
     else
@@ -526,16 +317,18 @@ procedure inspectChunk: annotateChunk.id
         nn_start_i = Search column: "score", string$(nn_start_score)
         nn_start_index = undefined
         if nn_start_i == 0
-            nn_start$ = "NA"
+            nn_start_b$ = "NA"
             nn_start_e$ = "NA"
         else
             if double_derivative
-                nn_start = Get value: nn_start_i, "tmin2"
-                if nn_start == undefined
-                    nn_start$ = "NA"
+                nn_start = Get value: nn_start_i, "tmin"
+                nn_start$ = fixed$(nn_start, 3)
+                nn_start_b = Get value: nn_start_i, "tmin2"
+                if nn_start_b == undefined
+                    nn_start_b$ = "NA"
                     appendInfoLine: "ERROR: could not find nn_start_b for " + filepath$ + "," + c_channel$ + "," + c_start$ + "," + c_end$
                 else
-                    nn_start$ = fixed$(nn_start, 3)
+                    nn_start_b$ = fixed$(nn_start_b, 3)
                     nn_start_index = Get value: nn_start_i, "tmin2_i"
                 endif
                 nn_start_e = Get value: nn_start_i, "tmin3"
@@ -550,16 +343,17 @@ procedure inspectChunk: annotateChunk.id
                 nn_start = Get value: nn_start_i, "tmin"
                 nn_start$ = fixed$(nn_start, 3)
                 nn_start_e$ = "NA"
+                nn_start_b$ = "NA"
             endif
         endif
         removeObject: "Table starts"
         removeObject: "TextGrid starts"
         selectObject: "TextGrid starts_ends"
         Extract one tier: 2
-        if nn_start$ == "NA"
+        if nn_start_b$ == "NA"
             wrong_end_points = Get low index from time: 1, kal_start
         else
-            wrong_end_points = Get low index from time: 1, nn_start
+            wrong_end_points = Get low index from time: 1, nn_start_b
         endif
         for end_point from 1 to wrong_end_points
             Remove point: 1, 1
@@ -584,7 +378,7 @@ procedure inspectChunk: annotateChunk.id
             if prev_end and apply_penalty
                 closest_start_i = Get low index from time: 1, prev_end
                 closest_start = Get time of point: 1, closest_start_i
-                if closest_start == nn_start
+                if closest_start == nn_start_b
                     penalty = cum_strength * (prev_end - closest_start) * 2
                 else
                     cum_strength = 0
@@ -653,16 +447,19 @@ procedure inspectChunk: annotateChunk.id
         nn_end_index = undefined
         if nn_end_i == 0
             nn_end$ = "NA"
+            nn_end_e$ = "NA"
             nn_end_b$ = "NA"
         else
             if double_derivative
-                nn_end = Get value: nn_end_i, "tmin2"
-                if nn_end == undefined
-                    nn_end$ = "NA"
+                nn_end = Get value: nn_end_i, "tmin"
+                nn_end$ = fixed$(nn_end, 3)
+                nn_end_e = Get value: nn_end_i, "tmin2"
+                if nn_end_e == undefined
+                    nn_end_e$ = "NA"
                     appendInfoLine: "ERROR: could not find nn_end_e for " + filepath$ + "," + c_channel$ + "," + c_start$ + "," + c_end$
 #                    exitScript()
                 else
-                    nn_end$ = fixed$(nn_end, 3)
+                    nn_end_e$ = fixed$(nn_end_e, 3)
                     nn_end_index = Get value: nn_end_i, "tmin2_i"
                 endif
                 nn_end_b = Get value: nn_end_i, "tmin3"
@@ -677,88 +474,76 @@ procedure inspectChunk: annotateChunk.id
                 nn_end = Get value: nn_end_i, "tmin"
                 nn_end$ = fixed$(nn_end, 3)
                 nn_end_b$ = "NA"
+                nn_end_e$ = "NA"
             endif
         endif
-        if (nn_start_index != undefined) and (nn_end_index != undefined)
-            trace_range$ = string$(nn_start_index) + ":" + string$(nn_end_index)
-            selectObject: "IntensityTier " + p_name$
-            Down to TableOfReal
-            Extract row ranges: trace_range$
-            To Table: "rowLabel"
-            Remove column: "Time (s)"
-            Remove column: "rowLabel"
-            bla$ = List: "no"
-            bla2$ = replace_regex$(bla$,"[^0-9]+\n", "c(", 1)
-            bla3$ = replace_regex$(bla2$,"\n$", ")",0)
-            nn_trace$ = replace_regex$(bla3$,"\n", ",",0)
-            removeObject: "TableOfReal " + p_name$
-            removeObject: "TableOfReal " + p_name$ + "_rows"
-            removeObject: "Table " + p_name$ + "_rows"
-        else
-            nn_trace$ = "NA"
-        endif
+        # if (nn_start_index != undefined) and (nn_end_index != undefined)
+        #     trace_range$ = string$(nn_start_index) + ":" + string$(nn_end_index)
+        #     selectObject: "IntensityTier " + p_name$
+        #     Down to TableOfReal
+        #     Extract row ranges: trace_range$
+        #     To Table: "rowLabel"
+        #     Remove column: "Time (s)"
+        #     Remove column: "rowLabel"
+        #     bla$ = List: "no"
+        #     bla2$ = replace_regex$(bla$,"[^0-9]+\n", "c(", 1)
+        #     bla3$ = replace_regex$(bla2$,"\n$", ")",0)
+        #     nn_trace$ = replace_regex$(bla3$,"\n", ",",0)
+        #     removeObject: "TableOfReal " + p_name$
+        #     removeObject: "TableOfReal " + p_name$ + "_rows"
+        #     removeObject: "Table " + p_name$ + "_rows"
+        # else
+        #     nn_trace$ = "NA"
+        # endif
         removeObject: "Table ends"
         removeObject: "TextGrid ends"
         removeObject: "IntensityTier " + p_name$
         removeObject: "IntensityTier " + p_name$ + "_diff"
-#        removeObject: "IntensityTier " + p_name$ + "_diff_diff"
+        removeObject: "IntensityTier " + p_name$ + "_diff_diff"
         removeObject: "TextGrid starts_ends"
     else
         nn_start$ = "NA"
+        nn_start_b$ = "NA"
         nn_start_e$ = "NA"
         nn_end$ = "NA"
         nn_end_b$ = "NA"
-        nn_trace$ = "NA"
+        nn_end_e$ = "NA"
+        # nn_trace$ = "NA"
     endif
 
-    # get annotator boundaries
-    annot_chunk_name$ = replace$(filepath$, "/", "_", 0) + "_" + c_channel$ + "_" + c_start$ + "_" + c_end$ + "_" + c_tier$ + "_" + word_chunk_i$ + ".TextGrid"
-    for annotator_i from 1 to 2
-        annot_chunk_path$ = tensusers$ + "classifier_evaluation/s/man_annot/" + annotators$[annotator_i] + "_copy/" + corpus$ + "/" + annot_chunk_name$
-        if fileReadable(annot_chunk_path$)
-            Read from file: annot_chunk_path$
-            annot_chunk$ = selected$("TextGrid")
-            n_boundary_ints = Get number of intervals: 2
-            an_start_b = Get start time of interval: 2, 2
-            an_start_b$ = string$(an_start_b)
-            an_start_e = Get end time of interval: 2, 2
-            an_start_e$ = string$(an_start_e)
-            if n_boundary_ints == 5
-                an_end_b = Get start time of interval: 2, 4
-                an_end_e = Get end time of interval: 2, 4
-            elsif n_boundary_ints == 4
-                an_end_b = Get start time of interval: 2, 3
-                an_end_e = Get end time of interval: 2, 3
-            endif
-            an_end_b$ = string$(an_end_b)
-            an_end_e$ = string$(an_end_e)
-            an_reduction$ = Get label of interval: 3, 1
-            removeObject: "TextGrid " + annot_chunk$
-        else
-            appendInfoLine: annot_chunk_name$ + " not readable"
-            an_start_b$ = "NA"
-            an_start_e$ = "NA"
-            an_end_b$ = "NA"
-            an_end_e$ = "NA"
-            an_reduction$ = "NA"
-        endif
-        selectObject: "Table chunks"
-        Set string value: annotateChunk.id, annotators$[annotator_i] + "_start_b", an_start_b$
-        Set string value: annotateChunk.id, annotators$[annotator_i] + "_start_e", an_start_e$
-        Set string value: annotateChunk.id, annotators$[annotator_i] + "_end_b", an_end_b$
-        Set string value: annotateChunk.id, annotators$[annotator_i] + "_end_e", an_end_e$
-        Set string value: annotateChunk.id, annotators$[annotator_i] + "_reduction", an_reduction$
-    endfor
+    if nn_start$ != "NA"
+        base_dur$ = string$(nn_start - w_start)
+    else
+        base_dur$ = "NA"
+    endif
+
+    removeObject: "TextGrid " + s_name$ + "_kal"
 
     selectObject: "Table chunks"
-    Set numeric value: annotateChunk.id, "kal_b", kal_start
-    Set numeric value: annotateChunk.id, "kal_e", kal_end
-    Set string value: annotateChunk.id, "nn_start_b", nn_start$
-    Set string value: annotateChunk.id, "nn_start_e", nn_start_e$
-    Set string value: annotateChunk.id, "nn_end_b", nn_end_b$
-    Set string value: annotateChunk.id, "nn_end_e", nn_end$
-    Set string value: annotateChunk.id, "wrd_e", man_end$
-    Set string value: annotateChunk.id, "nn_trace", nn_trace$
+    if par_set$ == "overall"
+        Set numeric value: annotateChunk.id, "s_dur", kal_end - kal_start
+        Set numeric value: annotateChunk.id, "kal_start", kal_start
+        Set numeric value: annotateChunk.id, "kal_end", kal_end
+        Set string value: annotateChunk.id, "nn_start", nn_start$
+        Set string value: annotateChunk.id, "nn_start_b", nn_start_b$
+        Set string value: annotateChunk.id, "nn_start_e", nn_start_e$
+        Set string value: annotateChunk.id, "nn_end_b", nn_end_b$
+        Set string value: annotateChunk.id, "nn_end_e", nn_end_e$
+        Set string value: annotateChunk.id, "nn_end", nn_end$
+        Set string value: annotateChunk.id, "nn_start_score", nn_start_score$
+        Set string value: annotateChunk.id, "nn_end_score", nn_end_score$
+        Set string value: annotateChunk.id, "base_dur", base_dur$
+        # Set string value: annotateChunk.id, "nn_trace", nn_trace$
+    elsif par_set$ == "startb"
+        Set string value: annotateChunk.id, "nn_start_b", nn_start_b$
+    elsif par_set$ == "starte"
+        Set string value: annotateChunk.id, "nn_start_e", nn_start_e$
+    elsif par_set$ == "endb"
+        Set string value: annotateChunk.id, "nn_end_b", nn_end_b$
+        Set string value: annotateChunk.id, "base_dur", base_dur$
+    elsif par_set$ == "ende"
+        Set string value: annotateChunk.id, "nn_end_e", nn_end_e$
+    endif
 endproc
 
 
@@ -769,4 +554,11 @@ for id from 1 to num_chunks
 endfor
 
 selectObject: "Table chunks"
-Save as comma-separated file: tensusers$ + "classifier_evaluation/s/grid_search_output/" + network_type$ + "_" + context_frames$ + "_" + string$(kal_diff_weight) + "_" + string$(apply_penalty) + "_" + string$(n_prec_values) + "_" + string$(n_subs_values) + "_" + string$(n_smooths) + "_" + string$(take_sqrt) + ".csv"
+if corpus$ == "ecsd"
+    output_fol$ = "ECSD/"
+elsif corpus$ == "ifadv"
+    output_fol$ = "IFADVcorpus/"
+else
+    output_fol$ = "cgn/"
+endif
+Save as comma-separated file: tensusers$ + output_fol$ + input_name$ + "_" + par_set$ + ".csv"

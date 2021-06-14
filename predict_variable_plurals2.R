@@ -10,10 +10,10 @@ library(VGAM)
 library(aods3)
 
 if (Sys.info()[1] == "Darwin"){
-  f_path = "/Volumes/tensusers/timzee/timbl_files/"
+  f_path = "/Volumes/tensusers/timzee/timbl_files2/"
   f_path2 = "/Volumes/tensusers/timzee/other/"
 } else {
-  f_path = "/vol/tensusers/timzee/timbl_files/"
+  f_path = "/vol/tensusers/timzee/timbl_files2/"
   f_path2 = "/vol/tensusers/timzee/other/"
 }
 
@@ -174,22 +174,113 @@ get_mv_relfreq_sig = function(f_name, n, model_type) {
   print(n)
   if (file.exists(paste(f_path, f_name, sep = ""))) {
     results = read.csv(paste(f_path, f_name, sep = ""), header = T)
-    results[results$word == "client",]$f_ev = 115   # this should all be moved to python script
-    results[results$word == "big",]$f_ev = 801
-    results[results$word == "orgie",]$f_s = 16
-#    results[results$word == "grieve",]$f_ev = 5  # is een ww
-#    results[results$word == "grieve",]$f_s = 40
-    results = results[!(results$word %in% c("l", "pop", "portier", "net", "water", "god", "cent", "karaat", "punt", "post", "kajak", "grieve")),]
     results = results[results$f_s != 0,]
-#    results = results[results$f_other == 0,]
-    results$s_prop = results$f_s/(results$f_s + results$f_en + results$f_other)
-    results$log_f_mv = log(results$f_s + results$f_en + results$f_other)
-    results$mv_relfreq = (results$f_s + results$f_en + results$f_other) / (results$f_s + results$f_en + results$f_other + results$f_ev)
+    #results = results[results$f_other == 0,]
+    # twijfel = c("bank", #bank's
+    #             "bisschop", #bisschop's
+    #             "ex", #ex's
+    #             "havik", #havik's
+    #             "klootzak", # klootzak's
+    #             "mark", # mark's
+    #             "partij", #partij's
+    #             "vrouw", # vrouw's 
+    #             "wereld", # wereld's
+    #             "thee", # thee's
+    #             "schaduw", # schaduw's
+    #             "wereld", # wereld's
+    #             "werk", # werk's
+    #             "zatlap", # zatlap's
+    #             "dokter", # doktoren
+    #             "dynastie", #dynastie<U+0091>n
+    #             
+    #             "dropping",
+    #             "inning",
+    #             "kidnapping",
+    #             "shilling",
+    #             "training",
+    #             
+    #             "deur", # 2 deurs
+    #             "tand", # 3 tands
+    #             
+    #             "middelmaat", # wij zijn middelmaats
+    #             "engel", # kan verward worden met de taal; wij zijn engels
+    #             
+    #             "feminist", # hoe weet je dat femisten niet mv van feministe is
+    #             "mutagen", # nl'se woorde is mutageen
+    #             "cocon", # cocons cocoonen (zie SUBTLEX cocoonen niet een zelfst. naamw.)
+    #             
+    #             "clip", # 2 betekenissen
+    #             "den", # 2 betekenissen
+    #             "gif", # 2 betekenissen
+    #             "inning", # 2 betekenissen
+    #             "mul", # ww / 2 betekenissen
+    #             "horde", # 2 betekenissen
+    #             "scoop", # 2 betekenissen
+    #             "standaard", # verschillende betekensisen
+    #             "sim", # verschillende betekenissen
+    #             "sirene", # 2 betekenissen
+    #             "fee", # 2 betekenissen
+    #             "apache", # 2 betekenissen
+    #             
+    #             "frank", # valuta
+    #             "mark", # valuta
+    #             "shilling", # valuta
+    #             "cent", "karaat", "punt", # maat/eenheid
+    #             
+    #             "rode", # not a noun / afgeleid van bijv. naamw. altijd -en
+    #             "naaste", # des naastes / afgeleid van bijv. naamw. altijd -en
+    #             
+    #             "l", # not a noun
+    #             "pop", # 2 betekenissen
+    #             "portier", # 2 betekenissen
+    #             "net", # 2 betekenissen letterlijk en digitaal
+    #             "water", # 2 betekenissen
+    #             "god", # engels gods / wellicht genitief
+    #             "post", # 2 betekenissen
+    #             "grieve", # ww in van dale
+    #             
+    #             "ring", # engels rings **********
+    #             "stern", # *******************
+    #             "big", # engels ************
+    #             "client", # engels clients*******
+    #             "palm", # ************* 
+    #             "arend",    # +++++
+    #             "district", # +++++
+    #             "faillissement", # +++++
+    #             "gedachte", # +++++
+    #             "gevaar",   # +++++
+    #             "havik",    # +++++
+    #             "kanon",    # +++++
+    #             "lende",    # +++++
+    #             "lichaam",  # +++++
+    #             "linde",    # +++++
+    #             "moer",     # +++++
+    #             "neutron",  # +++++
+    #             #            "onderofficier", # +++++ Don't exclude according to f_s < number of compounds
+    #             "ongeluk",  # +++++
+    #             "uitgang",  # +++++
+    #             "vakbond",  # +++++
+    #             "vierkant", # +++++
+    #             "wereld", # +++++
+    #             "flap", # 2 betekenissen
+    #             "gel" # 2 betekenissen
+    # )
+    # ww_van_dale = c("adder", "bank", "big", "bijdrage", "brief", "dokter", "eikel", "gruwel", "hengel", "heuvel", "hoeve", "kandelaar", "kap", "kar", "kenteken", "kik", "kit", "klem", "klik", "leraar", "maal", "mat", "match", "mentor", "meubel", "moer", "monitor", "naaste", "nevel", "orakel", "parel", "pier", "rank", "rel", "ring", "ruzie", "schaduw", "sim", "sponsor", "steppe", "tand", "tong", "twist", "vel", "wapen", "werk", "wortel")
+    # spraakkunst = c("bal", "cent", "curator", "harmonie", "hemel", "kolonie", "letter", "maat", "middel", "olie", "patroon", "plan", "portier", "rede", "reden", "strip", "stuk", "tafel", "test", "tip", "vader", "vizier", "wapen", "water", "wortel")
+    # results = results[!(results$word %in% spraakkunst),]
+    # results = results[!(results$word %in% twijfel),]
+    # results = results[!(results$word %in% ww_van_dale),]
+    results$f_mv = results$f_s + results$f_en + results$f_other
+    results = results[results$f_mv > 2,]
+    results$s_prop = results$f_s/(results$f_mv)
+    results$log_f_mv = log(results$f_mv)
+    results$mv_relfreq = (results$f_mv) / (results$f_mv + results$f_ev)
+    results$log_ratio_pl = log((results$f_mv + 1)/(results$f_ev + 1))
     results$f_nons = results$f_en + results$f_other
     if (model_type == "betareg"){
       results$s_prop2 = (results$s_prop*(nrow(results)-1) + 0.5) / nrow(results)
-      prop = betareg(s_prop2 ~ p_s*mv_relfreq + p_s*log_f_mv, data = results)
-      return(summary(prop)$coefficients$mean["p_s:mv_relfreq", 4])
+      prop = betareg(s_prop2 ~ p_s*log_ratio_pl + p_s*log_f_mv, data = results)
+      return(summary(prop)$coefficients$mean["p_s:log_ratio_pl", 4])
     } else if (model_type == "betabin_aod"){
       prop = betabin(cbind(f_s, f_nons) ~ p_s * mv_relfreq + p_s * log_f_mv, ~ 1, data = results, control = list(maxit=5000))
       return(summary(prop)@Coef["p_s:mv_relfreq",]$`Pr(> |z|)`)
@@ -197,8 +288,12 @@ get_mv_relfreq_sig = function(f_name, n, model_type) {
       prop = vglm(cbind(f_s, f_nons) ~ p_s * mv_relfreq + p_s * log_f_mv, betabinomial, results)
       return(summary(prop)@coef3["p_s:mv_relfreq", "Pr(>|z|)"])
     } else {
-      prop = aodml(cbind(f_s, f_nons) ~ p_s * mv_relfreq + p_s * log_f_mv, family = "bb", data = results)
-      return(summary(prop)$BCoef["p_s:mv_relfreq", "Pr(> |z|)"])
+      prop = aodml(cbind(f_s, f_nons) ~ p_s * log_ratio_pl + p_s * log_f_mv, 
+#                   phi.formula = ~ log_f_mv, 
+                   family = "bb", data = results)
+      return(summary(prop)$BCoef["p_s:log_ratio_pl", "Pr(> |z|)"])
+#      prop = aodml(cbind(f_s, f_nons) ~ p_s * mv_relfreq + p_s * log_f_mv, phi.formula = ~ log_f_mv, family = "bb", data = results)
+#      return(summary(prop)$BCoef["p_s:mv_relfreq", "Pr(> |z|)"])
     }
   } else {
     return(NA)
@@ -218,8 +313,10 @@ get_mv_freq_relfreq_sig = function(f_name, n, model_type) {
     results = results[results$f_s != 0,]
 #    results = results[results$f_other == 0,]
     results$s_prop = results$f_s/(results$f_s + results$f_en + results$f_other)
-    results$log_f_mv = log(results$f_s + results$f_en + results$f_other)
+    results$f_mv = results$f_s + results$f_en + results$f_other
+    results$log_f_mv = log(results$f_mv)
     results$mv_relfreq = (results$f_s + results$f_en + results$f_other) / (results$f_s + results$f_en + results$f_other + results$f_ev)
+    var = var[var$f_pl > 2,]
     results$f_nons = results$f_en + results$f_other
     if (model_type == "betareg"){
       results$s_prop2 = (results$s_prop*(nrow(results)-1) + 0.5) / nrow(results)
@@ -274,16 +371,16 @@ gs_index$mv_relfreq_sig = mapply(get_mv_relfreq_sig, gs_index$file_n, gs_index$n
 
 gs_index_sig = gs_index[gs_index$mv_relfreq_sig < .05 
 #                        & gs_index$p_s_beta > .22
-                        & gs_index$nneigh_k > 1
-                        & gs_index$n_syll > 1 
-                        & gs_index$ad_verb == "False"
+#                        & gs_index$nneigh_k > 1
+#                        & gs_index$n_syll > 1 
+#                        & gs_index$ad_verb == "False"
 #                        & gs_index$ad_var == "False"
 ,]
 gs_index_nonsig = gs_index[gs_index$mv_relfreq_sig >= .05 
 #                          & gs_index$p_s_beta > .22 
-                          & gs_index$nneigh_k > 1
-                           & gs_index$n_syll > 1 
-                           & gs_index$ad_verb == "False"
+#                          & gs_index$nneigh_k > 1
+#                           & gs_index$n_syll > 1 
+#                           & gs_index$ad_verb == "False"
 #                          & gs_index$ad_var == "False"
 ,]
 
@@ -341,13 +438,13 @@ acc_sig2 = c()
 # acc_sds = c(acc_sds, "", round(acc_sd_type, 3), round(acc_sd_token, 3))
 
 # merge
-m_unmerged = mean(gs_index[gs_index$instncs == "type" & gs_index$merge == "False",]$cor, na.rm = T)
-sd_unmerged = sd(gs_index[gs_index$instncs == "type" & gs_index$merge == "False",]$cor, na.rm = T)
-m_merged = mean(gs_index[gs_index$instncs == "type" & gs_index$merge == "True",]$cor, na.rm = T)
-sd_merged = sd(gs_index[gs_index$instncs == "type" & gs_index$merge == "True",]$cor, na.rm = T)
-boxplot(cor ~ merge, data = gs_index[gs_index$instncs == "type",])
-merge_p = t.test(gs_index[gs_index$instncs == "type" & gs_index$merge == "False",]$cor, gs_index[gs_index$instncs == "type" & gs_index$merge == "True",]$cor, paired = TRUE, alternative = "two.sided")$p.value
-merge_p2 = ifelse(merge_p < .001, "***", ifelse(merge_p < .01, "**", ifelse(merge_p < .05, "*", "")))
+# m_unmerged = mean(gs_index[gs_index$instncs == "type" & gs_index$merge == "False",]$cor, na.rm = T)
+# sd_unmerged = sd(gs_index[gs_index$instncs == "type" & gs_index$merge == "False",]$cor, na.rm = T)
+# m_merged = mean(gs_index[gs_index$instncs == "type" & gs_index$merge == "True",]$cor, na.rm = T)
+# sd_merged = sd(gs_index[gs_index$instncs == "type" & gs_index$merge == "True",]$cor, na.rm = T)
+# boxplot(cor ~ merge, data = gs_index[gs_index$instncs == "type",])
+# merge_p = t.test(gs_index[gs_index$instncs == "type" & gs_index$merge == "False",]$cor, gs_index[gs_index$instncs == "type" & gs_index$merge == "True",]$cor, paired = TRUE, alternative = "two.sided")$p.value
+# merge_p2 = ifelse(merge_p < .001, "***", ifelse(merge_p < .01, "**", ifelse(merge_p < .05, "*", "")))
 
 acc_m_unmerged = mean(gs_index[gs_index$instncs == "type" & gs_index$merge == "False",]$acc, na.rm = T)
 acc_sd_unmerged = sd(gs_index[gs_index$instncs == "type" & gs_index$merge == "False",]$acc, na.rm = T)
@@ -358,10 +455,10 @@ acc_merge_p2 = ifelse(acc_merge_p < .001, "***", ifelse(acc_merge_p < .01, "**",
 
 
 par_names = c(par_names, "Type Merging", "No", "Yes")
-means = c(means, "", round(m_unmerged, 3), round(m_merged, 3))
-stand_devs = c(stand_devs, "", round(sd_unmerged, 3), round(sd_merged, 3))
-difference_significance = c(difference_significance, "", "", round(merge_p, 3))
-difference_significance2 = c(difference_significance2, "", "", merge_p2)
+# means = c(means, "", round(m_unmerged, 3), round(m_merged, 3))
+# stand_devs = c(stand_devs, "", round(sd_unmerged, 3), round(sd_merged, 3))
+# difference_significance = c(difference_significance, "", "", round(merge_p, 3))
+# difference_significance2 = c(difference_significance2, "", "", merge_p2)
 
 acc_means = c(acc_means, "", round(acc_m_unmerged, 3), round(acc_m_merged, 3))
 acc_sds = c(acc_sds, "", round(acc_sd_unmerged, 3), round(acc_sd_merged, 3))
@@ -369,21 +466,21 @@ acc_sig = c(acc_sig, "", "", round(acc_merge_p, 3))
 acc_sig2 = c(acc_sig2, "", "", acc_merge_p2)
 
 # num syll
-m_1syl = mean(gs_index[gs_index$n_syll == 1,]$cor, na.rm = T)
-sd_1syl = sd(gs_index[gs_index$n_syll == 1,]$cor, na.rm = T)
-m_2syl = mean(gs_index[gs_index$n_syll == 2,]$cor, na.rm = T)
-sd_2syl = sd(gs_index[gs_index$n_syll == 2,]$cor, na.rm = T)
-m_3syl = mean(gs_index[gs_index$n_syll == 3,]$cor, na.rm = T)
-sd_3syl = sd(gs_index[gs_index$n_syll == 3,]$cor, na.rm = T)
-m_4syl = mean(gs_index[gs_index$n_syll == 4,]$cor, na.rm = T)
-sd_4syl = sd(gs_index[gs_index$n_syll == 4,]$cor, na.rm = T)
-boxplot(cor ~ n_syll, data = gs_index)
-p_1_2syl = t.test(gs_index[gs_index$n_syll == 1,]$cor, gs_index[gs_index$n_syll == 2,]$cor, paired = TRUE, alternative = "two.sided")$p.value
-p_2_3syl = t.test(gs_index[gs_index$n_syll == 2,]$cor, gs_index[gs_index$n_syll == 3,]$cor, paired = TRUE, alternative = "two.sided")$p.value
-p_3_4syl = t.test(gs_index[gs_index$n_syll == 3,]$cor, gs_index[gs_index$n_syll == 4,]$cor, paired = TRUE, alternative = "two.sided")$p.value
-p_1_2syl2 = ifelse(p_1_2syl < .001, "***", ifelse(p_1_2syl < .01, "**", ifelse(p_1_2syl < .05, "*", "")))
-p_2_3syl2 = ifelse(p_2_3syl < .001, "***", ifelse(p_2_3syl < .01, "**", ifelse(p_2_3syl < .05, "*", "")))
-p_3_4syl2 = ifelse(p_3_4syl < .001, "***", ifelse(p_3_4syl < .01, "**", ifelse(p_3_4syl < .05, "*", "")))
+#m_1syl = mean(gs_index[gs_index$n_syll == 1,]$cor, na.rm = T)
+#sd_1syl = sd(gs_index[gs_index$n_syll == 1,]$cor, na.rm = T)
+# m_2syl = mean(gs_index[gs_index$n_syll == 2,]$cor, na.rm = T)
+# sd_2syl = sd(gs_index[gs_index$n_syll == 2,]$cor, na.rm = T)
+# m_3syl = mean(gs_index[gs_index$n_syll == 3,]$cor, na.rm = T)
+# sd_3syl = sd(gs_index[gs_index$n_syll == 3,]$cor, na.rm = T)
+# m_4syl = mean(gs_index[gs_index$n_syll == 4,]$cor, na.rm = T)
+# sd_4syl = sd(gs_index[gs_index$n_syll == 4,]$cor, na.rm = T)
+# boxplot(cor ~ n_syll, data = gs_index)
+#p_1_2syl = t.test(gs_index[gs_index$n_syll == 1,]$cor, gs_index[gs_index$n_syll == 2,]$cor, paired = TRUE, alternative = "two.sided")$p.value
+# p_2_3syl = t.test(gs_index[gs_index$n_syll == 2,]$cor, gs_index[gs_index$n_syll == 3,]$cor, paired = TRUE, alternative = "two.sided")$p.value
+# p_3_4syl = t.test(gs_index[gs_index$n_syll == 3,]$cor, gs_index[gs_index$n_syll == 4,]$cor, paired = TRUE, alternative = "two.sided")$p.value
+#p_1_2syl2 = ifelse(p_1_2syl < .001, "***", ifelse(p_1_2syl < .01, "**", ifelse(p_1_2syl < .05, "*", "")))
+# p_2_3syl2 = ifelse(p_2_3syl < .001, "***", ifelse(p_2_3syl < .01, "**", ifelse(p_2_3syl < .05, "*", "")))
+# p_3_4syl2 = ifelse(p_3_4syl < .001, "***", ifelse(p_3_4syl < .01, "**", ifelse(p_3_4syl < .05, "*", "")))
 
 acc_m_1syl = mean(gs_index[gs_index$n_syll == 1,]$acc, na.rm = T)
 acc_sd_1syl = sd(gs_index[gs_index$n_syll == 1,]$acc, na.rm = T)
@@ -401,39 +498,57 @@ acc_p_2_3syl2 = ifelse(acc_p_2_3syl < .001, "***", ifelse(acc_p_2_3syl < .01, "*
 acc_p_3_4syl2 = ifelse(acc_p_3_4syl < .001, "***", ifelse(acc_p_3_4syl < .01, "**", ifelse(acc_p_3_4syl < .05, "*", "")))
 
 
-par_names = c(par_names, "Number of Syllables", "1", "2", "3", "4")
-means = c(means, "", round(m_1syl, 3), round(m_2syl, 3), round(m_3syl, 3), round(m_4syl, 3))
-stand_devs = c(stand_devs, "", round(sd_1syl, 3), round(sd_2syl, 3), round(sd_3syl, 3), round(sd_4syl, 3))
-difference_significance = c(difference_significance, "", "", round(p_1_2syl, 3), round(p_2_3syl, 3), round(p_3_4syl, 3))
-difference_significance2 = c(difference_significance2, "", "", p_1_2syl2, p_2_3syl2, p_3_4syl2)
+par_names = c(par_names, "Number of Syllables", 
+              "1", 
+              "2", "3", "4")
+# means = c(means, "", 
+#           round(m_1syl, 3), 
+#           round(m_2syl, 3), round(m_3syl, 3), round(m_4syl, 3))
+# stand_devs = c(stand_devs, "", 
+#                round(sd_1syl, 3), 
+#                round(sd_2syl, 3), round(sd_3syl, 3), round(sd_4syl, 3))
+# difference_significance = c(difference_significance, "", "", 
+#                             round(p_1_2syl, 3), 
+#                             round(p_2_3syl, 3), round(p_3_4syl, 3))
+# difference_significance2 = c(difference_significance2, "", "", 
+#                              p_1_2syl2, 
+#                              p_2_3syl2, p_3_4syl2)
 
-acc_means = c(acc_means, "", round(acc_m_1syl, 3), round(acc_m_2syl, 3), round(acc_m_3syl, 3), round(acc_m_4syl, 3))
-acc_sds = c(acc_sds, "", round(acc_sd_1syl, 3), round(acc_sd_2syl, 3), round(acc_sd_3syl, 3), round(acc_sd_4syl, 3))
-acc_sig = c(acc_sig, "", "", round(acc_p_1_2syl, 3), round(acc_p_2_3syl, 3), round(acc_p_3_4syl, 3))
-acc_sig2 = c(acc_sig2, "", "", acc_p_1_2syl2, acc_p_2_3syl2, acc_p_3_4syl2)
+acc_means = c(acc_means, "", 
+              round(acc_m_1syl, 3), 
+              round(acc_m_2syl, 3), round(acc_m_3syl, 3), round(acc_m_4syl, 3))
+acc_sds = c(acc_sds, "", 
+            round(acc_sd_1syl, 3), 
+            round(acc_sd_2syl, 3), round(acc_sd_3syl, 3), round(acc_sd_4syl, 3))
+acc_sig = c(acc_sig, "", "", 
+            round(acc_p_1_2syl, 3), 
+            round(acc_p_2_3syl, 3), round(acc_p_3_4syl, 3))
+acc_sig2 = c(acc_sig2, "", "", 
+             acc_p_1_2syl2, 
+             acc_p_2_3syl2, acc_p_3_4syl2)
 
 
 # k num
-m_k1 = mean(gs_index[gs_index$nneigh_k == 1,]$cor, na.rm = T)
-sd_k1 = sd(gs_index[gs_index$nneigh_k == 1,]$cor, na.rm = T)
-m_k2 = mean(gs_index[gs_index$nneigh_k == 2,]$cor, na.rm = T)
-sd_k2 = sd(gs_index[gs_index$nneigh_k == 2,]$cor, na.rm = T)
-m_k3 = mean(gs_index[gs_index$nneigh_k == 3,]$cor, na.rm = T)
-sd_k3 = sd(gs_index[gs_index$nneigh_k == 3,]$cor, na.rm = T)
-m_k4 = mean(gs_index[gs_index$nneigh_k == 4,]$cor, na.rm = T)
-sd_k4 = sd(gs_index[gs_index$nneigh_k == 4,]$cor, na.rm = T)
-m_k5 = mean(gs_index[gs_index$nneigh_k == 5,]$cor, na.rm = T)
-sd_k5 = sd(gs_index[gs_index$nneigh_k == 5,]$cor, na.rm = T)
+#m_k1 = mean(gs_index[gs_index$nneigh_k == 1,]$cor, na.rm = T)
+#sd_k1 = sd(gs_index[gs_index$nneigh_k == 1,]$cor, na.rm = T)
+# m_k2 = mean(gs_index[gs_index$nneigh_k == 2,]$cor, na.rm = T)
+# sd_k2 = sd(gs_index[gs_index$nneigh_k == 2,]$cor, na.rm = T)
+# m_k3 = mean(gs_index[gs_index$nneigh_k == 3,]$cor, na.rm = T)
+# sd_k3 = sd(gs_index[gs_index$nneigh_k == 3,]$cor, na.rm = T)
+# m_k4 = mean(gs_index[gs_index$nneigh_k == 4,]$cor, na.rm = T)
+# sd_k4 = sd(gs_index[gs_index$nneigh_k == 4,]$cor, na.rm = T)
+# m_k5 = mean(gs_index[gs_index$nneigh_k == 5,]$cor, na.rm = T)
+# sd_k5 = sd(gs_index[gs_index$nneigh_k == 5,]$cor, na.rm = T)
 
-boxplot(cor ~ nneigh_k, data = gs_index)
-p_k1_2 = t.test(gs_index[gs_index$nneigh_k == 1,]$cor, gs_index[gs_index$nneigh_k == 2,]$cor, paired = TRUE, alternative = "two.sided")$p.value
-p_k2_3 = t.test(gs_index[gs_index$nneigh_k == 2,]$cor, gs_index[gs_index$nneigh_k == 3,]$cor, paired = TRUE, alternative = "two.sided")$p.value
-p_k3_4 = t.test(gs_index[gs_index$nneigh_k == 3,]$cor, gs_index[gs_index$nneigh_k == 4,]$cor, paired = TRUE, alternative = "two.sided")$p.value
-p_k4_5 = t.test(gs_index[gs_index$nneigh_k == 4,]$cor, gs_index[gs_index$nneigh_k == 5,]$cor, paired = TRUE, alternative = "two.sided")$p.value
-p_k1_2b = ifelse(p_k1_2 < .001, "***", ifelse(p_k1_2 < .01, "**", ifelse(p_k1_2 < .05, "*", "")))
-p_k2_3b = ifelse(p_k2_3 < .001, "***", ifelse(p_k2_3 < .01, "**", ifelse(p_k2_3 < .05, "*", "")))
-p_k3_4b = ifelse(p_k3_4 < .001, "***", ifelse(p_k3_4 < .01, "**", ifelse(p_k3_4 < .05, "*", "")))
-p_k4_5b = ifelse(p_k4_5 < .001, "***", ifelse(p_k4_5 < .01, "**", ifelse(p_k4_5 < .05, "*", "")))
+# boxplot(cor ~ nneigh_k, data = gs_index)
+#p_k1_2 = t.test(gs_index[gs_index$nneigh_k == 1,]$cor, gs_index[gs_index$nneigh_k == 2,]$cor, paired = TRUE, alternative = "two.sided")$p.value
+# p_k2_3 = t.test(gs_index[gs_index$nneigh_k == 2,]$cor, gs_index[gs_index$nneigh_k == 3,]$cor, paired = TRUE, alternative = "two.sided")$p.value
+# p_k3_4 = t.test(gs_index[gs_index$nneigh_k == 3,]$cor, gs_index[gs_index$nneigh_k == 4,]$cor, paired = TRUE, alternative = "two.sided")$p.value
+# p_k4_5 = t.test(gs_index[gs_index$nneigh_k == 4,]$cor, gs_index[gs_index$nneigh_k == 5,]$cor, paired = TRUE, alternative = "two.sided")$p.value
+#p_k1_2b = ifelse(p_k1_2 < .001, "***", ifelse(p_k1_2 < .01, "**", ifelse(p_k1_2 < .05, "*", "")))
+# p_k2_3b = ifelse(p_k2_3 < .001, "***", ifelse(p_k2_3 < .01, "**", ifelse(p_k2_3 < .05, "*", "")))
+# p_k3_4b = ifelse(p_k3_4 < .001, "***", ifelse(p_k3_4 < .01, "**", ifelse(p_k3_4 < .05, "*", "")))
+# p_k4_5b = ifelse(p_k4_5 < .001, "***", ifelse(p_k4_5 < .01, "**", ifelse(p_k4_5 < .05, "*", "")))
 
 acc_m_k1 = mean(gs_index[gs_index$nneigh_k == 1,]$acc, na.rm = T)
 acc_sd_k1 = sd(gs_index[gs_index$nneigh_k == 1,]$acc, na.rm = T)
@@ -456,26 +571,44 @@ acc_p_k3_4b = ifelse(acc_p_k3_4 < .001, "***", ifelse(acc_p_k3_4 < .01, "**", if
 acc_p_k4_5b = ifelse(acc_p_k4_5 < .001, "***", ifelse(acc_p_k4_5 < .01, "**", ifelse(acc_p_k4_5 < .05, "*", "")))
 
 
-par_names = c(par_names, "k", "1", "2", "3", "4", "5")
-means = c(means, "", round(m_k1, 3), round(m_k2, 3), round(m_k3, 3), round(m_k4, 3), round(m_k5, 3))
-stand_devs = c(stand_devs, "", round(sd_k1, 3), round(sd_k2, 3), round(sd_k3, 3), round(sd_k4, 3), round(sd_k5, 3))
-difference_significance = c(difference_significance, "", "", round(p_k1_2, 3), round(p_k2_3, 3), round(p_k3_4, 3), round(p_k4_5, 3))
-difference_significance2 = c(difference_significance2, "", "", p_k1_2b, p_k2_3b, p_k3_4b, p_k4_5b)
+par_names = c(par_names, "k", 
+              "1", 
+              "2", "3", "4", "5")
+#means = c(means, "", 
+#          round(m_k1, 3), 
+#          round(m_k2, 3), round(m_k3, 3), round(m_k4, 3), round(m_k5, 3))
+#stand_devs = c(stand_devs, "", 
+#               round(sd_k1, 3), 
+#               round(sd_k2, 3), round(sd_k3, 3), round(sd_k4, 3), round(sd_k5, 3))
+#difference_significance = c(difference_significance, "", "", 
+#                            round(p_k1_2, 3), 
+#                            round(p_k2_3, 3), round(p_k3_4, 3), round(p_k4_5, 3))
+#difference_significance2 = c(difference_significance2, "", "", 
+#                             p_k1_2b, 
+#                             p_k2_3b, p_k3_4b, p_k4_5b)
 
-acc_means = c(acc_means, "", round(acc_m_k1, 4), round(acc_m_k2, 4), round(acc_m_k3, 4), round(acc_m_k4, 4), round(acc_m_k5, 4))
-acc_sds = c(acc_sds, "", round(acc_sd_k1, 4), round(acc_sd_k2, 4), round(acc_sd_k3, 4), round(acc_sd_k4, 4), round(acc_sd_k5, 4))
-acc_sig = c(acc_sig, "", "", round(acc_p_k1_2, 3), round(acc_p_k2_3, 3), round(acc_p_k3_4, 3), round(acc_p_k4_5, 3))
-acc_sig2 = c(acc_sig2, "", "", acc_p_k1_2b, acc_p_k2_3b, acc_p_k3_4b, acc_p_k4_5b)
+acc_means = c(acc_means, "", 
+              round(acc_m_k1, 4), 
+              round(acc_m_k2, 4), round(acc_m_k3, 4), round(acc_m_k4, 4), round(acc_m_k5, 4))
+acc_sds = c(acc_sds, "", 
+            round(acc_sd_k1, 4), 
+            round(acc_sd_k2, 4), round(acc_sd_k3, 4), round(acc_sd_k4, 4), round(acc_sd_k5, 4))
+acc_sig = c(acc_sig, "", "", 
+            round(acc_p_k1_2, 3), 
+            round(acc_p_k2_3, 3), round(acc_p_k3_4, 3), round(acc_p_k4_5, 3))
+acc_sig2 = c(acc_sig2, "", "", 
+             acc_p_k1_2b, 
+             acc_p_k2_3b, acc_p_k3_4b, acc_p_k4_5b)
 
 
 # Distance Weighting
-m_zero = mean(gs_index[gs_index$d_weight == "Z",]$cor, na.rm = T)
-sd_zero = sd(gs_index[gs_index$d_weight == "Z",]$cor, na.rm = T)
-m_inv = mean(gs_index[gs_index$d_weight == "ID",]$cor, na.rm = T)
-sd_inv = sd(gs_index[gs_index$d_weight == "ID",]$cor, na.rm = T)
-boxplot(cor ~ d_weight, data = gs_index)
-d_weight_p = t.test(gs_index[gs_index$d_weight == "Z",]$cor, gs_index[gs_index$d_weight == "ID",]$cor, paired = TRUE, alternative = "two.sided")$p.value
-d_weight_p2 = ifelse(d_weight_p < .001, "***", ifelse(d_weight_p < .01, "**", ifelse(d_weight_p < .05, "*", "")))
+# m_zero = mean(gs_index[gs_index$d_weight == "Z",]$cor, na.rm = T)
+# sd_zero = sd(gs_index[gs_index$d_weight == "Z",]$cor, na.rm = T)
+# m_inv = mean(gs_index[gs_index$d_weight == "ID",]$cor, na.rm = T)
+# sd_inv = sd(gs_index[gs_index$d_weight == "ID",]$cor, na.rm = T)
+# boxplot(cor ~ d_weight, data = gs_index)
+# d_weight_p = t.test(gs_index[gs_index$d_weight == "Z",]$cor, gs_index[gs_index$d_weight == "ID",]$cor, paired = TRUE, alternative = "two.sided")$p.value
+# d_weight_p2 = ifelse(d_weight_p < .001, "***", ifelse(d_weight_p < .01, "**", ifelse(d_weight_p < .05, "*", "")))
 
 acc_m_zero = mean(gs_index[gs_index$d_weight == "Z",]$acc, na.rm = T)
 acc_sd_zero = sd(gs_index[gs_index$d_weight == "Z",]$acc, na.rm = T)
@@ -486,10 +619,10 @@ acc_d_weight_p2 = ifelse(acc_d_weight_p < .001, "***", ifelse(acc_d_weight_p < .
 
 
 par_names = c(par_names, "Distance Weighting", "Zero Decay", "Inv. Distance Decay")
-means = c(means, "", round(m_zero, 3), round(m_inv, 3))
-stand_devs = c(stand_devs, "", round(sd_zero, 3), round(sd_inv, 3))
-difference_significance = c(difference_significance, "", "", round(d_weight_p, 3))
-difference_significance2 = c(difference_significance2, "", "", d_weight_p2)
+# means = c(means, "", round(m_zero, 3), round(m_inv, 3))
+# stand_devs = c(stand_devs, "", round(sd_zero, 3), round(sd_inv, 3))
+# difference_significance = c(difference_significance, "", "", round(d_weight_p, 3))
+# difference_significance2 = c(difference_significance2, "", "", d_weight_p2)
 
 acc_means = c(acc_means, "", round(acc_m_zero, 3), round(acc_m_inv, 3))
 acc_sds = c(acc_sds, "", round(acc_sd_zero, 3), round(acc_sd_inv, 3))
@@ -574,8 +707,14 @@ acc_sig2 = c(acc_sig2, "", "", acc_d_weight_p2)
 # acc_sds = c(acc_sds, "", round(acc_sd_none, 3), round(acc_sd_EN, 3), round(acc_sd_VERB, 3))
 
 
-gs1 = data.frame(par_names, means, stand_devs, difference_significance2, acc_means, acc_sds, acc_sig2)
-names(gs1) = c("Parameters", "Correlations", "SD", "Difference significance", "Accuracies", "SD", "Difference significance")
+gs1 = data.frame(par_names, 
+#                 means, 
+#                 stand_devs, 
+#                 difference_significance2, 
+                 acc_means, acc_sds, acc_sig2)
+names(gs1) = c("Parameters", 
+#               "Correlations", "SD", "Difference significance", 
+               "Accuracies", "SD", "Difference significance")
 tab_df(gs1)
 
 

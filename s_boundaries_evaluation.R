@@ -6,7 +6,7 @@ if (Sys.info()[1] == "Darwin"){
 
 library(corrplot)
 
-bounds = read.csv(paste(f_path, "BLSTM_15_0.5_1_10_10_1_1.csv", sep = ""))
+#bounds = read.csv(paste(f_path, "BLSTM_15_0.5_1_10_10_1_1.csv", sep = ""))
 bounds = read.csv(paste(f_path, "FFNN_15_0.5_1_10_10_1_1.csv", sep = ""))
 bounds$corpus = as.factor(ifelse(substr(bounds$wav, 1, 1) %in% c("a", "c", "d", "k", "o"), paste("cgn-", substr(bounds$wav, 1, 1), sep = ""), ifelse(substr(bounds$wav, 1, 1) == "D", "ifadv", "ecsd")))
 

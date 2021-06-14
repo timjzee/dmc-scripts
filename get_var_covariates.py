@@ -4,7 +4,7 @@ import math
 
 tz_path = "/Volumes/timzee/" if sys.platform == "darwin" else "/home/timzee/"
 tens_path = "/Volumes/tensusers/timzee/" if sys.platform == "darwin" else "/vol/tensusers/timzee/"
-var_file = "p_f_type_O_merge_2syl_k4_ID_invar"
+var_file = "p_f_type_O_merge_2syl_k5_ID_invar"
 
 lexicon_dict = {}
 lexicon_text = ""
@@ -61,11 +61,12 @@ with open(tens_path + "other/Concreteness_ratings.csv") as f:
             conc_ratings[word] = conc
 
 with open(tens_path + "other/" + var_file + ".csv", "w") as g:
-    with open(tens_path + "timbl_files/" + var_file + ".csv", "r") as f:
+    with open(tens_path + "timbl_files2/" + var_file + ".csv", "r") as f:
         for n, l in enumerate(f, 1):
             l_list = l[:-1].split(",")
             if n == 1:
-                new_line = ",".join(l_list + ["seg_info", "seg_info_token", "lex_neb", "phon_s_num", "phon_schwa_num", "phon_s_freq", "phon_schwa_freq", "informativity_prev", "informativity_next", "age_of_aq", "concreteness"]) + "\n"
+                new_line = ",".join(l_list + ["lex_neb"]) + "\n"
+#                new_line = ",".join(l_list + ["seg_info", "seg_info_token", "lex_neb", "phon_s_num", "phon_schwa_num", "phon_s_freq", "phon_schwa_freq", "informativity_prev", "informativity_next", "age_of_aq", "concreteness"]) + "\n"
             else:
                 word = l_list[0]
                 print(word)
@@ -183,5 +184,6 @@ with open(tens_path + "other/" + var_file + ".csv", "w") as g:
                         else:
                             seg_inf_tok = str(-1 * math.log(s_match_freq / all_match_freq, 2))
                 print(word, seg_inf, seg_inf_tok, lex_neb, s_match_n, en_match_n, s_match_freq, en_match_freq, informativity_prev, informativity_next, age_of_aq, concreteness)
-                new_line = ",".join(l_list + [seg_inf, seg_inf_tok, lex_neb, str(s_match_n), str(en_match_n), str(s_match_freq), str(en_match_freq), informativity_prev, informativity_next, age_of_aq, concreteness]) + "\n"
+                new_line = ",".join(l_list + [lex_neb]) + "\n"
+#                new_line = ",".join(l_list + [seg_inf, seg_inf_tok, lex_neb, str(s_match_n), str(en_match_n), str(s_match_freq), str(en_match_freq), informativity_prev, informativity_next, age_of_aq, concreteness]) + "\n"
             g.write(new_line)

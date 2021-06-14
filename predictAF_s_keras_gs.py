@@ -54,7 +54,7 @@ classifiers = {
     "s": {"16k": tf.keras.models.load_model(tens_path + "keras_models/" + model_locations[network_type][context_frames]["16k"]), "8k": tf.keras.models.load_model(tens_path + "keras_models/" + model_locations[network_type][context_frames]["8k"])}
 }
 
-frag_fol = "af_eval_s"
+frag_fol = "ecsd"
 file_paths = glob.glob(tens_path + "pred_fragments/" + frag_fol + "/*.wav")
 
 # file_paths = [tens_path + "pred_fragments/af_eval_s/DVA10O_1_36.916_37.356.wav"]
@@ -76,7 +76,14 @@ file_paths = glob.glob(tens_path + "pred_fragments/" + frag_fol + "/*.wav")
 # ]
 
 # remove already predicted fragments
+
 tg_fol = frag_fol if len(frag_fol) > 1 else "cgn-" + frag_fol
+if not os.path.exists(tens_path + "pred_textgrids_keras/" + tg_fol):
+    os.mkdir(tens_path + "pred_textgrids_keras/" + tg_fol)
+tg_fol += "/" + network_type + "_" + context_frames
+if not os.path.exists(tens_path + "pred_textgrids_keras/" + tg_fol):
+    os.mkdir(tens_path + "pred_textgrids_keras/" + tg_fol)
+
 tg_paths = glob.glob(tens_path + "pred_textgrids_keras/" + tg_fol + "/*")
 
 for tg_path in tg_paths:

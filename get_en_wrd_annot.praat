@@ -4,7 +4,7 @@ os$ = extractWord$(prop$, newline$)
 
 wrd_path$ = "/bigdata2/corpora2/CGN2/data/annot/text/wrd/comp-"
 kal_path$ = "/tensusers/timzee/cgn/kaldi_annot/v3/comp-"
-input_name$ = "nn_eval_o_en_core_ort"
+input_name$ = "nn_eval_a_en_core_ort"
 medeklinkers$ = "GNSZbdfghjklmnprstvwxz"
 
 if os$ == "macintosh"

@@ -4,7 +4,7 @@ form Give chunks
     word bigdata2 /Volumes/bigdata2
 endform
 
-chunk_path$ = tensusers$ + "/timzee/classifier_evaluation/en/nn_eval_en_o1.csv"
+chunk_path$ = tensusers$ + "/timzee/classifier_evaluation/en/nn_eval_en_a1.csv"
 output_path$ = tensusers$ + "/timzee/classifier_evaluation/en/man_annot/"
 
 

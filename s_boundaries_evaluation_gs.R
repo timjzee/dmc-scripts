@@ -874,6 +874,8 @@ max(gs_df$perc20_TR_TS)
 max(gs_df$perc20_SA_NN)
 max(gs_df$perc20_TR_KAL)
 best_class_all = as.character(gs_df[gs_df$perc20_SA_NN == max(gs_df$perc20_SA_NN),]$gs_names)
+# and see whether they outperform KALDI
+gs_df[gs_df$gs_names %in% best_class_all, c("gs_names", "mean_SA_NN", "perc20_TR_KAL_startb", "perc20_SA_NN_startb", "perc20_TR_KAL_ende", "perc20_SA_NN_ende")]
 
 # get corresponding agreement for respective boundaries
 gs_df[as.character(gs_df$gs_names) %in% best_class_all,]$perc20_SA_NN_startb
@@ -886,6 +888,17 @@ gs_df[as.character(gs_df$gs_names) %in% best_class_all,]$perc20_SA_NN_ende
 max(gs_df$perc20_SA_NN_ende)
 
 mean(c(max(gs_df$perc20_SA_NN_startb), max(gs_df$perc20_SA_NN_starte), max(gs_df$perc20_SA_NN_endb), max(gs_df$perc20_SA_NN_ende)))
+
+# best classifiers for separate boundaries
+# [Network Type]_[Context Frames]_[KALDI weight]_[Apply Penalty]_[Preceding Context]_[Subsequent Context]_[Smoothing]_[Take sqrt]
+best_class_startb = as.character(gs_df[gs_df$perc20_SA_NN_startb == max(gs_df$perc20_SA_NN_startb),]$gs_names)
+gs_df[gs_df$gs_names %in% best_class_startb, c("gs_names", "mean_SA_NN")]
+best_class_starte = as.character(gs_df[gs_df$perc20_SA_NN_starte == max(gs_df$perc20_SA_NN_starte),]$gs_names)
+gs_df[gs_df$gs_names %in% best_class_starte, c("gs_names", "mean_SA_NN")]
+best_class_endb = as.character(gs_df[gs_df$perc20_SA_NN_endb == max(gs_df$perc20_SA_NN_endb),]$gs_names)
+gs_df[gs_df$gs_names %in% best_class_endb, c("gs_names", "mean_SA_NN")]
+best_class_ende = as.character(gs_df[gs_df$perc20_SA_NN_ende == max(gs_df$perc20_SA_NN_ende),]$gs_names)
+gs_df[gs_df$gs_names %in% best_class_ende, c("gs_names", "mean_SA_NN")]
 
 # p1 = plot(361:480, gs_df[order(gs_df$perc20_TR_NN_startb),]$perc20_TR_NN_startb[361:480], xlab = "", ylab = "", xaxt='n', type = "h")
 # text(361:480, par("usr")[3], labels = gs_df[order(gs_df$perc20_TR_NN_startb),]$gs_names[361:480], srt = 45, adj = c(1.1,1.1), xpd = TRUE, cex=0.6)

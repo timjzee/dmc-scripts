@@ -75,7 +75,7 @@ def run_timbl(word):
             else:
                 classifier.append(tuple(feat2 + strs2 + [word2[-1]]), pl_class)
     classifier.train()
-    classifier.api.getWeights("invar_test_best.wgt", classifier.api.currentWeighting())
+    classifier.api.getWeights(tens_path + "other/invar_test_best.wgt", classifier.api.currentWeighting())
     classlabel, distribution, distance = classifier.classify(tuple(feat + strs + [word[-1]]))
     if os.path.exists(tens_path + "other/invar_test_" + word + ".train"):
         os.remove(tens_path + "other/invar_test_" + word + ".train")
@@ -99,10 +99,16 @@ result_list = p.map(run_timbl, dataset_invar)
 
 # result_dict = {}
 with codecs.open(tens_path + "other/invar_probs.csv", "w") as f:
-    f.write("word,p_en,p_s,p_other,f_ev,f_mv\n")
+    f.write("word,p_en,p_s,p_other,f_sg,f_pl,pl_type,prop_pl,penult_onset,penult_nucleus,penult_coda,final_onset,final_nucleus,final_coda,penult_stress,final_stress\n")
     for line in result_list:
         word = line.split(",")[0]
-        f_ev = str(dataset_invar[word]["ev"])
-        f_mv = str(dataset_invar[word]["freq"])
-        f.write(line[:-1] + "," + f_ev + "," + f_mv + "\n")
+        f_ev = float(dataset_invar[word]["ev"])
+        f_mv = float(dataset_invar[word]["freq"])
+        prop_pl = str(f_mv / (f_mv + f_ev))
+        pl_type = dataset_invar[word]["class"]
+        frequencies = ",".join([str(f_ev), str(f_mv), prop_pl])
+        feat, strs = getFeatures(word, dataset_invar, 2)
+        feat.extend(strs)
+        ftrs = ",".join(feat)
+        f.write(line[:-1] + "," + frequencies + "," + pl_type + "," + ftrs + "\n")
 #        f.write("{},{},{},{}\n".format(w, result_dict[w]["EN"], result_dict[w]["S"], result_dict[w]["OTHER"]))
