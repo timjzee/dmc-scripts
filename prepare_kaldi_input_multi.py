@@ -6,9 +6,9 @@ import os
 
 home_dir = "/Volumes/timzee/" if sys.platform == "darwin" else "/home/timzee/"
 tens_dir = "/Volumes/tensusers/timzee/" if sys.platform == "darwin" else "/vol/tensusers/timzee/"
-corpus = "cgn"
+corpus = "ECSD"
 component = "o"
-index_file = "cgn_index_o_final2.txt"
+index_file = "ecsd_index2.txt"
 lex_exp_n = 1
 enable_n_weights = "True"
 
@@ -26,7 +26,7 @@ with codecs.open(tens_dir + corpus + "/" + index_file, "r", "utf-8") as f:
 
 running_cores = 0
 
-num_cores = 63
+num_cores = 5
 num_index_lines = len(cgn_index)
 core_dict = {}
 for i in range(num_cores):

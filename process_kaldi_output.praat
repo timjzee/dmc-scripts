@@ -2,9 +2,9 @@ Text writing preferences: "UTF-8"
 prop$ = Report system properties
 os$ = extractWord$(prop$, newline$)
 
-corpus$ = "cgn"
+corpus$ = "ECSD"
 if corpus$ == "IFADVcorpus"
-    o_path$ = "/tensusers/timzee/IFADVcorpus/Annotations/ort/"
+    o_path$ = "/tensusers/timzee/IFADVcorpus/Annotations/ort2/"
 elif corpus$ == "cgn" or corpus$ == "grid_search"
     o_path$ = "/bigdata2/corpora2/CGN2/data/annot/text/ort/comp-"
 else
@@ -21,10 +21,10 @@ else
     home_path$ = "/home/timzee/"
 endif
 
-ali_folder$ = "v3_comp-o"
-oov_conv$ = "oov_conv_table_comp-o.txt"
+ali_folder$ = "v3_ecsd"
+oov_conv$ = "oov_conv_table_comp-ECSD.txt"
 #index$ = "grid_search_index_sorted.txt"
-index$ = "cgn_index_o_final2.txt"
+index$ = "ecsd_index2.txt"
 gs_folder$ = "v2_gs40"
 
 procedure processWords

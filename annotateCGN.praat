@@ -1,7 +1,7 @@
 form Give chunks
-    word chunk_path /Volumes/tensusers/timzee/cgn/comp-k_en_eval.csv
+    word chunk_path /Volumes/tensusers/timzee/cgn/all_en_comb_a_ndl.csv
     word cgn_path /Volumes/bigdata2/corpora2/CGN2/data/audio/wav/comp-
-    word kaldi_path /Volumes/tensusers/timzee/cgn/kaldi_annot/v2/comp-
+    word kaldi_path /Volumes/tensusers/timzee/cgn/kaldi_annot/v3/comp-
     word output_path /Volumes/tensusers/timzee/cgn/man_annot/en/comp-
     word log_path /Volumes/tensusers/timzee/cgn/man_annot/en/
 endform
@@ -87,7 +87,7 @@ procedure annotateChunk: annotateChunk.id
         comment: "Click continue to save the annotation."
     endPause: "Continue", 1
     selectObject: "TextGrid " + s_name$
-    Save as text file: output_path$ + filepath$ + ".awd"
+#    Save as text file: output_path$ + filepath$ + ".awd"
     Remove
     selectObject: "LongSound " + s_name$
     Remove
@@ -103,7 +103,7 @@ elsif annotation_mode == 2
         @annotateChunk: id
         selectObject: "Table last_chunk"
         Set numeric value: 1, "chunk_id", id
-        Save as tab-separated file: log_path$ + "last_chunk.log"
+#        Save as tab-separated file: log_path$ + "last_chunk.log"
     endfor
 else
     Read Table from tab-separated file: log_path$ + "last_chunk.log"
@@ -117,6 +117,6 @@ else
         @annotateChunk: id
         selectObject: "Table last_chunk"
         Set numeric value: last_chunk + 1, "chunk_id", id
-        Save as tab-separated file: log_path$ + "last_chunk.log"
+#        Save as tab-separated file: log_path$ + "last_chunk.log"
     endfor
 endif
