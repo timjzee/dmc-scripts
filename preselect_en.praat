@@ -11,7 +11,7 @@ form Choose component
         button o
 endform
 
-chunk_path$ = tensusers$ + "/timzee/classifier_evaluation/en/nn_eval_" + component$ + "_en_preselect.csv"
+chunk_path$ = tensusers$ + "/timzee/classifier_evaluation/en/nn_eval_" + component$ + "_en_preselect2.csv"
 output_path$ = tensusers$ + "/timzee/classifier_evaluation/en/"
 
 
@@ -129,6 +129,7 @@ procedure annotateChunk: .id
     preselect_array["n"] = 3
     preselect_array["0"] = 4
     preselect_array["~"] = 5
+    preselect_array[""] = 6
 
     variant_array$[1] = "@n"
     variant_array$[2] = "@"
@@ -137,6 +138,7 @@ procedure annotateChunk: .id
     variant_array$[5] = "~"
     variant_array$[6] = ""
     beginPause: "Save and continue"
+        comment: "Currently on fragment number " + string$(.id)
         comment: "Annotate word number " + string$(word_chunk_i) + ": " + w_ort$
         choice: "Suffix variant", preselect_array[preselect_type$]
             option: "@n"

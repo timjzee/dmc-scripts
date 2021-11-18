@@ -80,18 +80,6 @@ def getFeatureLabel(frame_start, frame_end, feature, seg_index, segments, words,
         return -1
     if seg_index == 0:
         return -1
-    # exclude words with more nasals in ort than phon (excl final n)
-    ort_n = len(re.findall(r'(n+|m+)', word_str))
-    word_phon_str = word_segments[word_i]
-    phon_n = len(re.findall(r'[nmN]', word_phon_str))
-    if ort_n > phon_n:
-        if (ort_n - phon_n) == 1 and final_n and not re.search(r'n#', word_phon_str):
-            pass
-        else:
-            return -1
-    # exclude monosyllabic words ending in n followed by not (vowel or silence)
-#    if word_syllables[word_i] == 1 and re.search(r'n$', word_str) and not (next_phon_str in vowels + ["SIL", ""]):
-#        return -1
     # feature-specific criteria; see /notes/2021/17jun.txt /notes/2021/29jun.txt /notes/2021/5jul.txt
     if feature == "@":
         # check to see if phone is in word-final syllable
@@ -111,10 +99,7 @@ def getFeatureLabel(frame_start, frame_end, feature, seg_index, segments, words,
 #            return -1
         elif phon.strip("#") == "@" and prev_phon_str in ["b", "d", "g"] and next_phon_str in ["b", "d", "g", "l"]:
             return -1
-        # also ignore vowels following eachother across words, 3sep.txt
-        elif phon.strip("#") in vowels and (prev_phon_str in ["", "SIL"] or prev_phon in vowels2):
-            return -1
-        elif phon in vowels2 and next_phon_str in vowels:
+        elif phon.strip("#") in vowels and prev_phon_str in ["", "SIL"]:
             return -1
         elif phon.strip("#") in vowels:
             # if next_phon_str in ["n", "m", "N"] and phon[-1] != "#":
@@ -141,8 +126,7 @@ def getFeatureLabel(frame_start, frame_end, feature, seg_index, segments, words,
             if phon.strip("#") in ["n", "N", "m"] and phon[-1] == "#" and final_n:  # (final_n or word.mark.strip("?!.,") == "een"):
                 return -1
             else:
-                # widened window for al silences, see 3sep.txt
-                if phon.strip("[]#") in ["SIL", ""] or ((prev_phon_str not in vowels + ["w", "j", "r"] or (prev_phon_str in vowels and phon.strip("#") in ["n", "N", "m"])) and (prev_phon[-1] != "#" or phon.strip("[]#") in ["SIL", ""]) and (next_phon_str not in vowels + ["w", "j", "r"] or (phon.strip("[]#") in ["p", "t", "k", "f", "s", "x", "v", "z", "G"] and next_phon_str == "@")) and (phon[-1] != "#" or next_phon_str in ["SIL", ""])):
+                if (prev_phon_str not in vowels + ["w", "j", "r"] or (prev_phon_str in vowels and phon.strip("#") in ["n", "N", "m"])) and (prev_phon[-1] != "#" or phon.strip("[]#") in ["SIL", ""]) and (next_phon_str not in vowels + ["w", "j", "r"] or (phon.strip("[]#") in ["p", "t", "k", "f", "s", "x", "v", "z", "G"] and next_phon_str == "@")) and (phon[-1] != "#" or next_phon_str in ["SIL", ""]):
                     prop_used = 1
                     prop_dur = int_dur * prop_used
                     used_s = round(segments.intervals[seg_index].minTime, 3)
@@ -188,12 +172,18 @@ def getFeatureLabel(frame_start, frame_end, feature, seg_index, segments, words,
         elif phon.strip("#") == "n" and prev_phon_str == "@" and num_rem_syls <= 1 and re.search(r'ns$', word_str):  # 26aug.txt: exclude telkens, tijdens
             return -1
         elif phon.strip("#") in ["n", "m", "N"]:
-            if prev_phon_str in ["n", "m", "N"]:
+            # 26aug.txt: changed to be much more lenient
+            if prev_phon_str not in ["f", "s", "x", "v", "z", "G", "", "SIL"] and next_phon_str not in ["f", "s", "x", "v", "z", "G", "", "SIL"]:
+                prop_used = 1
+                prop_dur = int_dur * prop_used
+                used_s = round(segments.intervals[seg_index].minTime, 3)
+                used_e = used_s + prop_dur
+            elif prev_phon_str not in ["f", "s", "x", "v", "z", "G", "", "SIL"]:   # in ["n", "m", "N"]:
                 prop_used = 0.7
                 prop_dur = int_dur * prop_used
                 used_s = round(segments.intervals[seg_index].minTime, 3)
                 used_e = used_s + prop_dur
-            elif next_phon_str in ["n", "m", "N"] and num_rem_syls >= 1:  # exclude komen -> komn
+            elif next_phon_str not in ["f", "s", "x", "v", "z", "G", "", "SIL"]:  # in ["n", "m", "N"] and num_rem_syls >= 1:  # exclude komen -> komn
                 prop_used = 0.7
                 prop_dur = int_dur * prop_used
                 used_e = round(segments.intervals[seg_index].maxTime, 3)
@@ -223,7 +213,7 @@ def getFeatureLabel(frame_start, frame_end, feature, seg_index, segments, words,
         elif phon.strip("#") == "@" and num_rem_syls <= 1 and final_n:
             return -1
         else:
-            if phon.strip("[]#") in ["SIL", ""] or (prev_phon_str not in ["n", "m", "N"] and (prev_phon[-1] != "#" or phon == "w" or (phon in ["b", "d", "g"] and prev_phon_str in vowels)) and not (prev_phon_str in ["t", "d", "j"] and prev_prev_phon_str == "n") and not (prev_phon_str in ["p", "b"] and prev_prev_phon_str == "m") and not (prev_phon_str in ["k", "g"] and prev_prev_phon_str == "N") and next_phon_str not in ["n", "m", "N"] and (phon[-1] != "#" or next_phon_str in ["SIL", "", "b", "d", "g"]) and not (phon.strip("#") in vowels and next_phon_str == "@" and num_rem_syls <= 2 and final_n) and not (phon.strip("#") not in vowels and next_phon_str == "@" and num_rem_syls <= 1 and final_n)):
+            if prev_phon_str not in ["n", "m", "N"] and (prev_phon[-1] != "#" or phon == "w" or (phon in ["b", "d", "g"] and prev_phon_str in vowels)) and not (prev_phon_str in ["t", "d", "j"] and prev_prev_phon_str == "n") and not (prev_phon_str in ["p", "b"] and prev_prev_phon_str == "m") and not (prev_phon_str in ["k", "g"] and prev_prev_phon_str == "N") and next_phon_str not in ["n", "m", "N"] and (phon[-1] != "#" or next_phon_str in ["SIL", "", "b", "d", "g"]) and not (phon.strip("#") in vowels and next_phon_str == "@" and num_rem_syls <= 2 and final_n) and not (phon.strip("#") not in vowels and next_phon_str == "@" and num_rem_syls <= 1 and final_n):
                 prop_used = 1
                 prop_dur = int_dur * prop_used
                 used_s = round(segments.intervals[seg_index].minTime, 3)
@@ -415,15 +405,12 @@ def getFeatureLabel(frame_start, frame_end, feature, seg_index, segments, words,
             elif phon.strip("#") == "@" and num_rem_syls <= 1 and final_n:
                 return -1
             else:
-                # widened window for all silences, see 3sep.txt
-                if phon.strip("[]#") in ["SIL", ""] or ((prev_phon[-1] != "#" or prev_phon_str in ["SIL", ""] or (phon in ["b", "d", "g"] and prev_phon_str in vowels)) and not (next_phon_str in vowels + ["j", "l", "r", "w"] and next_next_phon_str in ["", "SIL"])):
+                if prev_phon[-1] != "#" and not (next_phon_str in vowels + ["j", "l", "r", "w"] and next_next_phon_str in ["", "SIL"]):
                     prop_used = 1
                     prop_dur = int_dur * prop_used
                     used_s = round(segments.intervals[seg_index].minTime, 3)
                     used_e = used_s + prop_dur
-                # widened post-silence onsets, see 3sep.txt
-                # widened window of post-vocalic voiced plosives
-                elif prev_phon[-1] != "#" or prev_phon_str in ["SIL", ""] or (phon in ["b", "d", "g"] and prev_phon_str in vowels):
+                elif prev_phon[-1] != "#":
                     prop_used = 0.7
                     prop_dur = int_dur * prop_used
                     used_s = round(segments.intervals[seg_index].minTime, 3)
@@ -462,7 +449,7 @@ wavpaths = []
 for fp in glob.glob(af_path + chunk_folder + "*.wav"):
     wavpaths.append(fp)
 
-# wavpaths = wavpaths[3000:3010]
+# wavpaths = wavpaths[2000:2010]
 
 # wavpaths = ['/vol/tensusers/timzee/af_classification/training_chunks_en/o/o_nl_fn001001_101.717_104.572.wav']
 
@@ -525,13 +512,12 @@ def makeData(from_file, to_file, core):
             assert first_seg == 0 or intervals[first_seg - 1].mark[-1] == "#"
             last_seg = tg.tiers[2].indexContaining(word_end - 0.001)
             assert intervals[last_seg].mark[-1] == "#"
-            word_seg = ""
+            n_segs = last_seg + 1 - first_seg
+            word_segs.append(n_segs)
             for seg in intervals[first_seg:last_seg + 1]:
-                word_seg += seg.mark
                 if seg.mark.strip("#") in vowels:
                     n_syls += 1
             word_syls.append(n_syls)
-            word_segs.append(word_seg)
         assert len(word_syls) == len(word_intervals)
         comments = tg.tiers[1].intervals
 #        print(start_time, end_time)

@@ -4,7 +4,7 @@ form Give chunks
     word bigdata2 /Volumes/bigdata2
 endform
 
-chunk_path$ = tensusers$ + "/timzee/classifier_evaluation/en/nn_eval_en_a1.csv"
+chunk_path$ = tensusers$ + "/timzee/classifier_evaluation/en/nn_eval_en_o2.csv"
 output_path$ = tensusers$ + "/timzee/classifier_evaluation/en/man_annot/"
 
 
@@ -102,6 +102,7 @@ procedure annotateChunk: .id
     plusObject: "Sound " + s_name$
     View & Edit
     editor: "TextGrid " + s_name$
+        Preferences: "yes", "no", 0.05, 18, "centre", "are shown as typed", "multiple boundaries", "intervals or points", "is equal to", "some text here for green paint"
         Spectrogram settings: 0, 5000, 0.005, 70
         editor_info$ = Editor info
         pitch_enabled = extractNumber(editor_info$, "Pitch show:")

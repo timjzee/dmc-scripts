@@ -12,28 +12,36 @@ if len(sys.argv) > 1:
     network_type = str(sys.argv[1])
     context_frames = str(sys.argv[2])
 else:
-    network_type = "FFNN"
-    context_frames = "5"
+    network_type = "BLSTM"
+    context_frames = "15"
 
 tens_path = "/Volumes/tensusers/timzee/af_classification/" if sys.platform == "darwin" else "/vol/tensusers/timzee/af_classification/"
 
 model_locations = {
     "BLSTM": {
         "5": {
-            "16k": "en_5c_16k/run-6",
+            "16k": {
+                "schwa": ["en_5c_16k_BLSTM_old5/", "/run-0"],
+                "nasal": ["en_5c_16k_BLSTM_old5/", "/run-0"],
+                "nasalization": ["en_5c_16k_BLSTM_old5/", "/run-0"]
+            },
             "8k": "en_5c_8k/run-4"
         },
         "15": {
-            "16k": "en_15c_16k/run-4",
+            "16k": {
+                "schwa": ["en_15c_16k_BLSTM/", "/run-0"],
+                "nasal": ["en_15c_16k_BLSTM/", "/run-0"],
+                "nasalization": ["en_15c_16k_BLSTM/", "/run-0"]
+            },
             "8k": "en_15c_8k/run-6"
         }
     },
     "FFNN": {
         "5": {
             "16k": {
-                "schwa": ["en_5c_16k_nn/", "/run-0"],
-                "nasal": ["en_5c_16k_nn_second_try_o/", "/run-0"],
-                "nasalization": ["en_5c_16k_nn_second_try_o/", "/run-0"]
+                "schwa": ["en_5c_16k_FFNN/", "/run-0"],
+                "nasal": ["en_5c_16k_FFNN/", "/run-0"],
+                "nasalization": ["en_5c_16k_FFNN/", "/run-0"]
             },
             "8k": {
                 "schwa": ["en_5c_8k_nn/", "/run-0"],
@@ -43,9 +51,9 @@ model_locations = {
         },
         "15": {
             "16k": {
-                "schwa": ["en_15c_16k_nn/", "/run-0"],
-                "nasal": ["en_15c_16k_nn/", "/run-0"],
-                "nasalization": ["en_15c_16k_nn/", "/run-0"]
+                "schwa": ["en_15c_16k_FFNN/", "/run-0"],
+                "nasal": ["en_15c_16k_FFNN/", "/run-0"],
+                "nasalization": ["en_15c_16k_FFNN/", "/run-0"]
             },
             "8k": {
                 "schwa": ["en_15c_8k_nn/", "/run-0"],
@@ -56,7 +64,7 @@ model_locations = {
     }
 }
 
-features = ["schwa"]  # , "nasal", "nasalization"]
+features = ["schwa", "nasal", "nasalization"]
 sampling_freqs = ["16k"]
 
 corpora = {
