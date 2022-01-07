@@ -11,7 +11,7 @@ form Choose component
         button o
 endform
 
-chunk_path$ = tensusers$ + "/timzee/classifier_evaluation/en/nn_eval_" + component$ + "_en_preselect2.csv"
+chunk_path$ = tensusers$ + "/timzee/classifier_evaluation/en/nn_eval_" + component$ + "_en_preselect3.csv"
 output_path$ = tensusers$ + "/timzee/classifier_evaluation/en/"
 
 

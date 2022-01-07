@@ -4,8 +4,8 @@ if (Sys.info()[1] == "Darwin"){
   f_path = "/vol/tensusers/timzee/"
 }
 
-library(rethinking)
-library(stringr)
+library(rstan)
+
 ##
 d <- read.csv(paste(f_path, "other/SonarVar.csv", sep = ""), header = T, row.names = NULL)
 
@@ -13,69 +13,32 @@ d_dist <- table(d$item, d$s_plural)
 d_dist2 <- d_dist[d_dist[,"0"] != 0 & d_dist[,"1"] != 0,]
 d_dist3 <- data.frame(item=row.names(d_dist2), en=d_dist2[,"0"], s=d_dist2[,"1"])
 d_dist3$prop <- d_dist3$s / (d_dist3$en + d_dist3$s)
-d_dist4 <- d_dist3[d_dist3$prop > 0.1 & d_dist3$prop < 0.9,]
+d_dist4 <- d_dist3[d_dist3$prop > 0.05 & d_dist3$prop < 0.95,]
 
 d2 <- d[d$item %in% d_dist4$item,]
 
-d2$next_POS <- str_match(d2$next_POS, "[A-Z]+")[,1]
-d2$next_cat <- as.integer(d2$next_POS %in% c("LID", "VG", "VNW", "VZ"))
 
 d3 <- na.omit(d2)
-# d3 <- d3[d3$next_vowel_length != 0,]
+d3 <- d3[d3$next_vowel_length != 0,]
 table(list(prosodic_break=d3$prosodic_break, next_stress=d3$next_stress, s_plural=d3$s_plural))
-
-table(d3$n_next_cons)
-d3[d3$n_next_cons == 3,]$next_lemma
-# don't treat as ordinal because n_next_cons == 3 completely confounded by next_s
-d3$n_next_cons2 <- as.integer(d3$n_next_cons + 1)
 
 # 1: s-sound, vowel, consonant
 d3$next_sound2 <- ifelse(d3$next_sound %in% c("s", "z"), 1, 
                          ifelse(d3$next_sound %in% c("@", "a", "A", "e", "E", "i", "I", "K", "L", "M", "o", "O", "y"), 2, 3))
 d3$next_sound2 <- as.integer(d3$next_sound2)
-d3$next_sound3 <- ifelse(d3$next_sound %in% c("s", "z"), 1, 
-                         ifelse(d3$next_sound == "n", 2, 3))
-d3$next_sound3 <- as.integer(d3$next_sound3)
 d3$next_s <- ifelse(d3$next_sound %in% c("s", "z"), 1, 2)
 d3$next_s <- as.integer(d3$next_s)
-d3$next_stress2 <- d3$next_stress + 1
 # 1: break - stress, 2: break - nostress, 3: nobreak - stress, 4: nobreak - nostress
 d3$stress_interaction <- ifelse(d3$prosodic_break == "1" & d3$next_stress == "1", 1,
                                 ifelse(d3$prosodic_break == "1" & d3$next_stress == "0", 2,
                                        ifelse(d3$prosodic_break == "0" & d3$next_stress == "1", 3, 4)))
 d3$stress_interaction <- as.integer(d3$stress_interaction)
-d3$stress_interaction2 <- ifelse(d3$next_cat == "1" & d3$prosodic_break == "1" & d3$next_stress == "1", 1,
-                                ifelse(d3$next_cat == "1" & d3$prosodic_break == "1" & d3$next_stress == "0", 2,
-                                       ifelse(d3$next_cat == "1" & d3$prosodic_break == "0" & d3$next_stress == "1", 3, 
-                                              ifelse(d3$next_cat == "1" & d3$prosodic_break == "0" & d3$next_stress == "0", 4,
-                                                     ifelse(d3$next_cat == "0" & d3$prosodic_break == "1" & d3$next_stress == "1", 5,
-                                                            ifelse(d3$next_cat == "0" & d3$prosodic_break == "1" & d3$next_stress == "0", 6,
-                                                                   ifelse(d3$next_cat == "0" & d3$prosodic_break == "0" & d3$next_stress == "1", 7, 8)))))))
-d3$stress_interaction2 <- as.integer(d3$stress_interaction2)
 d3$sound_interaction <- ifelse(d3$prosodic_break == "1" & d3$next_sound2 == "1", 1,
                                ifelse(d3$prosodic_break == "1" & d3$next_sound2 == "2", 2,
                                       ifelse(d3$prosodic_break == "1" & d3$next_sound2 == "3", 3,
                                              ifelse(d3$prosodic_break == "0" & d3$next_sound2 == "1", 4,
                                                     ifelse(d3$prosodic_break == "0" & d3$next_sound2 == "2", 5, 6)))))
 d3$sound_interaction <- as.integer(d3$sound_interaction)
-d3$sound_interaction2 <- ifelse(d3$prosodic_break == "1" & d3$next_sound3 == "1", 1,
-                               ifelse(d3$prosodic_break == "1" & d3$next_sound3 == "2", 2,
-                                      ifelse(d3$prosodic_break == "1" & d3$next_sound3 == "3", 3,
-                                             ifelse(d3$prosodic_break == "0" & d3$next_sound3 == "1", 4,
-                                                    ifelse(d3$prosodic_break == "0" & d3$next_sound3 == "2", 5, 6)))))
-d3$sound_interaction2 <- as.integer(d3$sound_interaction2)
-d3$next_s_interaction <- ifelse(d3$prosodic_break == "1" & d3$next_s == "1", 1,
-                                ifelse(d3$prosodic_break == "1" & d3$next_s == "2", 2,
-                                       ifelse(d3$prosodic_break == "0" & d3$next_s == "1", 3, 4)))
-d3$next_s_interaction <- as.integer(d3$next_s_interaction)
-d3$n_cons_interaction <- ifelse(d3$prosodic_break == "1" & d3$n_next_cons2 == 1, 1,
-                                ifelse(d3$prosodic_break == "1" & d3$n_next_cons2 == 2, 2,
-                                       ifelse(d3$prosodic_break == "1" & d3$n_next_cons2 == 3, 3,
-                                              ifelse(d3$prosodic_break == "1" & d3$n_next_cons2 == 4, 4,
-                                                     ifelse(d3$prosodic_break == "0" & d3$n_next_cons2 == 1, 5,
-                                                            ifelse(d3$prosodic_break == "0" & d3$n_next_cons2 == 2, 6,
-                                                                   ifelse(d3$prosodic_break == "0" & d3$n_next_cons2 == 3, 7, 8)))))))
-d3$n_cons_interaction <- as.integer(d3$n_cons_interaction)
 d3$item_index <- coerce_index(d3$item)
 
 # d3 still needs to be cleaned manually of a few French sentences
@@ -97,193 +60,12 @@ rm_lines <- c("16145", "34370", "37630", "47134", "90132", "94461", "21343", "94
 
 d3 <- d3[!(row.names(d3) %in% rm_lines),]
 
-# check_french2 <- d3[d3$item %in% c("baron", "crediteur", "expert", "majoor", "protocol") & d3$s_plural == 1,]
-# d3 <- d3[row.names(d3) != "46707",]
+check_french2 <- d3[d3$item %in% c("baron", "crediteur", "expert", "majoor", "protocol") & d3$s_plural == 1,]
+d3 <- d3[row.names(d3) != "46707",]
 
 # 46707: Experts en modélisation
 
-# Figure out how index variables compare to dummy variables
-# intercepts in no boundary condition 2, 0.5, -2.5, 1
-# option 1
-a0 <- 0.25
-sd0 <- 2
-a_items <- rnorm(5, mean = 0, sd = sd0)
-items <- rep(1:5, each=16)
-P1 <- rep(1:4, times=20) # n_next_cons (index)
-P2 <- rep(c(0,1), each=4, times=10) # Prosodic break (dummy)
-a1 <- c(1.75, 0.25, -2.75, 0.75)
-b2 <- 0.5
-ab2 <- -1
-p <- logistic(a0 + a1[P1] + b2*P2 + ab2*P2*a1[P1] + a_items[items])
 
-# option 2
-P1P2 <- rep(1:8, times=10)
-a12 <- c(1.75, 0.25, -2.75, 0.75, 0.5, 0.5, 0.5, 0.5)
-p <- logistic(a0 + a12[P1P2] + a_items[items])
-
-O <- rbinom(n = 80, prob = p, size = 1)
-
-dum <- ulam(
-  alist(
-    O ~ dbern(p),
-    logit(p) <- a0 + a1[P1] + b2*P2 + ab2*P2*a1[P1] + a_items[items],
-    a_items[items] ~ dnorm(0, sd0),
-    sd0 ~ dexp(1),
-    a0 ~ dnorm(0, 2),
-    a1[P1] ~ dnorm(0,2),
-    b2 ~ dnorm(0,2),
-    ab2 ~ dnorm(0,2)
-  ), data = list(O=O, P1=P1, P2=P2, items=items), chains = 4, cores = 4
-)
-
-precis(dum)
-#      mean   sd
-# ab2 -1.00 0.34
-
-ind <- ulam(
-  alist(
-    O ~ dbern(p),
-    logit(p) <- a0 + a12[P1P2] + a_items[items],
-    a_items[items] ~ dnorm(0, sd0),
-    sd0 ~ dexp(1),
-    a0 ~ dnorm(0, 2),
-    a12[P1P2] ~ dnorm(0,2)
-  ), data = list(O=O, P1P2=P1P2, items=items), chains = 4, cores = 4
-)
-
-# to get a12[,5:8] from dum analysis, we do:
-dum_post <- extract.samples(dum)
-dum_post$a2 <- dum_post$a1 + array(rep(dum_post$b2, times = 4), dim = c(2000,4)) + array(rep(dum_post$ab2, times = 4), dim = c(2000,4))*dum_post$a1
-
-# not exactly the same as the dum model, because intercepts in ind model are free to fit
-# the data, wheras the computed intercepts using the dum model need to reflect the
-# interaction coefficient, which  limits the types of interaction that can be measured.
-
-# we'll use the index model and calculate specific contrasts
-ind_post <- extract.samples(ind)
-# we'll use no consonants as the reference level
-# we expect following words with 2 consonant to result in fewer s variants than following
-# words with no consonants. We expect this effect to be stronger without pros boundary
-ind_post$c13 <- ind_post$a12[,1] - ind_post$a12[,3]
-ind_post$c57 <- ind_post$a12[,5] - ind_post$a12[,7]
-ind_post$c1357 <- ind_post$c13 - ind_post$c57
-
-# now onto real data
-m_cons <- ulam(
-  alist(
-    S ~ dbern(prob),
-    logit(prob) <- a[item] + d[cons],
-    d[cons] ~ dnorm(0, 1),
-    a[item] ~ dnorm(0, sigma),
-    sigma ~ dexp(1)
-  ),
-  data = list(S = d3$s_plural, 
-              item = d3$item_index, 
-              cons = d3$n_cons_interaction
-  ), 
-  chains = 4, cores = 4, iter = 4000, log_lik = T
-)
-
-cons_post <- extract.samples(m_cons)
-cons_post$d13 <- cons_post$d[,1] - cons_post$d[,3]
-cons_post$d57 <- cons_post$d[,5] - cons_post$d[,7]
-cons_post$d1357 <- cons_post$d13 - cons_post$d57
-# nothing
-# try without interaction
-
-m_cons0 <- ulam(
-  alist(
-    S ~ dbern(prob),
-    logit(prob) <- a[item] + d[cons],
-    d[cons] ~ dnorm(0, 1),
-    a[item] ~ dnorm(0, sigma),
-    sigma ~ dexp(1)
-  ),
-  data = list(S = d3$s_plural, 
-              item = d3$item_index, 
-              cons = d3$n_next_cons2
-  ), 
-  chains = 4, cores = 4, iter = 4000, log_lik = T
-)
-
-#
-m_cov <- ulam(
-  alist(
-    S ~ dbern(prob),
-    logit(prob) <- a[item] + b[stress] + g[sound] + d[cons],
-    b[stress] ~ dnorm(0, 1),
-    g[sound] ~ dnorm(0, 1),
-    d[cons] ~ dnorm(0, 1),
-    a[item] ~ dnorm(0, sigma),
-    sigma ~ dexp(1)
-  ), 
-  data = list(S = d3$s_plural, 
-              item = d3$item_index, 
-              stress = d3$stress_interaction,
-              sound = d3$next_s_interaction,
-              cons = d3$n_cons_interaction
-  ), 
-  chains = 4, cores = 4, iter = 4000, log_lik = T
-)
-
-
-m0.0 <- ulam(
-  alist(
-    S ~ dbern(prob),
-    logit(prob) <- a[item],
-    a[item] ~ dnorm(0, sigma),
-    sigma ~ dexp(1)
-  ), 
-  data = list(S = d3$s_plural, 
-              item = d3$item_index
-  ), 
-  chains = 4, cores = 4, iter = 3000, log_lik = T
-)
-
-m0 <- ulam(
-  alist(
-    S ~ dbern(prob),
-    logit(prob) <- a[item] + b[stress],
-    b[stress] ~ dnorm(0, 1),
-    a[item] ~ dnorm(0, sigma),
-    sigma ~ dexp(1)
-  ), 
-  data = list(S = d3$s_plural, 
-              item = d3$item_index, 
-              stress = d3$next_stress2
-  ), 
-  chains = 4, cores = 4, iter = 4000, log_lik = T
-)
-
-m0.5 <- ulam(
-  alist(
-    S ~ dbern(prob),
-    logit(prob) <- a[item] + b[stress],
-    b[stress] ~ dnorm(0, 1),
-    a[item] ~ dnorm(0, sigma),
-    sigma ~ dexp(1)
-  ), 
-  data = list(S = d3$s_plural, 
-              item = d3$item_index, 
-              stress = d3$stress_interaction
-  ), 
-  chains = 4, cores = 4, iter = 3000, log_lik = T
-)
-
-m0.5b <- ulam(
-  alist(
-    S ~ dbern(prob),
-    logit(prob) <- a[item] + g[sound],
-    g[sound] ~ dnorm(0, 1),
-    a[item] ~ dnorm(0, sigma),
-    sigma ~ dexp(1)
-  ), 
-  data = list(S = d3$s_plural, 
-              item = d3$item_index, 
-              sound = d3$next_s
-  ), 
-  chains = 4, cores = 4, iter = 3000, log_lik = T
-)
 
 # can't i get rid of a_bar?
 m1 <- ulam(
@@ -303,37 +85,12 @@ m1 <- ulam(
   chains = 4, cores = 4, iter = 4000, log_lik = T
 )
 
-saveRDS(object = m1, file = concat(f_path, "LIN_project/m1.rds"))
-
-m1.5 <- ulam(
-  alist(
-    S ~ dbern(prob),
-    logit(prob) <- a[item] + b[stress] + g[sound],
-    b[stress] ~ dnorm(0, 1),
-    g[sound] ~ dnorm(0, 1),
-    a[item] ~ dnorm(0, sigma),
-    sigma ~ dexp(1)
-  ), 
-  data = list(S = d3$s_plural, 
-              item = d3$item_index, 
-              stress = d3$stress_interaction,
-              sound = d3$next_s_interaction
-  ), 
-  chains = 4, cores = 4, iter = 4000, log_lik = T
-)
+saveRDS(object = m1, file = concat(f_path, "LIN_project/m1_big.rds"))
 
 post <- extract.samples(m1)
 # look at sound effects
-# following s interaction
-#post$g1_2 <- post$g[,1] - post$g[,2]
-#post$g3_4 <- post$g[,3] - post$g[,4]
-#post$g1_2_3_4 <- post$g1_2 - post$g3_4
-#plot(density(post$g1_2_3_4), xlim=c(-1, 1))
-# no interaction, look at separate contrasts
-#plot(density(post$g1_2), xlim=c(-1, 1))
-#plot(density(post$g3_4), xlim=c(-1, 1))
 post$g1_2 <- post$g[,1] - post$g[,2]
-plot(density(post$g1_2), xlim=c(-0.2, 1), main = "Next segment: s - other", xlab = "Difference in logit")
+plot(density(post$g1_2), xlim=c(-0.2, 1))
 abline(v = 0, lty="dotted")
 
 g_mu <- apply(post$g, 2, mean)
@@ -349,11 +106,9 @@ for (i in 1:2) lines(c(i,i), g_pi[,i])
 # see also p. 355 in rethinking pdf for similar analysis
 post$b1_2 <- post$b[,1] - post$b[,2]
 post$b3_4 <- post$b[,3] - post$b[,4]
-plot(density(post$b3_4), xlim=c(-0.5, 0.75), main = "", xlab= "Diff. in log-odds of -s Plural")
+plot(density(post$b3_4), xlim=c(-0.5, 0.75))
 lines(density(post$b1_2), lty="dashed")
 abline(v = 0, lty="dotted")
-text(-0.4, 4, "N/S - N/N")
-text(0.5, 2, "B/S - B/N")
 diffs <- list(db12 = post$b1_2, db34 = post$b3_4 )
 plot(precis(diffs))
 
@@ -482,7 +237,7 @@ for (k in 0:(rown-1)){
   for ( j in 1:coln ) {
     word_name <- d3[d3$item_index == k*coln+j,]$item[1]
     text( (j-1)*4+2.5 , 1.1 , word_name , xpd=TRUE )
-#    if (word_name %in% c("ballon", "kopie", "directeur", "redacteur")){
+#    if (word_name %in% c("ballon", "directeur", "luitenant", "redacteur", "sergeant")){
 #      rect((j-1)*4+0.5, 0, (j-1)*4+4.5, 1, col = alpha("green", 0.5), border = NA)
 #    } else if (word_name %in% c("admiraal", "bretel", "compagnie", "redacteur", "doorn")){
 #      rect((j-1)*4+0.5, 0, (j-1)*4+4.5, 1, col = alpha("purple", 0.5), border = NA)

@@ -18,7 +18,7 @@ with open(f_path + "DPW3.CD", "r") as f:
         syls = l_list[4].split("-")
         syl_struc = [i.strip("[]") for i in l_list[5].split("[") if i != ""]
         if syls == [""]:
-            celex[word] = ["NA", "NA", "NA", "NA", "NA"]
+            celex[word] = ["NA", "NA", "NA", "NA", "NA", "NA"]
         else:
             num_syl = len(syls)
             for counter, syl in enumerate(syls, 1):
@@ -26,9 +26,9 @@ with open(f_path + "DPW3.CD", "r") as f:
                     stress = counter
                     break
             if len(syl_struc) > 0:
-                celex[word] = [str(num_syl), str(stress), syls[0].strip("'")[0], "@" in syls[0], str(syl_struc[0].count("V"))]
+                celex[word] = [str(num_syl), str(stress), syls[0].strip("'")[0], "@" in syls[0], str(syl_struc[0].count("V")), str(len(re.search('^C*', syl_struc[0]).group()))]
             else:
-                celex[word] = [str(num_syl), str(stress), syls[0].strip("'")[0], "@" in syls[0], "NA"]
+                celex[word] = [str(num_syl), str(stress), syls[0].strip("'")[0], "@" in syls[0], "NA", "NA"]
 
 double_vowels = ["ee", "uu", "oo", "aa"]
 short_vowels = ["e", "u", "i", "o", "a"]
@@ -82,36 +82,45 @@ def getVariables(i_pair):
                 clean_index = [w["index"] for w in frog_output_clean].index(frog_output[w_index]["index"])
                 if clean_index + 1 < len(frog_output_clean):
                     next_word = frog_output_clean[clean_index + 1]["text"].lower()
+                    next_lemma = frog_output_clean[clean_index + 1]["lemma"].lower()
+                    next_POS = frog_output_clean[clean_index + 1]["pos"]
                 else:
                     context_frog_output = frog.process(re.sub(" & ", " en ", foll_context))
                     context_frog_output_clean = [i for i in context_frog_output if i["pos"] != "LET()"]
                     if len(context_frog_output_clean) > 0:
                         next_word = context_frog_output_clean[0]["text"].lower()
+                        next_lemma = context_frog_output_clean[0]["lemma"].lower()
+                        next_POS = context_frog_output_clean[0]["pos"]
                     else:
                         next_word = None
+                        next_lemma = "NA"
+                        next_POS = "NA"
                 if next_word:
                     if next_word in celex:
-                        stressed_syl, next_sound, next_syl_schwa, next_vowel_length = celex[next_word][1:]
+                        stressed_syl, next_sound, next_syl_schwa, next_vowel_length, n_next_cons = celex[next_word][1:]
                         next_stress = "1" if stressed_syl == "1" and not next_syl_schwa else "NA" if stressed_syl == "NA" else "0"
                     else:
                         # check multi-word unit
                         if "_" in next_word:
                             first_word = next_word.split("_")[0]
                             if first_word in celex:
-                                stressed_syl, next_sound, next_syl_schwa, next_vowel_length = celex[first_word][1:]
+                                stressed_syl, next_sound, next_syl_schwa, next_vowel_length, n_next_cons = celex[first_word][1:]
                                 next_stress = "1" if stressed_syl == "1" and not next_syl_schwa else "NA" if stressed_syl == "NA" else "0"
                             else:
                                 next_stress = "NA"
                                 next_sound = "NA"
                                 next_vowel_length = "NA"
+                                n_next_cons = "NA"
                         else:
                             next_stress = "NA"
                             next_sound = "NA"
                             next_vowel_length = "NA"
+                            n_next_cons = "NA"
                 else:
                     next_stress = "NA"
                     next_sound = "NA"
                     next_vowel_length = "NA"
+                    n_next_cons = "NA"
                 if w_index + 1 < len(frog_output):
                     following_interp = frog_output[w_index + 1]["pos"] == "LET()"
                 else:
@@ -121,7 +130,7 @@ def getVariables(i_pair):
                     else:
                         following_interp = "NA"
                 prosodic_break = "NA" if following_interp == "NA" else "1" if following_interp else "0"
-                return ",".join([s_plural, t, prosodic_break, next_stress, next_sound, next_vowel_length, re.sub(",", "", line)]) + "\n"
+                return ",".join([s_plural, t, prosodic_break, next_stress, next_sound, next_vowel_length, n_next_cons, re.sub(",", "_", next_POS), next_lemma, re.sub(",", "", line)]) + "\n"
 
 
 p = multiprocessing.Pool(60)
@@ -133,6 +142,6 @@ result_list = [line for line in result_list if line]
 
 print("Writing output file...")
 with open(f_path + "SonarVar.csv", "w") as g:
-    g.write("s_plural,item,prosodic_break,next_stress,next_sound,next_vowel_length,ort\n")
+    g.write("s_plural,item,prosodic_break,next_stress,next_sound,next_vowel_length,n_next_cons,next_POS,next_lemma,ort\n")
     for line in result_list:
         g.write(line)

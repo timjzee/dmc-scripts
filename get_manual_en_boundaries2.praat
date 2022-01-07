@@ -6,16 +6,17 @@ else
     bigdata2$ = "/vol/bigdata2/"
 endif
 
-annotators$[1] = "TR"
-annotators$[2] = "TS"
+n_annotators = 2
+annotators$[1] = "TZ"
+annotators$[2] = "MW"
 
 segments$[1] = "e"
 segments$[2] = "n"
 
 # Make sure input file has a header
-Read Table from comma-separated file: tensusers$ + "classifier_evaluation/en/" + "nn_eval_en_o1.csv"
+Read Table from comma-separated file: tensusers$ + "classifier_evaluation/en/" + "nn_eval_en_o2b.csv"
 Rename: "chunks"
-for a_i from 1 to 2
+for a_i from 1 to n_annotators
     a$ = annotators$[a_i]
     for s_i from 1 to 2
         s$ = segments$[s_i]
@@ -374,9 +375,9 @@ procedure inspectChunk: annotateChunk.id
 
     # get annotator boundaries
     annot_chunk_name$ = replace$(filepath$, "/", "_", 0) + "_" + c_channel$ + "_" + c_start$ + "_" + c_end$ + "_" + c_tier$ + "_" + word_chunk_i$ + ".TextGrid"
-    for annotator_i from 1 to 2
+    for annotator_i from 1 to n_annotators
         a$ = annotators$[annotator_i]
-        annot_chunk_path$ = tensusers$ + "classifier_evaluation/en/man_annot/" + a$ + "_copy/" + corpus$ + "/" + annot_chunk_name$
+        annot_chunk_path$ = tensusers$ + "classifier_evaluation/en/man_annot/" + a$ + "/" + corpus$ + "/" + annot_chunk_name$
         if fileReadable(annot_chunk_path$)
             Read from file: annot_chunk_path$
             annot_chunk$ = selected$("TextGrid")
@@ -464,4 +465,4 @@ for id from 1 to num_chunks
 endfor
 
 selectObject: "Table chunks"
-Save as comma-separated file: tensusers$ + "classifier_evaluation/en/nn_eval_en_o1_annotated2.csv"
+Save as comma-separated file: tensusers$ + "classifier_evaluation/en/nn_eval_en_o2_annotated.csv"

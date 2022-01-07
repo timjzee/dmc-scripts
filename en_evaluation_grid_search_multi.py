@@ -8,10 +8,10 @@ network_type = ["FFNN", "BLSTM"]    # ["FFNN", "BLSTM"]
 context_frames = ["5", "15"]               # [5, 15]; need to train models with 5 context still
 model_feature_combos = [(n, c) for n in network_type for c in context_frames]
 
-# for nt in network_type:
-#     for cf in context_frames:
-#         print("Predicting {} {}".format(nt, cf))
-#         subprocess.call(["python", home_dir + "GitHub/dmc-scripts/predictAF_en_keras_gs.py", nt, cf])
+for nt in network_type:
+    for cf in context_frames:
+        print("Predicting {} {}".format(nt, cf))
+        subprocess.call(["python", home_dir + "GitHub/dmc-scripts/predictAF_en_keras_gs.py", nt, cf])
 
 
 def gridSearch(data_combos=model_feature_combos, kal_diff_weight=["0.5", "1"], apply_penalty=["1"], n_prec_values=["0", "10"], n_subs_values=["0", "10"], n_smooths=["1", "2", "3"], take_sqrt=["0"], threshold_schwa=["0.2", "0.5", "0.8"], threshold_n=["0.2", "0.5", "0.8"], threshold_N=["0.2", "0.5", "0.8"], subtract_n=["0", "1"]):

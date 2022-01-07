@@ -26,6 +26,8 @@ else
     tensusers$ = "/vol/tensusers/timzee/"
 endif
 
+eval_folder$ = "eval2"
+
 double_derivative = 1
 frag_buffer = 0.2
 
@@ -46,7 +48,7 @@ network_types$[2] = network_type_n$
 network_types$[3] = network_type_N$
 
 # Make sure input file has a header
-Read Table from comma-separated file: tensusers$ + "classifier_evaluation/en/" + "nn_eval_en_o1_annotated3.csv"
+Read Table from comma-separated file: tensusers$ + "classifier_evaluation/en/" + "nn_eval_en_o2_annotated.csv"
 Rename: "chunks"
 
 for s_i from 1 to 3
@@ -102,7 +104,7 @@ procedure inspectChunk: annotateChunk.id
         if frag_end > sound_end
             frag_end = sound_end
         endif
-        frag_path$ = tensusers$ + "af_classification/pred_textgrids_keras_en/eval/" + network_types$[s_i] + "_" + context_frames$[s_i] + "/"
+        frag_path$ = tensusers$ + "af_classification/pred_textgrids_keras_en/" + eval_folder$ + "/" + network_types$[s_i] + "_" + context_frames$[s_i] + "/"
         if corpus$ = "ecsd"
             frag_file$ = frag_path$ + s_name$ + "_S_" + c_channel$ + "_" + frag_start$ + "_" + fixed$(frag_end, 3) + "_" + s_text$ + ".IntensityTier"
         else
@@ -181,7 +183,7 @@ procedure inspectChunk: annotateChunk.id
             if subtract_n and s$ == "e"
                 p_file$ = right$(frag_file$, length(frag_file$) - rindex(frag_file$, "/"))
                 n_file$ = replace_regex$(p_file$, "_[a-z]+(?=\.IntensityTier)", "_nasal", 0)
-                Read from file: tensusers$ + "af_classification/pred_textgrids_keras_en/eval/" + network_types$[2] + "_" + context_frames$[2] + "/" + n_file$
+                Read from file: tensusers$ + "af_classification/pred_textgrids_keras_en/" + eval_folder$ + "/" + network_types$[2] + "_" + context_frames$[2] + "/" + n_file$
                 n_name$ = selected$("IntensityTier")
                 if context_frames$[2] == "15"
                     z_t = Get time from index: 1
@@ -562,7 +564,7 @@ procedure inspectChunk: annotateChunk.id
             else
                 nn_trace$ = "NA"
             endif
-            Read from file: tensusers$ + "af_classification/pred_fragments_en/eval/" + s_name$ + "_" + c_channel$ + "_" + frag_start$ + "_" + fixed$(frag_end, 3) + ".wav"
+            Read from file: tensusers$ + "af_classification/pred_fragments_en/" + eval_folder$ + "/" + s_name$ + "_" + c_channel$ + "_" + frag_start$ + "_" + fixed$(frag_end, 3) + ".wav"
             w_name$ = selected$("Sound")
             Shift times to: "start time", frag_start
             # get A1-P1
@@ -681,4 +683,4 @@ for id from 1 to num_chunks
 endfor
 
 selectObject: "Table chunks"
-Save as comma-separated file: tensusers$ + "classifier_evaluation/en/grid_search_output/" + "e-" + network_type_schwa$ + "-" + context_frames_schwa$ + "_n-" + network_type_n$ + "-" + context_frames_n$ + "_N-" + network_type_N$ + "-" + context_frames_N$ + "_" + string$(kal_diff_weight) + "_" + string$(apply_penalty) + "_" + string$(n_prec_values) + "_" + string$(n_subs_values) + "_" + string$(n_smooths) + "_" + string$(take_sqrt) + "_" + string$(threshold_schwa) + "_" + string$(threshold_n) + "_" + string$(threshold_N) + "_" + string$(subtract_n) + ".csv"
+Save as comma-separated file: tensusers$ + "classifier_evaluation/en/grid_search_output2/" + "e-" + network_type_schwa$ + "-" + context_frames_schwa$ + "_n-" + network_type_n$ + "-" + context_frames_n$ + "_N-" + network_type_N$ + "-" + context_frames_N$ + "_" + string$(kal_diff_weight) + "_" + string$(apply_penalty) + "_" + string$(n_prec_values) + "_" + string$(n_subs_values) + "_" + string$(n_smooths) + "_" + string$(take_sqrt) + "_" + string$(threshold_schwa) + "_" + string$(threshold_n) + "_" + string$(threshold_N) + "_" + string$(subtract_n) + ".csv"

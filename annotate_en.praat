@@ -4,7 +4,7 @@ form Give chunks
     word bigdata2 /Volumes/bigdata2
 endform
 
-chunk_path$ = tensusers$ + "/timzee/classifier_evaluation/en/nn_eval_en_o2.csv"
+chunk_path$ = tensusers$ + "/timzee/classifier_evaluation/en/nn_eval_en_o3.csv"
 output_path$ = tensusers$ + "/timzee/classifier_evaluation/en/man_annot/"
 
 
@@ -84,21 +84,31 @@ procedure annotateChunk: .id
     removeObject: "LongSound " + s_name$
     c_dur = Get total duration
     equal_interval_dur = c_dur / 5
-    To TextGrid: "orthography schwa nasalization nasal-stop schwa-reduction stop-reduction", ""
-    Set interval text: 1, 1, ort$
-    Insert boundary: 3, c_start_buf + equal_interval_dur
-    Insert boundary: 3, c_start_buf + equal_interval_dur * 4
-    for i from 1 to 4
-        Insert boundary: 2, c_start_buf + equal_interval_dur * i
-        Insert boundary: 4, c_start_buf + equal_interval_dur * i
-    endfor
-    Set interval text: 2, 2, "start"
-    Set interval text: 2, 3, "max"
-    Set interval text: 2, 4, "end"
-    Set interval text: 3, 2, "nasalization"
-    Set interval text: 4, 2, "start"
-    Set interval text: 4, 3, "max"
-    Set interval text: 4, 4, "end"
+    # check if tg already exists
+    frag_file$ = output_path$ + user_name$ + "/" + corpus$ + "/" + replace$(filepath$, "/", "_", 0) + "_" + chan$ + "_" + c_start$ + "_" + c_end$ + "_" + c_tier$ + "_" + word_chunk_i$ + ".TextGrid"
+    if fileReadable(frag_file$)
+        Read from file: frag_file$
+        Rename: s_name$
+    else
+        To TextGrid: "orthography schwa nasalization nasal-stop schwa-reduction stop-reduction", ""
+        Set interval text: 1, 1, ort$
+        Insert boundary: 3, c_start_buf + equal_interval_dur
+        Insert boundary: 3, c_start_buf + equal_interval_dur * 4
+        for i from 1 to 4
+            Insert boundary: 2, c_start_buf + equal_interval_dur * i
+            Insert boundary: 4, c_start_buf + equal_interval_dur * i
+        endfor
+        Set interval text: 2, 2, "start"
+        Set interval text: 2, 3, "max"
+        Set interval text: 2, 4, "end"
+        Set interval text: 3, 2, "nasalization"
+        Set interval text: 4, 2, "start"
+        Set interval text: 4, 3, "max"
+        Set interval text: 4, 4, "end"
+    endif
+    schwa_max_exists = Count intervals where: 2, "is equal to", "max"
+    nasalization_exists = Count intervals where: 3, "is equal to", "nasalization"
+    nasal_max_exists = Count intervals where: 4, "is equal to", "max"
     plusObject: "Sound " + s_name$
     View & Edit
     editor: "TextGrid " + s_name$
@@ -128,9 +138,21 @@ procedure annotateChunk: .id
     endeditor
     clicked1 = 4
     clicked2 = 0
-    b1_lab$ = "-@"
-    b2_lab$ = "-n"
-    b3_lab$ = "-N"
+    if schwa_max_exists
+        b1_lab$ = "-@"
+    else
+        b1_lab$ = "+@"
+    endif
+    if nasal_max_exists
+        b2_lab$ = "-n"
+    else
+        b2_lab$ = "+n"
+    endif
+    if nasalization_exists
+        b3_lab$ = "-N"
+    else
+        b3_lab$ = "+N"
+    endif
     annotation_incomplete = 1
     while annotation_incomplete == 1
         selectObject: "TextGrid " + s_name$

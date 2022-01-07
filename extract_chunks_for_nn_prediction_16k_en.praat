@@ -4,7 +4,7 @@ if corpus$ == "IFADVcorpus"
     component$ = "ifadv"
     o_path$ = "/tensusers/timzee/IFADVcorpus/Speech/"
 elif corpus$ == "cgn"
-    component$ = "a"
+    component$ = "o"
     if component$ == "c" or component$ == "d"
         o_path$ = "/tensusers/timzee/cgn/mono_comp-"
         new_sample_f = 8000
@@ -20,18 +20,18 @@ endif
 if macintosh
     tens_path$ = "/Volumes/tensusers/timzee/"
     audio_path$ = "/Volumes" + o_path$
-    frag_path$ = "/Volumes/tensusers/timzee/af_classification/pred_fragments_en/" + "eval/"
+    frag_path$ = "/Volumes/tensusers/timzee/af_classification/pred_fragments_en/" + "eval2/"
 else
     tens_path$ = "/vol/tensusers/timzee/"
     audio_path$ = "/vol" + o_path$
-    frag_path$ = "/vol/tensusers/timzee/af_classification/pred_fragments_en/" + "eval/"
+    frag_path$ = "/vol/tensusers/timzee/af_classification/pred_fragments_en/" + "eval2/"
 endif
 
 frag_buffer = 0.2
 
 Read Table from tab-separated file: tens_path$ + corpus$ + "/speakers.txt"
 
-Read Table from comma-separated file: tens_path$ + "classifier_evaluation/en/" + "nn_eval_en_o1.csv"
+Read Table from comma-separated file: tens_path$ + "classifier_evaluation/en/" + "nn_eval_en_o2b.csv"
 table_name$ = selected$("Table")
 
 wav_name$ = ""

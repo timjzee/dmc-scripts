@@ -97,7 +97,7 @@ classifiers = {feat: {freq: tf.keras.models.load_model(tens_path + "keras_models
 #     "nasalization": {"16k": tf.keras.models.load_model(tens_path + "keras_models/" + "nasalization".join(model_locations[network_type][context_frames]["16k"]["nasalization"]))}
 # }
 
-frag_fol = "eval"
+frag_fol = "eval2"
 file_paths = glob.glob(tens_path + "pred_fragments_en/" + frag_fol + "/*.wav")
 
 # file_paths = [tens_path + "pred_fragments/af_eval_s/DVA10O_1_36.916_37.356.wav"]
