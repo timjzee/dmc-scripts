@@ -6,8 +6,8 @@ if (Sys.info()[1] == "Darwin"){
 
 # indices for val/test split
 
-vali_indices <- 1:70
-test_indices <- 71:140
+vali_indices <- 1:71
+test_indices <- 72:142
 
 par_list = list(
   schwa_network_type = c("FFNN", "BLSTM"),
@@ -150,7 +150,7 @@ getGsData <- function(gs_index){
   gs_name <- sub("(?<=5)_(?=(FFNN|BLSTM))", "_N-", gs_name, perl = T)
   gs_name <- gsub("(?<=(TM|NN))_(?=(1|5))", "-", gs_name, perl = T)
 #  print(gs_name)
-  bounds <- read.csv(paste(f_path, "grid_search_output2/", gs_name, ".csv", sep = ""))
+  bounds <- read.csv(paste(f_path, "grid_search_output3/", gs_name, ".csv", sep = ""))
   bounds <- bounds[indices,]
   ### schwa
   ## Human-Human
@@ -397,7 +397,7 @@ getGsData <- function(gs_index){
   Accuracy3 <- sum(diag(cm3)) / sum(cm3)
   macro.Fscore3 <- 2*((macro.precision3 * macro.recall3) / (macro.precision3 + macro.recall3))
   
-  if(length(indices) == 140){
+  if(length(indices) == 142){
     return(bounds)
   } else {
     return(c(gs_name, 
@@ -461,9 +461,9 @@ gs_df[,(n_col_vali+1):n_col_test] <- t(sapply(1:nrow(gs_df), getGsData))[,2:(n_c
 
 gs_df <- gs_df[order(gs_df$v_perc20_TZ_NN, decreasing = T),]
 
-write.csv(gs_df, file = paste(f_path, "gs_summary2.csv", sep = ""),quote = F, row.names = F)
+write.csv(gs_df, file = paste(f_path, "gs_summary3.csv", sep = ""),quote = F, row.names = F)
 
-indices <- 1:140
+indices <- 1:142
 bla <- getGsData(1)
-write.table(bla, file = paste(f_path, "gs_summary2_example.csv", sep = ""),quote = F, row.names = F, sep = "\t")
+write.table(bla, file = paste(f_path, "gs_summary3_example.csv", sep = ""),quote = F, row.names = F, sep = "\t")
 

@@ -16,22 +16,27 @@ else
     o_path$ = "/tensusers/timzee/ECSD/Speech/"
 endif
 
+# output_path$ = "eval3/"
+output_path$ = "o/"
 
 if macintosh
     tens_path$ = "/Volumes/tensusers/timzee/"
     audio_path$ = "/Volumes" + o_path$
-    frag_path$ = "/Volumes/tensusers/timzee/af_classification/pred_fragments_en/" + "eval2/"
+    frag_path$ = "/Volumes/tensusers/timzee/af_classification/pred_fragments_en/" + output_path$
 else
     tens_path$ = "/vol/tensusers/timzee/"
     audio_path$ = "/vol" + o_path$
-    frag_path$ = "/vol/tensusers/timzee/af_classification/pred_fragments_en/" + "eval2/"
+    frag_path$ = "/vol/tensusers/timzee/af_classification/pred_fragments_en/" + output_path$
 endif
 
 frag_buffer = 0.2
 
 Read Table from tab-separated file: tens_path$ + corpus$ + "/speakers.txt"
 
-Read Table from comma-separated file: tens_path$ + "classifier_evaluation/en/" + "nn_eval_en_o2b.csv"
+# input_file$ = "classifier_evaluation/en/nn_eval_en_o3.csv"
+input_file$ = "en_morph_project/nn_all_en_o.csv"
+
+Read Table from comma-separated file: tens_path$ + input_file$
 table_name$ = selected$("Table")
 
 wav_name$ = ""
@@ -47,7 +52,7 @@ for s_line from 1 to n_inputlines
     cur_start = number(cur_start$)
     cur_end$ = Get value: s_line, "chunk_end"
     cur_end = number(cur_end$)
-    appendInfoLine: "Working on ", cur_name$, " from ", cur_start$, " to ", cur_end$
+    appendInfoLine: "Working on line ", s_line , " file ", cur_name$, " from ", cur_start$, " to ", cur_end$
     c_channel$ = Get value: s_line, "chan"
     c_channel = number(c_channel$)
 

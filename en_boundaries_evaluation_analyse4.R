@@ -4,14 +4,17 @@ if (Sys.info()[1] == "Darwin"){
   f_path = "/vol/tensusers/timzee/classifier_evaluation/en/"
 }
 
-gs_df <- read.csv(paste(f_path, "gs_summary2.csv", sep = ""))
+gs_df <- read.csv(paste(f_path, "gs_summary3.csv", sep = ""))
 
 gs_df$v_classifier_average_score <- (gs_df$v_perc20_MW_NN + gs_df$v_variant_accuracy_MW_NN + gs_df$v_variant_macro_Fscore_MW_NN) / 3
+# gs_df$v_classifier_average_score <- (gs_df$v_perc20_MW_NN + gs_df$v_variant_accuracy_MW_NN) / 2
 gs_df$v_classifier_average_score_TZ <- (gs_df$v_perc20_TZ_NN + gs_df$v_variant_accuracy_TZ_NN + gs_df$v_variant_macro_Fscore_TZ_NN) / 3
+# gs_df$v_classifier_average_score_TZ <- (gs_df$v_perc20_TZ_NN + gs_df$v_variant_accuracy_TZ_NN) / 2
 
 gs_df$t_classifier_average_score <- (gs_df$t_perc20_MW_NN + gs_df$t_variant_accuracy_MW_NN + gs_df$t_variant_macro_Fscore_MW_NN) / 3
+# gs_df$t_classifier_average_score <- (gs_df$t_perc20_MW_NN + gs_df$t_variant_accuracy_MW_NN) / 2
 gs_df$t_classifier_average_score_TZ <- (gs_df$t_perc20_TZ_NN + gs_df$t_variant_accuracy_TZ_NN + gs_df$t_variant_macro_Fscore_TZ_NN) / 3
-
+# gs_df$t_classifier_average_score_TZ <- (gs_df$t_perc20_TZ_NN + gs_df$t_variant_accuracy_TZ_NN) / 2
 
 # compared to MW
 par(mfrow = c(1,1), mar=c(12,6,1,2), oma=c(0,0,2,0))
@@ -19,7 +22,9 @@ par(mfrow = c(1,1), mar=c(12,6,1,2), oma=c(0,0,2,0))
 gs_df = gs_df[order(gs_df$v_perc20_MW_NN, decreasing = T),]
 
 best_ind <- as.integer(seq(from=1, to=nrow(gs_df)/2, length.out = 100))
-plot(best_ind - 0.25*((nrow(gs_df)/2) %/% 100), gs_df$v_perc20_MW_NN[best_ind], xlab = "", ylab = "", xaxt='n', type = "h", ylim = c(min(gs_df$t_perc20_MW_NN[best_ind])-0.002, max(gs_df$v_perc20_TZ_MW[1],gs_df$v_perc20_MW_NN[1])+0.002))
+plot(best_ind - 0.25*((nrow(gs_df)/2) %/% 100), gs_df$v_perc20_MW_NN[best_ind], xlab = "", ylab = "", xaxt='n', type = "h", 
+     ylim = c(min(gs_df$t_perc20_MW_NN[best_ind])-0.002, 
+              max(gs_df$v_perc20_TZ_MW[1],gs_df$v_perc20_MW_NN[1],gs_df$t_perc20_TZ_MW[1])+0.002))
 points(best_ind + 0.25*((nrow(gs_df)/2) %/% 100), gs_df$t_perc20_MW_NN[best_ind], type = "h", col="red")
 text(best_ind, par("usr")[3], labels = gs_df$gs_name[best_ind], srt = 45, adj = c(1.1,1.1), xpd = TRUE, cex=0.4)
 
@@ -35,11 +40,65 @@ text(best_ind, par("usr")[3], labels = gs_df$gs_name[best_ind], srt = 45, adj = 
 abline(h = gs_df$v_perc20_TZ_MW[1], lty="dashed", col="black")
 abline(h = gs_df$t_perc20_TZ_MW[1], lty="dashed", col="red")
 
+# TZ
+gs_df = gs_df[order(gs_df$v_perc20_TZ_NN, decreasing = T),]
+
+best_ind <- as.integer(seq(from=1, to=nrow(gs_df)/2, length.out = 100))
+plot(best_ind - 0.25*((nrow(gs_df)/2) %/% 100), gs_df$v_perc20_TZ_NN[best_ind], xlab = "", ylab = "", xaxt='n', type = "h", 
+     ylim = c(min(min(gs_df$t_perc20_TZ_NN[best_ind]), min(gs_df[order(gs_df$v_perc20_MW_NN, decreasing = T),]$t_perc20_MW_NN[best_ind]))-0.002, 
+              max(gs_df$v_perc20_TZ_MW[1],gs_df$v_perc20_TZ_NN[1],gs_df$t_perc20_TZ_MW[1])+0.002))
+points(best_ind + 0.25*((nrow(gs_df)/2) %/% 100), gs_df$t_perc20_TZ_NN[best_ind], type = "h", col="red")
+text(best_ind, par("usr")[3], labels = gs_df$gs_name[best_ind], srt = 45, adj = c(1.1,1.1), xpd = TRUE, cex=0.4)
+
+abline(h = gs_df$v_perc20_TZ_MW[1], lty="dashed", col="black")
+abline(h = gs_df$t_perc20_TZ_MW[1], lty="dashed", col="red")
+
+# best 100
+best_ind <- 1:100
+plot(best_ind-0.25, gs_df$v_perc20_TZ_NN[best_ind], xlab = "", ylab = "", xaxt='n', type = "h", ylim = c(min(gs_df$t_perc20_TZ_NN[best_ind])-0.002, max(gs_df$v_perc20_TZ_MW[1],gs_df$v_perc20_TZ_NN[1])+0.002))
+points(best_ind + 0.25, gs_df$t_perc20_TZ_NN[best_ind], type = "h", col="red")
+text(best_ind, par("usr")[3], labels = gs_df$gs_name[best_ind], srt = 45, adj = c(1.1,1.1), xpd = TRUE, cex=0.4)
+
+abline(h = gs_df$v_perc20_TZ_MW[1], lty="dashed", col="black")
+abline(h = gs_df$t_perc20_TZ_MW[1], lty="dashed", col="red")
+
+# accuracy
+# MW
+gs_df = gs_df[order(gs_df$v_variant_accuracy_MW_NN, decreasing = T),]
+
+best_ind <- as.integer(seq(from=1, to=nrow(gs_df)/2, length.out = 100))
+plot(best_ind - 0.25*((nrow(gs_df)/2) %/% 100), gs_df$v_variant_accuracy_MW_NN[best_ind], xlab = "", ylab = "", xaxt='n', type = "h", 
+     ylim = c(min(gs_df$t_variant_accuracy_MW_NN[best_ind],
+                  min(gs_df[order(gs_df$v_variant_accuracy_TZ_NN, decreasing = T),]$t_variant_accuracy_TZ_NN[best_ind]))-0.002, 
+              max(gs_df$v_variant_accuracy_TZ_MW[1],
+                  gs_df$v_variant_accuracy_MW_NN[1],
+                  gs_df$t_variant_accuracy_MW_NN[1],
+                  gs_df$t_variant_accuracy_TZ_MW[1],
+                  gs_df[order(gs_df$v_variant_accuracy_TZ_NN, decreasing = T),]$v_variant_accuracy_TZ_NN[best_ind[1]])+0.002))
+points(best_ind + 0.25*((nrow(gs_df)/2) %/% 100), gs_df$t_variant_accuracy_MW_NN[best_ind], type = "h", col="red")
+text(best_ind, par("usr")[3], labels = gs_df$gs_name[best_ind], srt = 45, adj = c(1.1,1.1), xpd = TRUE, cex=0.4)
+
+abline(h = gs_df$v_variant_accuracy_TZ_MW[1], lty="dashed", col="black")
+abline(h = gs_df$t_variant_accuracy_TZ_MW[1], lty="dashed", col="red")
+# TZ
+gs_df = gs_df[order(gs_df$v_variant_accuracy_TZ_NN, decreasing = T),]
+
+best_ind <- as.integer(seq(from=1, to=nrow(gs_df)/2, length.out = 100))
+plot(best_ind - 0.25*((nrow(gs_df)/2) %/% 100), gs_df$v_variant_accuracy_TZ_NN[best_ind], xlab = "", ylab = "", xaxt='n', type = "h", 
+     ylim = c(min(gs_df$t_variant_accuracy_TZ_NN[best_ind])-0.002, 
+              max(gs_df$v_variant_accuracy_TZ_MW[1],gs_df$v_variant_accuracy_TZ_NN[1],gs_df$t_variant_accuracy_TZ_NN[1],gs_df$t_variant_accuracy_TZ_MW[1])+0.002))
+points(best_ind + 0.25*((nrow(gs_df)/2) %/% 100), gs_df$t_variant_accuracy_TZ_NN[best_ind], type = "h", col="red")
+text(best_ind, par("usr")[3], labels = gs_df$gs_name[best_ind], srt = 45, adj = c(1.1,1.1), xpd = TRUE, cex=0.4)
+
+abline(h = gs_df$v_variant_accuracy_TZ_MW[1], lty="dashed", col="black")
+abline(h = gs_df$t_variant_accuracy_TZ_MW[1], lty="dashed", col="red")
+
 
 # combined score
 v_human_average_score <- (gs_df$v_perc20_TZ_MW[1] + gs_df$v_variant_accuracy_TZ_MW + gs_df$v_variant_macro_Fscore_TZ_MW) / 3
-
+# v_human_average_score <- (gs_df$v_perc20_TZ_MW[1] + gs_df$v_variant_accuracy_TZ_MW) / 2
 t_human_average_score <- (gs_df$t_perc20_TZ_MW[1] + gs_df$t_variant_accuracy_TZ_MW + gs_df$t_variant_macro_Fscore_TZ_MW) / 3
+# t_human_average_score <- (gs_df$t_perc20_TZ_MW[1] + gs_df$t_variant_accuracy_TZ_MW) / 2
 
 best_ind <- as.integer(seq(from=1, to=nrow(gs_df), length.out = 100))
 plot(best_ind - 0.25*(nrow(gs_df) %/% 100), gs_df[order(gs_df$v_classifier_average_score, decreasing = T),]$v_classifier_average_score[best_ind], 
@@ -155,14 +214,14 @@ axis(side=1, col="black", at=1:2, labels=prec_labels)
 par(mar=c(5.1, 4.1, 4.1, 2.1), oma=c(0,0,0,0), mfrow=c(1,1))
 
 # inspect confusion matrices
-bounds <- read.table(paste(f_path, "gs_summary2_example.csv", sep = ""), header = T, quote = "", sep = "\t")
+bounds <- read.table(paste(f_path, "gs_summary3_example.csv", sep = ""), header = T, quote = "", sep = "\t")
 
 bounds$TZ_variant <- factor(x = bounds$TZ_variant, levels = c("@", "@n", "~", "0", "n"))
 bounds$MW_variant <- factor(x = bounds$MW_variant, levels = c("@", "@n", "~", "0", "n"))
 
 
-vali_indices <- 1:70
-test_indices <- 71:140
+vali_indices <- 1:71
+test_indices <- 72:142
 
 v_cm <- table(bounds[vali_indices,]$TZ_variant, bounds[vali_indices,]$MW_variant, dnn = c("TZ", "MW"))
 v_recall <- diag(v_cm) / colSums(v_cm)

@@ -13,7 +13,7 @@ if len(sys.argv) > 1:
     context_frames = str(sys.argv[2])
 else:
     network_type = "BLSTM"
-    context_frames = "15"
+    context_frames = "5"
 
 tens_path = "/Volumes/tensusers/timzee/af_classification/" if sys.platform == "darwin" else "/vol/tensusers/timzee/af_classification/"
 
@@ -64,7 +64,7 @@ model_locations = {
     }
 }
 
-features = ["schwa", "nasal", "nasalization"]
+features = ["nasalization"]        # ["schwa", "nasal", "nasalization"]
 sampling_freqs = ["16k"]
 
 corpora = {
@@ -97,7 +97,7 @@ classifiers = {feat: {freq: tf.keras.models.load_model(tens_path + "keras_models
 #     "nasalization": {"16k": tf.keras.models.load_model(tens_path + "keras_models/" + "nasalization".join(model_locations[network_type][context_frames]["16k"]["nasalization"]))}
 # }
 
-frag_fol = "eval3"
+frag_fol = "o"
 file_paths = glob.glob(tens_path + "pred_fragments_en/" + frag_fol + "/*.wav")
 
 # file_paths = [tens_path + "pred_fragments/af_eval_s/DVA10O_1_36.916_37.356.wav"]
@@ -129,8 +129,8 @@ if not os.path.exists(tens_path + "pred_textgrids_keras_en/" + tg_fol):
 
 tg_paths = glob.glob(tens_path + "pred_textgrids_keras_en/" + tg_fol + "/*")
 
-for tg_path in tg_paths:
-    os.remove(tg_path)
+#for tg_path in tg_paths:
+#    os.remove(tg_path)
 
 # running_cores = 0
 #
@@ -230,8 +230,8 @@ for fp in file_paths:
         if max_time < float(end_time):  # add the empty interval for the final buffer (due to windowing over subsequent 5 frames)
             tier.add(max_time, float(end_time), "")
         tg.append(tier)
-    with open(tens_path + "pred_textgrids_keras_en/" + tg_fol + "/" + fragment_id + ".TextGrid", "w") as f:
-        tg.write(f)
+#    with open(tens_path + "pred_textgrids_keras_en/" + tg_fol + "/" + fragment_id + ".TextGrid", "w") as f:
+#        tg.write(f)
 
 
 # jobs = []

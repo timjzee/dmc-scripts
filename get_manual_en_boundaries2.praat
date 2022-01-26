@@ -14,7 +14,7 @@ segments$[1] = "e"
 segments$[2] = "n"
 
 # Make sure input file has a header
-Read Table from comma-separated file: tensusers$ + "classifier_evaluation/en/" + "nn_eval_en_o2b.csv"
+Read Table from comma-separated file: tensusers$ + "classifier_evaluation/en/" + "nn_eval_en_o3.csv"
 Rename: "chunks"
 for a_i from 1 to n_annotators
     a$ = annotators$[a_i]
@@ -465,4 +465,4 @@ for id from 1 to num_chunks
 endfor
 
 selectObject: "Table chunks"
-Save as comma-separated file: tensusers$ + "classifier_evaluation/en/nn_eval_en_o2_annotated.csv"
+Save as comma-separated file: tensusers$ + "classifier_evaluation/en/nn_eval_en_o3_annotated.csv"
