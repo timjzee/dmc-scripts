@@ -48,7 +48,7 @@ m0 <- ulam(
               item = d3$item_index, 
               stress = d3$next_stress2
   ), 
-  chains = 4, cores = 4, iter = 4000, log_lik = T
+  chains = 4, cores = 4, iter = 4000#, log_lik = T
 )
 
 m0.5 <- ulam(
@@ -63,7 +63,7 @@ m0.5 <- ulam(
               item = d3$item_index, 
               stress = d3$stress_interaction
   ), 
-  chains = 4, cores = 4, iter = 3000, log_lik = T
+  chains = 4, cores = 4, iter = 3000#, log_lik = T
 )
 
 compare(m0, m0.5)
@@ -75,6 +75,35 @@ diffs <- list(
   "No Boundary" = m0.5_post$b[,4] - m0.5_post$b[,3]
 )
 plot(precis(diffs), xlab = "Log-odds difference (unstressed - stressed)")
+
+diffs <- list(
+  "Boundary" = m0.5_post$b[,1] - m0.5_post$b[,2],
+  "No Boundary" = m0.5_post$b[,3] - m0.5_post$b[,4]
+)
+
+plot(precis(diffs), xlab = "Log-odds difference", main = "Effect of following stress")
+par(mar=c(5,6,4,2) + 0.1)
+plot(NULL, xlim=c(min(diffs$`No Boundary`), max(diffs$Boundary)), ylim=c(-0.25,2),yaxt="n",ylab="",xlab="Log-odds difference", main = "Effect of following stress")
+axis(2, at = c(0.5, 1.5), labels = c("No Boundary", "Boundary"), las=2)
+abline(v=0, lty="dashed")
+abline(h=0.1, lty="dotted")
+abline(h=1.1, lty="dotted")
+boundary_dens <- density(diffs$Boundary)
+boundary_dens$ynorm <- boundary_dens$y / (max(boundary_dens$y)*1.2)
+noboundary_dens <- density(diffs$`No Boundary`)
+noboundary_dens$ynorm <- noboundary_dens$y / (max(noboundary_dens$y)*1.2)
+
+arrows(x0 = -0.05, y0 = -0.15, x1 = -0.5, y1 = -0.15, col = "darkgrey", lwd=3)
+text(x=-0.14,y=-0.06,labels = "fewer -s", col = "darkgrey", lwd=2)
+arrows(x0 = 0.05, y0 = -0.15, x1 = 0.7, y1 = -0.15, col = "darkgrey", lwd=3)
+text(x=0.14,y=-0.06,labels = "more -s", col = "darkgrey", lwd=2)
+
+polygon(x = c(boundary_dens$x, max(boundary_dens$x)), y = c(boundary_dens$ynorm + 1.1, 1.1), col = adjustcolor("grey",alpha.f=0.5), border = adjustcolor("grey",alpha.f=0.5))
+polygon(x = c(noboundary_dens$x, max(noboundary_dens$x)), y = c(noboundary_dens$ynorm + 0.1, 0.1), col = adjustcolor("grey",alpha.f=0.5), border = adjustcolor("grey",alpha.f=0.5))
+
+
+par(mar=c(5,4,4,2) + 0.1)
+
 
 m1 <- ulam(
   alist(

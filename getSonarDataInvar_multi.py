@@ -7,7 +7,7 @@ frog = Frog(FrogOptions(parser=True, numThreads=b"1"))
 
 f_path = "/Volumes/tensusers/timzee/other/" if sys.platform == "darwin" else "/vol/tensusers/timzee/other/"
 
-trials = ["administrateur", "admiraal", "alarm", "balkon", "ballon", "bar", "baron", "bretel", "broer", "cabriolet", "champignon", "commandant", "compagnie", "crediteur", "dessert", "directeur", "donateur", "doorn", "duel", "dynastie", "epidemie", "expert", "galerie", "gazon", "gel", "generaal", "genie", "hoorn", "idee", "interieur", "journaal", "kanaal", "kapitein", "kopie", "luitenant", "magnetron", "majoor", "meneer", "mevrouw", "microfoon", "militair", "miljonair", "model", "monarch", "monogram", "monteur", "mortier", "officier", "perron", "pion", "pistool", "protocol", "redacteur", "regisseur", "reptiel", "residu", "restaurant", "saxofoon", "sergeant", "sjaal", "strategie", "telegram", "theorie", "trofee", "vampier"]
+trials = ['vlies', 'cadeau', 'recept', 'talent', 'bonbon', 'hypocriet', 'auteur', 'beha', 'regime', 'debat', 'rabbijn', 'woestijn', 'abonnee', 'atelier', 'bataljon', 'matador', 'dialect', 'horoscoop', 'kapitaal', 'paragraaf', 'patholoog']
 
 print("Loading CELEX")
 celex = {}
@@ -36,7 +36,9 @@ short_vowels = ["e", "u", "i", "o", "a"]
 trials_dict = {}
 for t in trials:
     trials_dict[t] = {}
-    if t[-3:-1] in double_vowels:
+    if t == "vlies":
+        en_plural = "vliezen"
+    elif t[-3:-1] in double_vowels:
         en_plural = t[:-2] + t[-1] + "en"
     elif t[-2] in short_vowels and t[-3] not in short_vowels and t[-1] not in short_vowels + ["w"]:
         en_plural = t + t[-1] + "en"
@@ -53,15 +55,9 @@ for t in trials:
 
 
 input_data = []
-with open(f_path + "sonar_plurals3.csv", "r") as f:
+with open(f_path + "sonar_invars2.csv", "r") as f:
     for num, i in enumerate(f, 1):
         input_data.append([i, num])
-
-genres = {}
-with open(f_path + "sonar_genres.txt", "r") as f:
-    for i in f:
-        i_l = i[:-1].split("_")
-        genres[i_l[0]] = "_".join(i_l[1:])
 
 
 def getVariables(i_pair):
@@ -70,15 +66,10 @@ def getVariables(i_pair):
     i_list = i_line[:-1].split("\t")
     sentence = i_list[1].strip('" ')
     foll_context = i_list[2].strip('" ')
-    doc_id = "-".join(i_list[3].split("-")[:4])
     for t in trials:
         grep_text = "(^{}|[ ']{})({}|{})(?=[ .,?!':;])".format(t[0].upper(), t[0], trials_dict[t]["en"][1:], trials_dict[t]["s"][1:])
         if re.search(grep_text, sentence):
             line = re.sub(" & ", " en ", sentence)
-            if doc_id in genres:
-                genre = genres[doc_id]
-            else:
-                genre = "NA"
             frog_output = frog.process(line)
             frog_output_clean = [i for i in frog_output if i["pos"] != "LET()"]
             n_foreign_tags = len([i for i in frog_output_clean if i["pos"] == "SPEC(vreemd)"])
@@ -141,7 +132,7 @@ def getVariables(i_pair):
                     else:
                         following_interp = "NA"
                 prosodic_break = "NA" if following_interp == "NA" else "1" if following_interp else "0"
-                return ",".join([s_plural, t, prosodic_break, next_stress, next_sound, next_vowel_length, n_next_cons, re.sub(",", "_", next_POS), next_lemma, re.sub(",", "", line), genre]) + "\n"
+                return ",".join([s_plural, t, prosodic_break, next_stress, next_sound, next_vowel_length, n_next_cons, re.sub(",", "_", next_POS), next_lemma, re.sub(",", "", line)]) + "\n"
 
 
 p = multiprocessing.Pool(60)
@@ -152,7 +143,7 @@ result_list = [line for line in result_list if line]
 
 
 print("Writing output file...")
-with open(f_path + "SonarVar2.csv", "w") as g:
-    g.write("s_plural,item,prosodic_break,next_stress,next_sound,next_vowel_length,n_next_cons,next_POS,next_lemma,ort,sub_corpus\n")
+with open(f_path + "SonarInvar.csv", "w") as g:
+    g.write("s_plural,item,prosodic_break,next_stress,next_sound,next_vowel_length,n_next_cons,next_POS,next_lemma,ort\n")
     for line in result_list:
         g.write(line)
