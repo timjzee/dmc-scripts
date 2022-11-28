@@ -109,6 +109,38 @@ plot(invar_sub$f_pl, invar_sub$prop_pl, cex = .5 + invar_sub$n_syl/2, col = rgb(
 points(invar_sub$f_pl, invar_sub$prop_pl, cex = .5 + invar_sub$n_syl/2, col = rgb(0,0,0, 1), pch = 1, ylim=c(0,1), xlim=c(0,400))
 par(mfrow=c(1,1))
 
+names(var_sub)[names(var_sub)=="syl_n"] <- "Syllables"
+names(var_sub)[names(var_sub)=="prop_s"] <- "-s Proportion"
+
+library(ggplot2)
+var_plot <- ggplot(var_sub, aes(x = f_pl, y = prop_pl, fill = `-s Proportion`, size = Syllables, xmin=0, xmax=400, ymin=0, ymax=1)) +
+  xlab("Plural Frequency") + ylab("Plural Proportion") +
+  geom_point(shape=21, color = "black") +
+  ggtitle("A. Variable plurals") +
+  scale_size(breaks = c(1,2,3)) +
+  scale_fill_gradient(low = "black", high = "white")
+
+legend <- get_legend(var_plot)
+
+var_plot <- ggplot(var_sub, aes(x = f_pl, y = prop_pl, fill = `-s Proportion`, size = Syllables, ymin=0, ymax=1)) +
+  xlab("Plural Frequency") + ylab("Plural Proportion") +
+  geom_point(shape=21, color = "black", show.legend = FALSE) +
+  ggtitle("A. Variable plurals") +
+  scale_size(breaks = c(1,2,3)) +
+  scale_x_continuous(trans='log10', limits = c(1,1000)) +
+  scale_fill_gradient(low = "black", high = "white")
+
+invar_plot <- ggplot(invar_sub, aes(x = f_pl, y = prop_pl, fill = prop_s, size = n_syl, ymin=0, ymax=1)) +
+  xlab("Plural Frequency") + ylab("Plural Proportion") +
+  geom_point(shape=21, color = "black", show.legend = FALSE) +
+  ggtitle("B. Invariable plurals") +
+  scale_size(breaks = c(1,2,3)) +
+  scale_x_continuous(trans='log10', limits = c(1,1000)) +
+  scale_fill_gradient(low = "black", high = "white")
+
+plot_grid(var_plot, invar_plot, legend, ncol = 3, rel_widths = c(2/5, 2/5, 1/5))
+
+
 hist(invar_sub$n_syl, breaks = 20)
 
 invar_sub[, c("word", "pl_type")]

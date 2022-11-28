@@ -53,7 +53,7 @@ adjustmentSets(dagSt)
 
 
 ##
-dagPL2 <- dagitty("dag {
+dagPL2a <- dagitty("dag {
   Plural [outcome]
   Stress [exposure]
   Break
@@ -69,6 +69,22 @@ dagPL2 <- dagitty("dag {
   Stress <- U -> Sound
 }")
 
+dagPL2b <- dagitty("dag {
+  Plural [outcome]
+  Stress [exposure]
+  Break
+  Sound
+  U [unobserved]
+  Style
+  Singular
+  ID [unobserved]
+  Break -> Plural <- Stress
+  Sound -> Break <- Stress
+  Sound -> Plural <- Style
+  Singular -> Plural <- ID
+  Stress <- U -> Sound
+}")
+
 # difference between:
 #   Sound -> Break <- Stress
 #   Sound <- Break -> Stress
@@ -76,7 +92,7 @@ dagPL2 <- dagitty("dag {
 #   word/lemma selection
 #   syntactic structure
 # we can stay agnostic about it by doing:
-#   U -> Break, U -> Stress, U -> Break
+#   U -> Break, U -> Stress, U -> Sound
 # regardless, it doesn't matter for the adjustment sets
 # we can't stay agnostic about causality between Stress and Plural though:
 #   Stress -> Plural
@@ -85,12 +101,296 @@ dagPL2 <- dagitty("dag {
 #   a structure of word forms with phonological representations and breaks exists that influences
 #     which morphological forms are chosen (right to left influence)
 #   Phonological structure of final forms affect which following word is chosen
-coordinates(dagPL2) <- list( x=c(Break=2,Stress=2,Plural=3,U=1,Sound=2,Style=4,Singular=4,ID=4), 
+# but maybe it isn't helpful to do U -> Break
+#   U is very abstract in that conceptualisation
+#     Stress <- U -> Sound is very clear: stress and sound co-occur in words
+#   We may need to consider both directions in Sound ~ Break ~ Stress anyway when
+#   we look at Plural -> Stress
+coordinates(dagPL2a) <- list( x=c(Break=2,Stress=2,Plural=3,U=1,Sound=2,Style=4,Singular=4,ID=4), 
                             y=c(Break=2,Stress=1,Plural=2,U=2,Sound=3,Style=1,Singular=2,ID=3) ) 
-drawdag( dagPL2 )
-par(mar=c(5.1, 4.1, 4.1, 2.1), mfrow=c(1,1))
+coordinates(dagPL2b) <- list( x=c(Break=2,Stress=2,Plural=3,U=1,Sound=2,Style=4,Singular=4,ID=4), 
+                              y=c(Break=2,Stress=1,Plural=2,U=2,Sound=3,Style=1,Singular=2,ID=3) ) 
+par(mfrow=c(1,2))
+drawdag( dagPL2a )
+drawdag( dagPL2b )
+par(mfrow=c(1,1), mar=c(5.1, 4.1, 4.1, 2.1), mfrow=c(1,1))
 adjustmentSets(dagPL2)
 impliedConditionalIndependencies(dagPL2)
+
+library(ggdag)
+library(gridExtra)
+library(tibble)
+# helpful: https://cran.r-project.org/web/packages/ggdag/vignettes/intro-to-dags.html
+dagPL2a_plot <- ggdag(dagPL2a) + ggtitle("hey")
+dagPL2b_plot <- ggdag(dagPL2b) + ggtitle("you")
+grid.arrange(dagPL2a_plot, dagPL2b_plot, ncol=2)
+
+# scratch all that
+# mechanism 1
+# - Break influences Plural through an interaction with stress
+# - in this case we have all lexemes in place in the syntactic structure
+#   which may or may not contain a break
+# - Break does not have a causal relation to Stress or Sound
+# mechanism 2 lexical selection
+# - Plural influences Stress through an interaction with Break
+# - in this case we have the syntactic structure in place, the plural variant
+#   in place, but the lexeme following the plural is not yet decided 
+#   (i.e. a choice has to be made between different lexemes with similar meaning,
+#   e.g. vampieren doden/vermoorden mensen)
+# - Plural does not have a causal relation to Break
+# mechanism 2b word ordering
+# - Plural influences Stress through an interaction with Break
+# - in this case only the plural variant and the general message is chosen, 
+#   but the structure/ordering and lexemes are not yet decided. Stress represents the
+#   ordering/structure (different orderings would have resulted in a different 
+#   following word and thus stress)
+#   (i.e. a choice has to be made between different phrases with dif. structure and words,
+#   e.g. Zonlicht is gevaarlijk voor vampiers. Vampieren kunnen niet tegen zonlicht.
+#   e.g. Vampiers, zo gaat het verhaal, kunnen niet tegen zonlicht. Vampieren kunnen niet tegen zonlicht, zo gaat het verhaal.
+
+mech2bsub <- dagitty("dag {
+  Plural [exposure]
+  Stress [outcome]
+  Break
+  Stress <- Plural -> Break
+  Break -> Stress
+}")
+drawdag( mech2bsub )
+adjustmentSets(mech2bsub, effect = "direct")
+# mechanism ???
+# - Plural influences break through an interaction with Stress
+# - This is hard to imagine, because usually the removal of a ortographic break
+#   does not result in a legal structure (.?, often can't just be removed)
+
+# mech 1
+mech1_dag <- dagify(Plural ~ Break + Stress + Sound + ID + Singular + Style,
+                    Stress ~ Next_Word,
+                    Sound ~ Next_Word,
+                    latent = "ID",
+                    exposure = c("Stress", "Break"),
+                    outcome = "Plural",
+                    labels = c("Plural" = "Plural",
+                               "Break" = "Break",
+                               "Stress" = "Stress",
+                               "Sound" = "Sound",
+                               "ID" = "ID",
+                               "Singular" = "Singular",
+                               "Style" = "Style",
+                               "Next_Word" = "Next Word"),
+                    coords = list( x=c(Break=2,Stress=2,Plural=3,Next_Word=1,Sound=2,Style=4,Singular=4,ID=4), 
+                                   y=c(Break=2,Stress=3,Plural=2,Next_Word=2,Sound=1,Style=3,Singular=2,ID=1) ))
+
+mech1_dag_tidy <- tidy_dagitty(mech1_dag)
+
+mech1_dag_tidy$data = mech1_dag_tidy$data %>% 
+  add_column(ntype=ifelse(mech1_dag_tidy$data$name %in% latents(mech1_dag), "latent",
+                          ifelse(mech1_dag_tidy$data$name %in% outcomes(mech1_dag), "outcome",
+                                 ifelse(mech1_dag_tidy$data$name %in% exposures(mech1_dag), "exposure", "other"))))
+
+mech1_plot <- mech1_dag_tidy %>% 
+  ggplot(aes(x = x, y = y, xend = xend, yend = yend, color = ntype)) +
+  geom_dag_point() +
+  geom_dag_edges() +
+  geom_dag_label_repel(aes(label=label), show.legend = F, force = 0, col="black") +
+  theme_dag()
+
+adjustmentSets(mech1_dag, effect = "direct")
+
+# mech 2
+mech2_dag <- dagify(Plural ~ ID + Singular + Style,
+                    Stress ~ Plural + Break,
+                    Sound ~ Plural + Break,
+                    Next_Word ~ Stress + Sound,
+                    latent = "ID",
+                    exposure = c("Plural", "Break"),
+                    outcome = "Stress",
+                    labels = c("Plural" = "Plural",
+                               "Break" = "Break",
+                               "Stress" = "Stress",
+                               "Sound" = "Sound",
+                               "ID" = "ID",
+                               "Singular" = "Singular",
+                               "Style" = "Style",
+                               "Next_Word" = "Next Word"),
+                    coords = list( x=c(Break=2,Stress=2,Plural=3,Next_Word=1,Sound=2,Style=4,Singular=4,ID=4), 
+                                   y=c(Break=2,Stress=3,Plural=2,Next_Word=2,Sound=1,Style=3,Singular=2,ID=1) ))
+
+mech2_dag_tidy <- tidy_dagitty(mech2_dag)
+
+mech2_dag_tidy$data = mech2_dag_tidy$data %>% 
+  add_column(ntype=ifelse(mech2_dag_tidy$data$name %in% latents(mech2_dag), "latent",
+                          ifelse(mech2_dag_tidy$data$name %in% outcomes(mech2_dag), "outcome",
+                                 ifelse(mech2_dag_tidy$data$name %in% exposures(mech2_dag), "exposure", "other"))))
+
+mech2_plot <- mech2_dag_tidy %>% 
+  ggplot(aes(x = x, y = y, xend = xend, yend = yend, color = ntype)) +
+  geom_dag_point() +
+  geom_dag_edges() +
+  geom_dag_label_repel(aes(label=label), show.legend = F, force = 0, col="black") +
+  theme_dag()
+
+adjustmentSets(mech2_dag, effect = "direct")
+
+grid.arrange(mech1_plot, mech2_plot, ncol=2)
+
+## nope got it wrong again: in mech2, plural doesn't influence next_word through
+## Stress and Sound, but rather it directly influences Next_word which yields
+## Stress and Sound
+
+mech2_dag_alt <- dagify(Plural ~ ID + Singular + Style,
+                    Stress ~ Next_Word,
+                    Sound ~ Next_Word,
+                    Break ~ Plural,
+                    Next_Word ~ Break + Plural,
+                    latent = "ID",
+                    exposure = c("Plural", "Break"),
+                    outcome = "Stress",
+                    labels = c("Plural" = "Plural",
+                               "Break" = "Break",
+                               "Stress" = "Stress",
+                               "Sound" = "Sound",
+                               "ID" = "ID",
+                               "Singular" = "Singular",
+                               "Style" = "Style",
+                               "Next_Word" = "Next Word"),
+                    coords = list( x=c(Break=1,Stress=2,Plural=3,Next_Word=1,Sound=2,Style=4,Singular=4,ID=4), 
+                                   y=c(Break=3,Stress=2,Plural=2,Next_Word=1,Sound=1,Style=2,Singular=3,ID=1) ))
+
+mech2_dag_alt_tidy <- tidy_dagitty(mech2_dag_alt)
+
+mech2_dag_alt_tidy$data = mech2_dag_alt_tidy$data %>% 
+  add_column(ntype=ifelse(mech2_dag_alt_tidy$data$name %in% latents(mech2_dag_alt), "latent",
+                          ifelse(mech2_dag_alt_tidy$data$name %in% outcomes(mech2_dag_alt), "outcome",
+                                 ifelse(mech2_dag_alt_tidy$data$name %in% exposures(mech2_dag_alt), "exposure", "other"))))
+
+cbbPalette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+mech2_alt_plot <- mech2_dag_alt_tidy %>% 
+  ggplot(aes(x = x, y = y, xend = xend, yend = yend, color = ntype)) +
+  geom_dag_point(show.legend = FALSE) +
+  geom_dag_edges() +
+  geom_dag_label_repel(aes(label=label), show.legend = F, force = 0, col="black") +
+  ggtitle("Lexical/Structural effect") +
+  scale_colour_manual(values=cbbPalette) +
+  theme_dag(plot.margin = margin(15, 15, 15, 15, "pt"), 
+            panel.background = element_rect(fill = "grey95", linetype = "blank"))
+
+adjustmentSets(mech2_dag_alt)
+
+mech1_dag_alt <- dagify(Plural ~ ID + Singular + Style + Break + Stress + Sound,
+                        Stress ~ Next_Word,
+                        Sound ~ Next_Word,
+                        latent = "ID",
+                        exposure = c("Stress", "Break"),
+                        outcome = "Plural",
+                        labels = c("Plural" = "Plural",
+                                   "Break" = "Break",
+                                   "Stress" = "Stress",
+                                   "Sound" = "Sound",
+                                   "ID" = "ID",
+                                   "Singular" = "Singular",
+                                   "Style" = "Style",
+                                   "Next_Word" = "Next Word"),
+                        coords = list( x=c(Break=1,Stress=2,Plural=3,Next_Word=1,Sound=2,Style=4,Singular=4,ID=4), 
+                                       y=c(Break=3,Stress=2,Plural=2,Next_Word=1,Sound=1,Style=2,Singular=3,ID=1) ))
+
+mech1_dag_alt_tidy <- tidy_dagitty(mech1_dag_alt)
+
+mech1_dag_alt_tidy$data = mech1_dag_alt_tidy$data %>% 
+  add_column(ntype=ifelse(mech1_dag_alt_tidy$data$name %in% latents(mech1_dag_alt), "latent",
+                          ifelse(mech1_dag_alt_tidy$data$name %in% outcomes(mech1_dag_alt), "outcome",
+                                 ifelse(mech1_dag_alt_tidy$data$name %in% exposures(mech1_dag_alt), "exposure", "other"))))
+
+mech1_alt_plot <- mech1_dag_alt_tidy %>% 
+  ggplot(aes(x = x, y = y, xend = xend, yend = yend, color = ntype)) +
+  geom_dag_point() +
+  geom_dag_edges() +
+  geom_dag_label_repel(aes(label=label), show.legend = F, force = 0, col="black") +
+  scale_colour_manual(values=cbbPalette) +
+  theme_dag()
+
+adjustmentSets(mech1_dag_alt)
+
+legend <- get_legend(mech1_alt_plot)
+
+mech1_alt_plot <- mech1_dag_alt_tidy %>% 
+  ggplot(aes(x = x, y = y, xend = xend, yend = yend, color = ntype)) +
+  geom_dag_point(show.legend = FALSE) +
+  geom_dag_edges() +
+  geom_dag_label_repel(aes(label=label), show.legend = F, force = 0, col="black") +
+  ggtitle("Morphological effect") +
+  scale_colour_manual(values=cbbPalette) +
+  theme_dag(plot.margin = margin(15, 15, 15, 15, "pt"), 
+            panel.background = element_rect(fill = "grey95", linetype = "blank"))
+
+
+library(cowplot)
+plot_grid(mech1_alt_plot, mech2_alt_plot, legend, ncol = 3, rel_widths = c(2/5, 2/5, 1/5))
+#grid.arrange(mech1_alt_plot, mech2_alt_plot, ncol=2)
+
+## wait a minute, what about another possible mechanism:
+# Break and Stress influence the choice of lexeme if that lexeme likely results in -s
+# perhaps these plurals are not variable at all for these individuals
+# e.g., De directeurs heten Jan en Sara. vs. De bazen heten Jan en Sara
+# can this mechanism be excluded using the var dataset?
+#   - only if we add a Variability --> Plural relation, and the invariable data
+#   - i.e. a 3-way interaction between Break, Stress, and Variability
+#   - if break and stress only have an influence for variable plurals
+#   - the 
+
+# if we conceptualize the DAG as the process within individuals, then the way to
+# account for the directeurs/bazen mechanism is to include a latent variable
+# for Alternative Lexemes / Synonyms that were considered. This variable is latent
+# a priori because we can't look inside the mental processes of the individuals that
+# produced the data. This results in a confound for which we cannot control:
+# Plural <-- Break/Stress --> Synonyms --> Plural
+# However that would only make sense if Plural also included those synonyms
+# plural variants.
+# if we think generatively such a model still generates a distribution of variable
+# plurals which after selection on variability should show an effect of Stress and Break
+# Crucially, however, it should also generate a distribution of invariable plurals
+# that shows this effect.
+
+
+# I need to accept that the DAG cannot be used to visualize everything (missing data approach etc.)
+# So why not have a direct path from Break/Stress --> PLural, 
+# and a backdoor: Break/Stress --> Lexeme --> Plural
+# And then specify in the text that to estimate the direct effect Break/Stress --> Plural
+# we need to condition on Lexeme. And that would work if our outcome variable
+# represented the plural productions of a single person
+
+
+# btw this alt mechanism could also explain other Quené's findings:
+# heel/bijster grote man
+
+# btw potential reason for null effect in experiment: between a Subject and a verb
+# might be a location which can easily result in prosodic break.
+
+
+# haunted DAG interpretation:
+haunted_dag <- dagitty("dag {
+                    BS [exposure]
+                    PL [outcome]
+                    LEX
+                    ID [unobserved]
+                    ID -> LEX <- BS -> PL
+                    LEX -> PL <- ID
+}")
+
+coordinates(haunted_dag) <- list( x=c(BS=1,PL=3,LEX=2,ID=2), 
+                            y=c(BS=3,PL=3,LEX=2,ID=1) ) 
+drawdag( haunted_dag )
+par(mar=c(5.1, 4.1, 4.1, 2.1), mfrow=c(1,1))
+
+# collider interpretation: 
+# let's say there is 0 direct effect from BS to PL
+# 2 observations of the same LEXEME, 1 followed by stress 1 not. The only way this
+# happens is if they are produced by different people
+
+# let's simulate this
+
+
+
 
 
 ##
